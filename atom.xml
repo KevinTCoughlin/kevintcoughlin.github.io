@@ -1,0 +1,839 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Kevin Coughlin]]></title>
+  <link href="http://kevintcoughlin.com/atom.xml" rel="self"/>
+  <link href="http://kevintcoughlin.com/"/>
+  <updated>2013-11-14T21:03:00-05:00</updated>
+  <id>http://kevintcoughlin.com/</id>
+  <author>
+    <name><![CDATA[Kevin Coughlin]]></name>
+    <email><![CDATA[kevintcoughlin@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Android Development Behind a Firewall]]></title>
+    <link href="http://kevintcoughlin.com/blog/2013/11/14/android-development-behind-a-firewall/"/>
+    <updated>2013-11-14T20:25:00-05:00</updated>
+    <id>http://kevintcoughlin.com/blog/2013/11/14/android-development-behind-a-firewall</id>
+    <content type="html"><![CDATA[<h2>Configure Android Studio to use an HTTP Proxy</h2>
+
+<p>If you&rsquo;ve had problems using Android Studio or the Android SDK Manager behind a Firewall then these two configuration changes may help you configure your development environment. First, configure your Android studio to bypass the firewall by changing its HTTP Proxy settings. To do this navigate to <code>Preferences &gt; HTTP Proxy</code>. You&rsquo;ll be presented with the following dialog:</p>
+
+<p><img src="http://i.imgur.com/btmwNDC.png" alt="Android Studio HTTP Proxy Settings Dialog" /></p>
+
+<p>Configure Android Studio to use your HTTP Proxy by filling in the inputs with the correct settings. Once you&rsquo;re done you can check that the proxy works by pressing the <code>Check Connection</code> button and entering a URL that is typically blocked by your firewall.</p>
+
+<h2>Configure the Android SDK Manager to use an HTTP Proxy</h2>
+
+<p>If your Android SDK Manager is unable to make HTTP calls while installing / updating then you can edit its configuration file to use an HTTP Proxy. To do this you&rsquo;ll need to edit its config file named <code>androidtools.cgf</code>. If you are on a UNIX machine you can typically find it at the following path: <code>~/.android/androidtool.cfg</code>. Once you open the config file in an editor, append / modify the http proxy and http port settings like the following:</p>
+
+<pre><code>sdkman.force.http=true
+http.proxyPort=[PORT NUMBER]
+http.proxyHost=[IP ADDRESS]
+</code></pre>
+
+<p>Where <code>[PORT NUMBER]</code> and <code>[IP ADDRESS]</code> are the correct settings for your HTTP proxy and the first line forces the manager to use HTTP. Save your modifications to the configuration file and you should then be able to fetch and install SDK assets behind your firewall.</p>
+
+<p>Hope those two tips help you configure your Android development environment behind a firewall!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Developing for Firefox OS: Setting up your development environment]]></title>
+    <link href="http://kevintcoughlin.com/blog/2013/08/24/developing-for-firefox-os-setting-up-your-development-environment/"/>
+    <updated>2013-08-24T12:53:00-04:00</updated>
+    <id>http://kevintcoughlin.com/blog/2013/08/24/developing-for-firefox-os-setting-up-your-development-environment</id>
+    <content type="html"><![CDATA[<h2>Introduction</h2>
+
+<p>With Firefox OS phones <a href="http://www.digitalspy.com/tech/news/a509168/zte-open-firefox-phone-going-hands-on-with-the-sold-out-handset.html">beginning to ship</a> and developer resources &amp; tools maturing in the past few months, the tech community&rsquo;s interest in the web technology-based OS has been rapidly climbing. But this is obvious to you because that&rsquo;s why you&rsquo;re here! Right?</p>
+
+<p>This is the first in a series of posts that will catalogue my journey developing for the Firefox OS. We&rsquo;ll begin by setting up our Simulator and becoming proficient with it. Included in these posts are useful links (many of which are from <a href="https://developer.mozilla.org/en-US/">Mozilla&rsquo;s Developer Network</a>) and provide essential supplemental material. Some of the articles are more detailed version of my content, therefore I strongly urge that you take the time to read their material in addition to mine as I am just capturing my development experience and may not answer all the questions you may have. If at any point you have any questions or suggestions, feel free to reach out to me at <a href="http://twitter.com/kevintcoughlin">@kevintcoughlin</a> or by commenting on the post. Now, enough of me blabbering&hellip; Let&rsquo;s get started!</p>
+
+<!-- more -->
+
+
+<h2>Supplemental Mozilla Post</h2>
+
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Tools/Firefox_OS_Simulator/Simulator_Walkthrough">Firefox OS Simulator Walkthrough</a></li>
+</ul>
+
+
+<h2>Getting Started</h2>
+
+<p>The Firefox OS Simulator plugs into the Firefox browser and provides a test environment for their OS that emulates a Firefox mobile device. Before moving forward, make sure that you have the Firefox browser installed on your machine. If not, you can download a version from the following URLs:</p>
+
+<ul>
+<li><a href="http://www.mozilla.org/en-US/firefox/new/">Standard Build</a></li>
+<li><a href="http://nightly.mozilla.org/">Nightly Build</a></li>
+</ul>
+
+
+<p>Once you&rsquo;ve installed the browser, open it and navigate to the <a href="https://addons.mozilla.org/en-us/firefox/addon/firefox-os-simulator/">Firefox OS Simulator plugin page</a>. Press the &ldquo;+ Add to Firefox&rdquo; button to install the simulator plugin in your browser. The browser will prompt you to allow the installation of the software. Press <code>Allow</code> and you&rsquo;ll see the plugin installation progress.</p>
+
+<p><img src="http://i.imgur.com/SA9EXDf.png" title="Allow Simulator Plugin Installation" alt="Allow Firefox OS Simulator Plugin Installation" /></p>
+
+<p>The following screen will prompt you to authorize the installation of the plugin in your browser. Once the install button timer completes press &ldquo;Install&rdquo; and Firefox will successfully install the Simulator plugin.</p>
+
+<p><img src="http://i.imgur.com/DrECRjN.png" title="Install Firefox OS Simulator Plugin" alt="Install Firefox OS Simulator Plugin" /></p>
+
+<h2>Check Installation</h2>
+
+<p>Let&rsquo;s check that the Firefox OS Simulator installed successfully. To do this it is not necessary to restart the browser. Navigate to <code>Tools &gt; Web Developer &gt; Firefox OS Simulator</code> and you should be presented with the following new tab.</p>
+
+<p><img src="http://i.imgur.com/qqZnr1s.png" title="Simulator Dashboard" alt="Firefox OS Simulator Dashboard" /></p>
+
+<p>This tab contains the dashboard for your Simulator which contains the apps you create / import along with the toggle switch for turning the mobile simulator on and off. Let&rsquo;s fire-up the simulator by switching the Simulator toggle to &ldquo;Running&rdquo;. Now a new window should pop-up named <code>B2G</code> (Boot2Gecko) and you should see an emulated Firefox mobile device like the following:</p>
+
+<p><img src="http://i.imgur.com/nOZEp67.png" title="Simulator Device" alt="Firefox OS Simulator Device" /></p>
+
+<h2>Testing an App</h2>
+
+<p>Now that our environment is ready to rock let&rsquo;s give the Simulator its first application to run. The Mozilla employee working on Firefox OS, Rob Nyman (<a href="https://github.com/robnyman">Github</a>, <a href="https://twitter.com/robertnyman">@robertnyman</a>) has provided an excellent Firefox OS bootstrap application that we&rsquo;ll use to test the Simulator. His application showcases the basic functionality of the OS and provides a good code base to extend into your own applications. To deploy the boilerplate app to our Simulator, input either of the two links into the <code>URL for page or manifest.webapp</code> input box in the top right corner.</p>
+
+<ul>
+<li><a href="http://robnyman.github.com/Firefox-OS-Boilerplate-App/manifest.webapp">http://robnyman.github.com/Firefox-OS-Boilerplate-App/manifest.webapp</a></li>
+<li><a href="http://robnyman.github.com/Firefox-OS-Boilerplate-App/">http://robnyman.github.com/Firefox-OS-Boilerplate-App/</a></li>
+</ul>
+
+
+<p><img src="http://i.imgur.com/QhHBQkk.png" title="Simulator URL Input Field" alt="Firefox OS Simulator URL Input Field" /></p>
+
+<p><em>NOTE: If you don&rsquo;t use the <code>manifest.webapp</code> URL then you&rsquo;ll have to modify the app&rsquo;s launch image path for the app to deploy without warnings (See the <code>Using the Directory URL</code> Section). Therefore it&rsquo;s easier to use the <code>.webapp</code> path for this example.</em></p>
+
+<p>Once you input the URL, the Firefox OS will automatically deploy the package to your Simulator and activate the Simulator and application. If you have done everything correctly, you&rsquo;ll see the following screen:</p>
+
+<p><img src="http://i.imgur.com/MSx4gxp.png" title="Deployed Firefox OS Boilerplate App" alt="Deployed Firefox OS Boilerplate App" /></p>
+
+<p>In this app you can play around with the basic functionality of Firefox OS.</p>
+
+<h3>Using the Directory URL</h3>
+
+<p>If you use the directory link rather than the manifest.webapp URL then a quick modification must be made so that the Simulator has the correct launcher image. Otherwise it will appear without a launcher image and fire the following warning: <code>app submission to the Marketplace needs at least an 128 icon</code>. To fix this, you&rsquo;ll need to edit the following line <code>"launch_path": "/Firefox-OS-Boilerplate-App/index.html"</code>. Rob covers this in the following section of his <code>README.md</code>:</p>
+
+<p><em>Note: If you use the Add Directory option in the Simulator, or if you are trying to package (zip) for a future upload in the marketplace, make sure to change &ldquo;launch_path&rdquo;: &ldquo;/Firefox-OS-Boilerplate-App/index.html&rdquo; to &ldquo;launch_path&rdquo;: &ldquo;index.html&rdquo; and the icon paths accordingly since it runs it as a packaged app directly from the root folder of the Firefox OS Boilerplate App.</em></p>
+
+<p>To accomplish this, either fork or download the repository so that you can modify the <code>manifest.webapp</code> file. Then copy the URL of the modified directory into the simulator.</p>
+
+<h2>Removing an App</h2>
+
+<p>To remove an application from your Simulator, navigate to the Simulator&rsquo;s dashboard and click the <code>X</code> to the right of the app that you wish to remove. The app will then be listed like it is in the following image:</p>
+
+<p><img src="http://i.imgur.com/Ns1vmWm.png" title="Removed Firefox OS Boilerplate App" alt="Removed Firefox OS Boilerplate App" /></p>
+
+<p>You can undo the removal by clicking the dashboard&rsquo;s <code>Undo</code> button. Note that it&rsquo;s preferable not to remove the app via Firefox OS&rsquo;s long press on the icon method as it will not be synced with the Simulator dashboard.</p>
+
+<h2>Conclusion</h2>
+
+<p>It&rsquo;s an exciting time to be a web developer. Open web technologies are advancing at break-neck speed thanks to the resurgence of Open Source Software due in large-part to Github and popular tech like Node.js and JavaScript frameworks. Firefox&rsquo;s Operating System at the very least is an excellent platform to hack on for any JavaScript developer as it has extremely low barriers to entry for most web developers.</p>
+
+<p>In Part 2 of this series, I&rsquo;ll start developing the application and have it fetch JSON data and populate the views.</p>
+
+<h2>Further Reading</h2>
+
+<p>As you move towards developing your own applications for Firefox OS I recommend you supplementing my series of tutorials with the links listed above and below. In particular, Mozilla provides a more detailed walkthrough of the Simulator installation process and features at <a href="https://developer.mozilla.org/en-US/docs/Tools/Firefox_OS_Simulator#Installing_the_Simulator_add-on">https://developer.mozilla.org/en-US/docs/Tools/Firefox_OS_Simulator#Installing_the_Simulator_add-on</a>  You will greatly benefit from becoming acquainted with Firefox&rsquo;s Marketplace Developer Hub and reading through the Simulator walkthrough and API reference listed below. Mozilla does a fantastic job at creating high-quality material for developers.</p>
+
+<ul>
+<li><a href="https://marketplace.firefox.com/developers/">Firefox Marketplace Developer Hub</a></li>
+<li><a href="https://hacks.mozilla.org/2013/03/how-to-install-packaged-apps-in-firefox-os-options-and-tools/">How To Install Packaged Apps in Firefox OS</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/Apps/Reference?redirectlocale=en-US&amp;redirectslug=Apps%2FReference">Firefox OS App Development API Reference</a></li>
+<li><a href="https://github.com/mozilla/r2d2b2g">Firefox OS Simulator Github Repo</a></li>
+<li><a href="https://hacks.mozilla.org/2013/07/firefox-os-simulator-4-0-released/">Firefox OS Simulator 4.0 Released &ndash; MDN Blog Post</a></li>
+<li><a href="https://github.com/robnyman/Firefox-OS-Boilerplate-App">Firefox OS Boilerplate App</a></li>
+<li><a href="https://github.com/Jaxo/fxosstub">Firefox OS Minimal Application Template</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[A Gentle Introduction to D3.js (Part 1) - Generating N-Random Circles]]></title>
+    <link href="http://kevintcoughlin.com/blog/2013/07/01/a-gentle-introduction-to-d3-dot-js/"/>
+    <updated>2013-07-01T17:30:00-04:00</updated>
+    <id>http://kevintcoughlin.com/blog/2013/07/01/a-gentle-introduction-to-d3-dot-js</id>
+    <content type="html"><![CDATA[<h2>Introduction</h2>
+
+<p>In Part 1 of this D3.js introduction, we are going to append 200 circles of random size and color to random locations of a SVG (Scalable Vector Graphics) HTML element (<a href="https://developer.mozilla.org/en-US/docs/Web/SVG">Mozilla Developer Network: SVG</a>). This brief and simplistic tutorial will help familiarize you with a fraction of D3.js&#8217; core functionality and its expressive power. In later tutorials we will build upon this implementation by adding behavior to the circles.</p>
+
+<!-- more -->
+
+
+<h2>What is D3.js?</h2>
+
+<p>Created by <a href="https://twitter.com/mbostock">@mbostock</a>, D3.js allows the developer (you!) to bind data to the Document Object Model (DOM) and then apply data-driven transitions and events to the document. Many well-known companies use the library in production such as <a href="http://www.squareup.com/">Square</a>, Mike Bostock&rsquo;s employer <a href="http://www.nytimes.com/">The New York Times</a>, and <a href="http://chartio.com/">Chart.io</a>. The library&rsquo;s homepage introduces it as:</p>
+
+<blockquote><p>D3.js is a JavaScript library for manipulating documents based on data. D3 helps you bring data to life using HTML, SVG and CSS. D3’s emphasis on web standards gives you the full capabilities of modern browsers without tying yourself to a proprietary framework, combining powerful visualization components and a data-driven approach to DOM manipulation.</p><footer><strong>Mike Bostock</strong> <cite><a href='http://d3js.org'>d3js.org/&hellip;</a></cite></footer></blockquote>
+
+
+<h2>Getting Started</h2>
+
+<p>We&rsquo;ll begin by creating our HTML5 document and importing the hosted version of D3.js. It&rsquo;s important to note that when using D3.js in production, you may see better performance from linking to a popular CDN repository of the library or storing it locally. Regardless, our <code>index.html</code> document should contain the following code:</p>
+
+<figure class='code'><figcaption><span>index.html </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="cp">&lt;!DOCTYPE html&gt;</span>
+</span><span class='line'><span class="nt">&lt;html&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;head&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;meta</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;title&gt;</span>D3.js Context Menu Tutorial<span class="nt">&lt;/title&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">src=</span><span class="s">&quot;http://d3js.org/d3.v3.min.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/head&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;body&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/body&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now that we&rsquo;ve prepared our <code>index.html</code> document, let&rsquo;s start writing our random circle generation script. First we&rsquo;ll dynamically generate a SVG element with dimensions equal to the height and width of the browser window.</p>
+
+<figure class='code'><figcaption><span>index.html </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="cp">&lt;!DOCTYPE html&gt;</span>
+</span><span class='line'><span class="nt">&lt;html&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;head&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;meta</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;title&gt;</span>D3.js Context Menu Tutorial<span class="nt">&lt;/title&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">src=</span><span class="s">&quot;http://d3js.org/d3.v3.min.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/head&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;body&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">svgWidth</span>  <span class="o">=</span> <span class="nb">window</span><span class="p">.</span><span class="nx">innerWidth</span>
+</span><span class='line'>       <span class="p">,</span>  <span class="nx">svgHeight</span> <span class="o">=</span> <span class="nb">window</span><span class="p">.</span><span class="nx">innerHeight</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// SVG we will draw to</span>
+</span><span class='line'>        <span class="kd">var</span> <span class="nx">svg</span> <span class="o">=</span> <span class="nx">d3</span><span class="p">.</span><span class="nx">select</span><span class="p">(</span><span class="s2">&quot;body&quot;</span><span class="p">).</span><span class="nx">append</span><span class="p">(</span><span class="s2">&quot;svg&quot;</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;width&quot;</span><span class="p">,</span> <span class="nx">svgWidth</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;height&quot;</span><span class="p">,</span> <span class="nx">svgHeight</span><span class="p">);</span>
+</span><span class='line'>      <span class="nt">&lt;/script&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/body&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the above code, we declare two variables <code>svgWidth</code> and <code>svgHeight</code> that contain the width and height of our browser window element. Next we create a <code>svg</code> object and append it to the HTML document&rsquo;s <code>body</code>. Similar to jQuery and Zepto.js, we use D3 to select the <code>body</code> element and then use the append method to create and append the <code>svg</code> element. We continue our chain by making the <code>svg</code> element&rsquo;s width and height attributes equal to <code>svgWidth</code> and <code>svgHeight</code> respectively.</p>
+
+<p>The SVG is our graphics container that resides in our HTML document. Now we can use D3.js to create objects and append them to our <code>svg</code>. We accomplish this by generating the N-number (in this case 200) of circles that we&rsquo;ll later draw. These circles will be reside in an Array and will each contain the three necessary attributes: a center-x <code>cx</code>, center-y <code>cy</code>, and a radius <code>r</code>.</p>
+
+<p>D3.js has a built-in <a href="https://github.com/mbostock/d3/wiki/Arrays#wiki-d3_range">range</a> function that iterates over a numeric sequence similar to Python&rsquo;s <a href="http://docs.python.org/library/functions.html#range">range</a> function. Since we need 200 randomly generated circles, let&rsquo;s enter 200 into the range function and map the returned object of each iteration into an array. Again, each object will contain the three circle properties mentioned previously. The code is as follows:</p>
+
+<figure class='code'><figcaption><span>index.html </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="cp">&lt;!DOCTYPE html&gt;</span>
+</span><span class='line'><span class="nt">&lt;html&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;head&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;meta</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;title&gt;</span>D3.js Context Menu Tutorial<span class="nt">&lt;/title&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">src=</span><span class="s">&quot;http://d3js.org/d3.v3.min.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/head&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;body&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">svgWidth</span>  <span class="o">=</span> <span class="nb">window</span><span class="p">.</span><span class="nx">innerWidth</span>
+</span><span class='line'>           <span class="p">,</span>  <span class="nx">svgHeight</span> <span class="o">=</span> <span class="nb">window</span><span class="p">.</span><span class="nx">innerHeight</span>
+</span><span class='line'>           <span class="p">,</span>  <span class="nx">nodes</span> <span class="o">=</span> <span class="nx">d3</span><span class="p">.</span><span class="nx">range</span><span class="p">(</span><span class="mi">200</span><span class="p">).</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">radius</span><span class="o">:</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="mi">12</span> <span class="o">+</span> <span class="mi">4</span><span class="p">,</span>
+</span><span class='line'>                  <span class="nx">cx</span><span class="o">:</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">svgWidth</span><span class="p">,</span>
+</span><span class='line'>                  <span class="nx">cy</span><span class="o">:</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">svgHeight</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>          <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="c1">// SVG we will draw to</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">svg</span> <span class="o">=</span> <span class="nx">d3</span><span class="p">.</span><span class="nx">select</span><span class="p">(</span><span class="s2">&quot;body&quot;</span><span class="p">).</span><span class="nx">append</span><span class="p">(</span><span class="s2">&quot;svg&quot;</span><span class="p">)</span>
+</span><span class='line'>              <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;width&quot;</span><span class="p">,</span> <span class="nx">svgWidth</span><span class="p">)</span>
+</span><span class='line'>              <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;height&quot;</span><span class="p">,</span> <span class="nx">svgHeight</span><span class="p">);</span>
+</span><span class='line'>      <span class="nt">&lt;/script&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/body&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here you can see the <code>nodes</code> array that holds our circle objects. You can view the array and its contents by opening your browser&rsquo;s JavaScript Developer&rsquo;s Console and typing:</p>
+
+<pre><code>console.log(nodes);
+</code></pre>
+
+<p>Each circle&rsquo;s properties were generated using a combination of JavaScript&rsquo;s <code>Math.random()</code> and the <code>height</code> and <code>width</code> of the <code>SVG</code> element we accessed earlier. The <code>radius</code> calculation includes constants so that the circle is not smaller than size 4.</p>
+
+<p>Now that we have our array of 200 circles, we need to draw them to the <code>svg</code> element. Here we will use D3&rsquo;s <a href="https://github.com/mbostock/d3/wiki/Selections#wiki-append">append() method</a> to append our nodes. We&rsquo;ll name each node as a &ldquo;circle&rdquo; and use the properties we generated earlier to set their respective graphical properties. The drawing code is:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">// Append each circle in nodes to SVG</span>
+</span><span class='line'><span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">nodes</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">svg</span><span class="p">.</span><span class="nx">append</span><span class="p">(</span><span class="s2">&quot;circle&quot;</span><span class="p">)</span>
+</span><span class='line'>     <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;cx&quot;</span><span class="p">,</span> <span class="nx">nodes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">cx</span><span class="p">)</span>
+</span><span class='line'>     <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;cy&quot;</span><span class="p">,</span> <span class="nx">nodes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">cy</span><span class="p">)</span>
+</span><span class='line'>     <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="nx">nodes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">radius</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the above code we simply loop through our array of circle nodes and for each node we append a circle object to our SVG element with their radius, center-x, and center-y having the values of the object at the current index.</p>
+
+<p>At this point you can open / refresh the index.html page in your browser and should see 200 black circles of random size drawn at random positions. But black is boring, so let&rsquo;s finally finish this exercise by randomly coloring the circles.</p>
+
+<p>To do this we will modify the appending code we just wrote to apply three styles (fill, stroke, and stroke-width). These are our circle&rsquo;s fill color, border color, and border width respectively. The code to do this is very similar to jQuery, Zepto, etc and is as follows:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">// Append each circle in nodes to SVG</span>
+</span><span class='line'><span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">nodes</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">svg</span><span class="p">.</span><span class="nx">append</span><span class="p">(</span><span class="s2">&quot;circle&quot;</span><span class="p">)</span>
+</span><span class='line'>     <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;cx&quot;</span><span class="p">,</span> <span class="nx">nodes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">cx</span><span class="p">)</span>
+</span><span class='line'>     <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;cy&quot;</span><span class="p">,</span> <span class="nx">nodes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">cy</span><span class="p">)</span>
+</span><span class='line'>     <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="nx">nodes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">radius</span><span class="p">)</span>
+</span><span class='line'>     <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;fill&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="s2">&quot;hsl(&quot;</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="mi">360</span> <span class="o">+</span> <span class="s2">&quot;, 100%, 75%)&quot;</span> <span class="p">})</span>
+</span><span class='line'>     <span class="p">.</span><span class="nx">style</span><span class="p">(</span><span class="s2">&quot;stroke&quot;</span><span class="p">,</span> <span class="s2">&quot;black&quot;</span><span class="p">)</span>
+</span><span class='line'>     <span class="p">.</span><span class="nx">style</span><span class="p">(</span><span class="s2">&quot;stroke-width&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The most complex piece of this added code is the random color generation. Here we calculate the fill value from the return value of a function that utilizes D3.js&rsquo;s <a href="https://github.com/mbostock/d3/wiki/Colors#wiki-d3_hsl">HSL color space method</a>. The parameters we pass to the method are <code>hue</code>, <code>saturation</code>, and <code>lightness</code>. Again we utilize JavaScript&rsquo;s <code>Math.random()</code> for the random hue generation and I have preset the saturation and lightness to my liking. You may tinker with these values to achieve different color variation. Finally we added a black border (stroke) of width 1 pixel.</p>
+
+<p>And with that you should have successfully created an HTML page that is populated with 200 random circles using D3.js&hellip; Congratulations! Hopefully this tutorial has shown you the expressive power of Mike Bostock&rsquo;s library. In just a few short lines of code we have generated a dynamic graphic and that is only the absolute tip of the iceberg that is the D3.js library!</p>
+
+<h2>Final Code</h2>
+
+<p>Your final code should resemble:</p>
+
+<figure class='code'><figcaption><span>index.html </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="cp">&lt;!DOCTYPE html&gt;</span>
+</span><span class='line'><span class="nt">&lt;html&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;head&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;meta</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;title&gt;</span>D3.js Context Menu Tutorial<span class="nt">&lt;/title&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">src=</span><span class="s">&quot;http://d3js.org/d3.v3.min.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/head&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;body&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">svgWidth</span>  <span class="o">=</span> <span class="nb">window</span><span class="p">.</span><span class="nx">innerWidth</span>
+</span><span class='line'>           <span class="p">,</span>  <span class="nx">svgHeight</span> <span class="o">=</span> <span class="nb">window</span><span class="p">.</span><span class="nx">innerHeight</span>
+</span><span class='line'>           <span class="p">,</span>  <span class="nx">nodes</span> <span class="o">=</span> <span class="nx">d3</span><span class="p">.</span><span class="nx">range</span><span class="p">(</span><span class="mi">200</span><span class="p">).</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="p">{</span>
+</span><span class='line'>                <span class="nx">radius</span><span class="o">:</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="mi">12</span> <span class="o">+</span> <span class="mi">4</span><span class="p">,</span>
+</span><span class='line'>                <span class="nx">cx</span><span class="o">:</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">svgWidth</span> <span class="o">-</span> <span class="mi">50</span> <span class="p">,</span>
+</span><span class='line'>                <span class="nx">cy</span><span class="o">:</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">svgHeight</span> <span class="o">-</span> <span class="mi">50</span> <span class="p">}</span>
+</span><span class='line'>              <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="c1">// SVG we will draw to</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">svg</span> <span class="o">=</span> <span class="nx">d3</span><span class="p">.</span><span class="nx">select</span><span class="p">(</span><span class="s2">&quot;body&quot;</span><span class="p">).</span><span class="nx">append</span><span class="p">(</span><span class="s2">&quot;svg&quot;</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;width&quot;</span><span class="p">,</span> <span class="nx">svgWidth</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;height&quot;</span><span class="p">,</span> <span class="nx">svgHeight</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="c1">// Append each circle in nodes to SVG</span>
+</span><span class='line'>          <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">nodes</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">svg</span><span class="p">.</span><span class="nx">append</span><span class="p">(</span><span class="s2">&quot;circle&quot;</span><span class="p">)</span>
+</span><span class='line'>                 <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;cx&quot;</span><span class="p">,</span> <span class="nx">nodes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">cx</span><span class="p">)</span>
+</span><span class='line'>                 <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;cy&quot;</span><span class="p">,</span> <span class="nx">nodes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">cy</span><span class="p">)</span>
+</span><span class='line'>                 <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="nx">nodes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">radius</span><span class="p">)</span>
+</span><span class='line'>                 <span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;fill&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="s2">&quot;hsl(&quot;</span> <span class="o">+</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="mi">360</span> <span class="o">+</span> <span class="s2">&quot;, 100%, 75%)&quot;</span> <span class="p">})</span>
+</span><span class='line'>                 <span class="p">.</span><span class="nx">style</span><span class="p">(</span><span class="s2">&quot;stroke&quot;</span><span class="p">,</span> <span class="s2">&quot;black&quot;</span><span class="p">)</span>
+</span><span class='line'>                 <span class="p">.</span><span class="nx">style</span><span class="p">(</span><span class="s2">&quot;stroke-width&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="nt">&lt;/script&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/body&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Demo (<a href="http://jsfiddle.net/kevintcoughlin/JV62X/embedded/result/">fullscreen</a>)</h2>
+
+<iframe width="100%" height="300" src="http://jsfiddle.net/kevintcoughlin/JV62X/embedded/js/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+
+
+<h2>Next</h2>
+
+<p>In the next tutorial I will show you how to take the code we developed above and make it dynamic with both force and collision detection using D3.js&#8217; built-in functionality.</p>
+
+<h2>Recommended Reading</h2>
+
+<ul>
+<li><a href="http://d3js.org/">D3.js Homepage</a></li>
+<li><a href="https://github.com/mbostock/d3">D3.js Github Repo</a></li>
+<li><a href="https://github.com/mbostock/d3/wiki">D3.js Documentation</a></li>
+<li><a href="https://github.com/mbostock/d3/wiki/API-Reference">D3.js API Reference</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/SVG">SVG Mozilla Developer Network Documentation</a></li>
+</ul>
+
+
+<h2>Revision History</h2>
+
+<ul>
+<li>Initial Publish &ndash; 07/01/2013</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Intro to QUnit and Backbone.js - Part 1: Testing Your Models]]></title>
+    <link href="http://kevintcoughlin.com/blog/2013/05/14/intro-to-qunit-and-backbone-dot-js-part-1-testing-your-models/"/>
+    <updated>2013-05-14T00:07:00-04:00</updated>
+    <id>http://kevintcoughlin.com/blog/2013/05/14/intro-to-qunit-and-backbone-dot-js-part-1-testing-your-models</id>
+    <content type="html"><![CDATA[<h2>Introduction</h2>
+
+<p>QUnit is a JavaScript Unit Testing Framework originally developed by John Resig that is now maintained by the jQuery team. It is a powerful JavaScript testing library and an alternative to other testing frameworks such as <a href="http://pivotal.github.io/jasmine/">Jasmine</a> and <a href="http://visionmedia.github.io/mocha/">Mocha</a>. QUnit is often recommended as the first unit testing library to pickup for JavaScript due to its less steep learning curve yet extendability. I’m not able to comment on that statement since QUnit is the only JavaScript testing framework I have experience with so far. However, I hope to revisit the recommendation once I am able to evaluate the other offerings.</p>
+
+<!-- more -->
+
+
+<h2>Getting Started</h2>
+
+<p>To get started, let’s create the appropriate directory structure for our Backbone app. The application will consist of our app’s script file in a separate directory from our tests directory that contains the necessary files QUnit requires. Of course all of the app files can be in one folder, I am dividing them as a recommendation for when you are implementing tests in a more complex application.</p>
+
+<p>My app’s directory structure is as follows:</p>
+
+<ul>
+<li>app/</li>
+<li>app/src</li>
+<li>app/src/app.js</li>
+<li>app/tests</li>
+<li>app/tests/js</li>
+<li>app/tests/js/tests.js</li>
+<li>app/tests/index.html</li>
+</ul>
+
+
+<h2>Create Your Backbone.js Model</h2>
+
+<p>This tutorial is going to focus on testing your app’s Backbone models. Before we write our unit tests, we need some Backbone model code. I’m going to create a model representing an address book contact with some default attributes. My app.js code in the app/src directory is as follows:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">// Address Book Contact Model</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">Contact</span> <span class="o">=</span> <span class="nx">Backbone</span><span class="p">.</span><span class="nx">Model</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Default Attribute Values</span>
+</span><span class='line'>    <span class="nx">defaults</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">name</span>      <span class="o">:</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">email</span>     <span class="o">:</span> <span class="s2">&quot;example@domain.com&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">telephone</span> <span class="o">:</span> <span class="s2">&quot;555-555-5555&quot;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here you can see that we extended the base Backbone model naming it “Contact” and giving it three default values for its three attributes. Now that we have our model code, we can prepare our QUnit resources for unit tests.</p>
+
+<h2>Prepare QUnit Resources</h2>
+
+<p>Setting up QUnit is ridiculously easy. First create an index.html file in the app/tests folder that will contain the HTML markup for QUnit to display tests and their results on. The required basic code for index.html is the following:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="cp">&lt;!DOCTYPE html&gt;</span>
+</span><span class='line'><span class="nt">&lt;html&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;head&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;meta</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;title&gt;</span>QUnit and Backbone Example<span class="nt">&lt;/title&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">href=</span><span class="s">&quot;http://code.jquery.com/qunit/qunit-1.11.0.css&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;http://underscorejs.org/underscore.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;http://backbonejs.org/backbone.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/head&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;body&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;qunit&quot;</span><span class="nt">&gt;&lt;/div&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;qunit-fixture&quot;</span><span class="nt">&gt;&lt;/div&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;http://code.jquery.com/qunit/qunit-1.11.0.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;../src/app.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;./js/tests.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/body&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that this code is nearly identical to that found on <a href="http://qunitjs.com/">QUnit</a> except I have changed the source for the QUnit CSS and JavaScript to their CDN urls. When you are testing your code you’ll probably want to move these files locally to avoid unnecessary network calls. Take note that I have also included the CDN Development versions of Underscore.js and Backbone.js. Both of which our app.js depends on as we are extending the Backbone Model object. I am using the development versions as it will provide more useful error messages if the tests don’t pass since the code is not minified.</p>
+
+<p>Also notice that I have included our app.js script file above the tests.js file we are going to create as our tests will use the code we defined in app.js (Backbone Model code). Once you have the QUnit index.html file created, we can move to writing our model unit tests.</p>
+
+<h2>Writing Unit Tests for our Model</h2>
+
+<p>First, we need to create our tests.js file in the app/tests/js folder that will contain our unit tests. Inside the tests.js file, write the following code:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">module</span><span class="p">(</span> <span class="s2">&quot;Contact Backbone Model Tests&quot;</span> <span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here we are creating a segment of tests that we will label as “Contact Backbone Model Tests”. Now we will write our first test that will ensure that we can create an instance of our Model object and that its defaults are correct.</p>
+
+<p>To do this we will write the following code:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">module</span><span class="p">(</span> <span class="s2">&quot;Contact Backbone Model Tests&quot;</span> <span class="p">);</span>
+</span><span class='line'>  <span class="nx">test</span><span class="p">(</span><span class="s2">&quot;Can be instantiated with correct default values&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="c1">// Number of Assertions we Expect</span>
+</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span> <span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1">// Instantiate Local Contact Backbone Model Object</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">contact</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Contact</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1">// Default Attribute Value Assertions</span>
+</span><span class='line'>      <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">),</span> <span class="s2">&quot;John Smith&quot;</span> <span class="p">);</span>
+</span><span class='line'>      <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span class="p">),</span> <span class="s2">&quot;example@domain.com&quot;</span> <span class="p">);</span>
+</span><span class='line'>      <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;telephone&quot;</span><span class="p">),</span> <span class="s2">&quot;555-555-5555&quot;</span> <span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In this code block we are first declaring using the expect() QUnit call that QUnit should expect three assertions to be run in this test. There are 3 equals assertion calls defined in this test that test our three default values for our Contact model. We then create a local variable from the Contact Backbone Model and name it “contact”.</p>
+
+<p>Lastly, we write three assertions that get each attribute key and check its value against the value we have provided. If they are equal then it means are object is created and the defaults are what we expect and the assertion will pass. We can also define a String to be returned. The following code demonstrates this:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">module</span><span class="p">(</span> <span class="s2">&quot;Contact Backbone Model Tests&quot;</span> <span class="p">);</span>
+</span><span class='line'>    <span class="nx">test</span><span class="p">(</span><span class="s2">&quot;Can be instantiated with correct default values&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="c1">// Number of Assertions we Expect</span>
+</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span> <span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1">// Instantiate Local Contact Backbone Model Object</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">contact</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Contact</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1">// Default Attribute Value Assertions</span>
+</span><span class='line'>      <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">),</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span> <span class="s2">&quot;Default name should equal &#39;John Smith&#39;&quot;</span> <span class="p">);</span>
+</span><span class='line'>      <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span class="p">),</span> <span class="s2">&quot;example@domain.com&quot;</span><span class="p">,</span> <span class="s2">&quot;Default email should equal &#39;example@domain.com&#39;&quot;</span> <span class="p">);</span>
+</span><span class='line'>      <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;telephone&quot;</span><span class="p">),</span> <span class="s2">&quot;555-555-5555&quot;</span><span class="p">,</span> <span class="s2">&quot;Default telephone should equal &#39;555-555-5555&#39;&quot;</span> <span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The third parameter in each equal assertion is the message that QUnit will print to the page. This is sometimes helpful in understanding your assertion without reviewing the test’s code.</p>
+
+<p>Now that we have our test code written we can run it for the first time.</p>
+
+<h2>Running Your QUnit Tests</h2>
+
+<p>Running the QUnit test that we just defined is easy. Simply open the index.html file in the app/tests folder in your browser either locally or via a local HTTP server. Note that it might be useful to have your Browser’s developers console open when viewing your test results.</p>
+
+<p>Once you open your index.html file you should see that the three tests we defined earlier did pass successfully. You can click on the test to expand the assertion results. The result should look like the following image:</p>
+
+<p><img src="http://media.tumblr.com/4a371f56646efb6a0d1b289270c6a43d/tumblr_inline_mmrs6di6ju1qz4rgp.png" title="'First QUnit Test Results'" ></p>
+
+<p>Now let’s edit one of our assertions in our tests.js to see what a failure would look like. I have changed my tests.js to the following:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">module</span><span class="p">(</span> <span class="s2">&quot;Contact Backbone Model Tests&quot;</span> <span class="p">);</span>
+</span><span class='line'>    <span class="nx">test</span><span class="p">(</span><span class="s2">&quot;Can be instantiated with correct default values&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="c1">// Number of Assertions we Expect</span>
+</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span> <span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1">// Instantiate Local Contact Backbone Model Object</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">contact</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Contact</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1">// Default Attribute Value Assertions</span>
+</span><span class='line'>      <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">),</span> <span class="s2">&quot;Wrong Name&quot;</span><span class="p">,</span> <span class="s2">&quot;Default Name Correct!&quot;</span> <span class="p">);</span>      <span class="c1">// Expected Name String has been changed to be incorrect</span>
+</span><span class='line'>      <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span class="p">),</span> <span class="s2">&quot;example@domain.com&quot;</span><span class="p">,</span> <span class="s2">&quot;Default Email Correct!&quot;</span> <span class="p">);</span>
+</span><span class='line'>      <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;telephone&quot;</span><span class="p">),</span> <span class="s2">&quot;555-555-5555&quot;</span><span class="p">,</span> <span class="s2">&quot;Default Telephone Correct!&quot;</span> <span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now run the QUnit test again by reloading the page or clicking the “rerun” link next to the test. You should be presented with one fail and the page should look like the following image:</p>
+
+<p><img src="http://media.tumblr.com/666c5baa27f41e13edf7701c7dc0f4f9/tumblr_inline_mmrs7wLtbZ1qz4rgp.png" title="'Test Results with Error'" ></p>
+
+<h1>Testing Our Model One Step Further</h1>
+
+<p>Now that we have more of an understanding of QUnit as it relates to testing our Backbone.js code. Let’s add another test for our Contact Model.</p>
+
+<p>In this test I am going to change the values for the model’s attributes and test that the changes did occur and return the correct results. I have changed my tests.js code to the following:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">module</span><span class="p">(</span> <span class="s2">&quot;Contact Backbone Model Tests&quot;</span> <span class="p">);</span>
+</span><span class='line'>  <span class="nx">test</span><span class="p">(</span><span class="s2">&quot;Can be instantiated with correct default values&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="c1">// Number of Assertions we Expect</span>
+</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span> <span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1">// Instantiate Local Contact Backbone Model Object</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">contact</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Contact</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1">// Default Attribute Value Assertions</span>
+</span><span class='line'>      <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">),</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span> <span class="s2">&quot;Default Name Correct!&quot;</span> <span class="p">);</span>        <span class="c1">// FIXED</span>
+</span><span class='line'>      <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span class="p">),</span> <span class="s2">&quot;example@domain.com&quot;</span><span class="p">,</span> <span class="s2">&quot;Default Email Correct!&quot;</span> <span class="p">);</span>
+</span><span class='line'>      <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;telephone&quot;</span><span class="p">),</span> <span class="s2">&quot;555-555-5555&quot;</span><span class="p">,</span> <span class="s2">&quot;Default Telephone Correct!&quot;</span> <span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">test</span><span class="p">(</span><span class="s2">&quot;Can be instantiated and attribute values changed&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// Number of Assertions expected</span>
+</span><span class='line'>        <span class="nx">expect</span><span class="p">(</span> <span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// Instantiate Local Contact Backbone Model Object with Attr. Values</span>
+</span><span class='line'>        <span class="kd">var</span> <span class="nx">contact</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Contact</span><span class="p">({</span>
+</span><span class='line'>            <span class="nx">name</span>        <span class="o">:</span> <span class="s2">&quot;Kevin Coughlin&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="nx">email</span>       <span class="o">:</span> <span class="s2">&quot;me@kevintcoughlin.com&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="nx">telephone</span>   <span class="o">:</span> <span class="s2">&quot;222-222-2222&quot;</span>
+</span><span class='line'>        <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// Changed Attribute Value Assertions</span>
+</span><span class='line'>        <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">),</span> <span class="s2">&quot;Kevin Coughlin&quot;</span><span class="p">,</span> <span class="s2">&quot;Name Correct!&quot;</span> <span class="p">);</span>
+</span><span class='line'>        <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span class="p">),</span> <span class="s2">&quot;me@kevintcoughlin.com&quot;</span><span class="p">,</span> <span class="s2">&quot;Email Correct!&quot;</span> <span class="p">);</span>
+</span><span class='line'>        <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;telephone&quot;</span><span class="p">),</span> <span class="s2">&quot;222-222-2222&quot;</span><span class="p">,</span> <span class="s2">&quot;Telephone Correct!&quot;</span> <span class="p">);</span>
+</span><span class='line'>    <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the new test, I am creating an object extended from our Contact Backbone Model object. However, I am passing the attribute values I wish for the object to have when it is created. I then have three assertions to test whether the changes were made as it should return the correct Strings that I expect. IMPORTANT: I corrected the test code that I made incorrect earlier so that everything would pass successfully.</p>
+
+<p>Once you have added this code to your tests.js rerun the QUnit tests by reloading the page. You should be presented with the following image:</p>
+
+<p><img src="http://media.tumblr.com/2b9a31ba8f230e37e003a9da160be0b9/tumblr_inline_mmrs8vR6oW1qz4rgp.png" title="'Test Results Success'" ></p>
+
+<h2>Conclusion</h2>
+
+<p>Feel free to browse / fork this tutorial&rsquo;s <a href="https://github.com/KevinTCoughlin/tutorials/tree/master/published/backbone-qunit-models">Github Repository</a>.</p>
+
+<p>I realize this tutorial barely scratches the surface the power of QUnit and how to properly and extensively test your Backbone Models. However, I hope that it serves as a good introduction to those that are unexperienced with Unit Testing their Backbone code and are looking to get their hands wet. I encourage you to take a look at <a href="http://github.com/jquery/api.qunitjs.com">QUnit’s API Documentation</a> to further expand your tests. Also, take a look at the “Further Reading” links below for more tutorials on QUnit &amp; Backbone testing.</p>
+
+<p>In my next tutorial I hope to cover Model testing further and move to testing your Collections. Thanks for reading!</p>
+
+<h2>Recommended Reading</h2>
+
+<ul>
+<li><a href="http://addyosmani.com/blog/unit-testing-backbone-js-apps-with-qunit-and-sinonjs/">Addyosmani’s Intro to Backbone.js, QUnit, and SinonJS</a></li>
+<li><a href="https://gist.github.com/peol/1915247">Gist Overview of Backbone.js, QUnit, and SinonJS</a></li>
+<li><a href="http://stackoverflow.com/questions/13991065/backbone-and-require-how-to-add-qunit">StackOverflow answer for Backbone.js, QUnit, and Require.js</a></li>
+<li><a href="http://qunitjs.com/">QUnit: JavaScript Unit Testing Framework</a></li>
+<li><a href="http://github.com/jquery/api.qunitjs.com">QUnit API Documentation</a></li>
+<li><a href="http://github.com/jquery/qunit">QUnit Github Repository</a></li>
+<li><a href="http://backbonejs.org">Backbone.js Documentation</a></li>
+</ul>
+
+
+<h2>Source Code</h2>
+
+<ul>
+<li><a href="https://github.com/KevinTCoughlin/tutorials/tree/master/published/backbone-qunit-models">Github Repository</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Solution: Proxy Issues with cURL]]></title>
+    <link href="http://kevintcoughlin.com/blog/2013/05/10/solution-proxy-issues-with-curl/"/>
+    <updated>2013-05-10T23:21:00-04:00</updated>
+    <id>http://kevintcoughlin.com/blog/2013/05/10/solution-proxy-issues-with-curl</id>
+    <content type="html"><![CDATA[<h2>Quick Tip</h2>
+
+<p>Here&rsquo;s a solution if you ever run into the following issue while running cURL:</p>
+
+<pre><code>$ [curl] 56: Received HTTP code 407 from proxy after CONNECT
+</code></pre>
+
+<p>and you believe that you have exhaustively removed all of your proxy environment variables i.e.:</p>
+
+<ul>
+<li>http_proxy</li>
+<li>https_proxy</li>
+<li>all_proxy</li>
+</ul>
+
+
+<!-- more -->
+
+
+<p>Check if you created a profile for cURL <code>~/.urlrc</code>, ikely in your home directory. You can find it by typing:</p>
+
+<pre><code>$ find / -type f -name ".curlrc"
+</code></pre>
+
+<p>I ran into this problem today when I forgot I had created the cURL profile months ago. In my home directory I had a <code>.curlrc</code> file with</p>
+
+<figure class='code'><figcaption><span>.curlrc </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>proxy = hostname:port</span></code></pre></td></tr></table></div></figure>
+
+
+<p>cURL no longer went through the proxy once I removed the above line. Hopefully this will save at least one person from going insane like I did today. Hopefully I remember profile files from now on.</p>
+]]></content>
+  </entry>
+  
+</feed>

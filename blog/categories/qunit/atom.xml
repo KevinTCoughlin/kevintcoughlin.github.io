@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: QUnit | Kevin Coughlin]]></title>
+  <link href="http://kevintcoughlin.com/blog/categories/qunit/atom.xml" rel="self"/>
+  <link href="http://kevintcoughlin.com/"/>
+  <updated>2013-11-14T21:03:00-05:00</updated>
+  <id>http://kevintcoughlin.com/</id>
+  <author>
+    <name><![CDATA[Kevin Coughlin]]></name>
+    <email><![CDATA[kevintcoughlin@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Intro to QUnit and Backbone.js - Part 1: Testing Your Models]]></title>
+    <link href="http://kevintcoughlin.com/blog/2013/05/14/intro-to-qunit-and-backbone-dot-js-part-1-testing-your-models/"/>
+    <updated>2013-05-14T00:07:00-04:00</updated>
+    <id>http://kevintcoughlin.com/blog/2013/05/14/intro-to-qunit-and-backbone-dot-js-part-1-testing-your-models</id>
+    <content type="html"><![CDATA[<h2>Introduction</h2>
+
+<p>QUnit is a JavaScript Unit Testing Framework originally developed by John Resig that is now maintained by the jQuery team. It is a powerful JavaScript testing library and an alternative to other testing frameworks such as <a href="http://pivotal.github.io/jasmine/">Jasmine</a> and <a href="http://visionmedia.github.io/mocha/">Mocha</a>. QUnit is often recommended as the first unit testing library to pickup for JavaScript due to its less steep learning curve yet extendability. I’m not able to comment on that statement since QUnit is the only JavaScript testing framework I have experience with so far. However, I hope to revisit the recommendation once I am able to evaluate the other offerings.</p>
+
+<!-- more -->
+
+
+<h2>Getting Started</h2>
+
+<p>To get started, let’s create the appropriate directory structure for our Backbone app. The application will consist of our app’s script file in a separate directory from our tests directory that contains the necessary files QUnit requires. Of course all of the app files can be in one folder, I am dividing them as a recommendation for when you are implementing tests in a more complex application.</p>
+
+<p>My app’s directory structure is as follows:</p>
+
+<ul>
+<li>app/</li>
+<li>app/src</li>
+<li>app/src/app.js</li>
+<li>app/tests</li>
+<li>app/tests/js</li>
+<li>app/tests/js/tests.js</li>
+<li>app/tests/index.html</li>
+</ul>
+
+
+<h2>Create Your Backbone.js Model</h2>
+
+<p>This tutorial is going to focus on testing your app’s Backbone models. Before we write our unit tests, we need some Backbone model code. I’m going to create a model representing an address book contact with some default attributes. My app.js code in the app/src directory is as follows:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">// Address Book Contact Model</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">Contact</span> <span class="o">=</span> <span class="nx">Backbone</span><span class="p">.</span><span class="nx">Model</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">pre</span><span class="o">&gt;&lt;</span><span class="nx">code</span><span class="o">&gt;</span><span class="c1">// Default Attribute Values</span>
+</span><span class='line'><span class="nx">defaults</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">name</span>      <span class="o">:</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">email</span>     <span class="o">:</span> <span class="s2">&quot;example@domain.com&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">telephone</span> <span class="o">:</span> <span class="s2">&quot;555-555-5555&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Here you can see that we extended the base Backbone model naming it “Contact” and giving it three default values for its three attributes. Now that we have our model code, we can prepare our QUnit resources for unit tests.</p>
+
+<h2>Prepare QUnit Resources</h2>
+
+<p>Setting up QUnit is ridiculously easy. First create an index.html file in the app/tests folder that will contain the HTML markup for QUnit to display tests and their results on. The required basic code for index.html is the following:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="ni">&amp;lt;</span>!DOCTYPE html&gt;
+</span><span class='line'><span class="nt">&lt;html&gt;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;pre&gt;&lt;code&gt;</span><span class="ni">&amp;lt;</span>head<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>meta charset=&quot;utf-8&quot;<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>title<span class="ni">&amp;gt;</span>QUnit and Backbone Example<span class="ni">&amp;lt;</span>/title<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>link rel=&quot;stylesheet&quot; href=&quot;http://code.jquery.com/qunit/qunit-1.11.0.css&quot;<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>script src=&quot;http://underscorejs.org/underscore.js&quot;<span class="ni">&amp;gt;&amp;lt;</span>/script<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>script src=&quot;http://backbonejs.org/backbone.js&quot;<span class="ni">&amp;gt;&amp;lt;</span>/script<span class="ni">&amp;gt;</span>
+</span><span class='line'><span class="ni">&amp;lt;</span>/head<span class="ni">&amp;gt;</span>
+</span><span class='line'><span class="ni">&amp;lt;</span>body<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>div id=&quot;qunit&quot;<span class="ni">&amp;gt;&amp;lt;</span>/div<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>div id=&quot;qunit-fixture&quot;<span class="ni">&amp;gt;&amp;lt;</span>/div<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>script src=&quot;http://code.jquery.com/qunit/qunit-1.11.0.js&quot;<span class="ni">&amp;gt;&amp;lt;</span>/script<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>script src=&quot;../src/app.js&quot;<span class="ni">&amp;gt;&amp;lt;</span>/script<span class="ni">&amp;gt;</span>
+</span><span class='line'>    <span class="ni">&amp;lt;</span>script src=&quot;./js/tests.js&quot;<span class="ni">&amp;gt;&amp;lt;</span>/script<span class="ni">&amp;gt;</span>
+</span><span class='line'><span class="ni">&amp;lt;</span>/body<span class="ni">&amp;gt;</span>
+</span><span class='line'><span class="nt">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;p&gt;&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Note that this code is nearly identical to that found on <a href="http://qunitjs.com/">QUnit</a> except I have changed the source for the QUnit CSS and JavaScript to their CDN urls. When you are testing your code you’ll probably want to move these files locally to avoid unnecessary network calls. Take note that I have also included the CDN Development versions of Underscore.js and Backbone.js. Both of which our app.js depends on as we are extending the Backbone Model object. I am using the development versions as it will provide more useful error messages if the tests don’t pass since the code is not minified.</p>
+
+<p>Also notice that I have included our app.js script file above the tests.js file we are going to create as our tests will use the code we defined in app.js (Backbone Model code). Once you have the QUnit index.html file created, we can move to writing our model unit tests.</p>
+
+<h2>Writing Unit Tests for our Model</h2>
+
+<p>First, we need to create our tests.js file in the app/tests/js folder that will contain our unit tests. Inside the tests.js file, write the following code:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">module</span><span class="p">(</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">Contact</span> <span class="nx">Backbone</span> <span class="nx">Model</span> <span class="nx">Tests</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;</span> <span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Here we are creating a segment of tests that we will label as “Contact Backbone Model Tests”. Now we will write our first test that will ensure that we can create an instance of our Model object and that its defaults are correct.</p>
+
+<p>To do this we will write the following code:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">module</span><span class="p">(</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">Contact</span> <span class="nx">Backbone</span> <span class="nx">Model</span> <span class="nx">Tests</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;</span> <span class="p">);</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">pre</span><span class="o">&gt;&lt;</span><span class="nx">code</span><span class="o">&gt;</span><span class="nx">test</span><span class="p">(</span><span class="s2">&quot;Can be instantiated with correct default values&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Number of Assertions we Expect</span>
+</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span> <span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Instantiate Local Contact Backbone Model Object</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">contact</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Contact</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Default Attribute Value Assertions</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">),</span> <span class="s2">&quot;John Smith&quot;</span> <span class="p">);</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span class="p">),</span> <span class="s2">&quot;example@domain.com&quot;</span> <span class="p">);</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;telephone&quot;</span><span class="p">),</span> <span class="s2">&quot;555-555-5555&quot;</span> <span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>In this code block we are first declaring using the expect() QUnit call that QUnit should expect three assertions to be run in this test. There are 3 equals assertion calls defined in this test that test our three default values for our Contact model. We then create a local variable from the Contact Backbone Model and name it “contact”.</p>
+
+<p>Lastly, we write three assertions that get each attribute key and check its value against the value we have provided. If they are equal then it means are object is created and the defaults are what we expect and the assertion will pass. We can also define a String to be returned. The following code demonstrates this:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">module</span><span class="p">(</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">Contact</span> <span class="nx">Backbone</span> <span class="nx">Model</span> <span class="nx">Tests</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;</span> <span class="p">);</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">pre</span><span class="o">&gt;&lt;</span><span class="nx">code</span><span class="o">&gt;</span><span class="nx">test</span><span class="p">(</span><span class="s2">&quot;Can be instantiated with correct default values&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Number of Assertions we Expect</span>
+</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span> <span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Instantiate Local Contact Backbone Model Object</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">contact</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Contact</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Default Attribute Value Assertions</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">),</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span> <span class="s2">&quot;Default name should equal &#39;John Smith&#39;&quot;</span> <span class="p">);</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span class="p">),</span> <span class="s2">&quot;example@domain.com&quot;</span><span class="p">,</span> <span class="s2">&quot;Default email should equal &#39;example@domain.com&#39;&quot;</span> <span class="p">);</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;telephone&quot;</span><span class="p">),</span> <span class="s2">&quot;555-555-5555&quot;</span><span class="p">,</span> <span class="s2">&quot;Default telephone should equal &#39;555-555-5555&#39;&quot;</span> <span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The third parameter in each equal assertion is the message that QUnit will print to the page. This is sometimes helpful in understanding your assertion without reviewing the test’s code.</p>
+
+<p>Now that we have our test code written we can run it for the first time.</p>
+
+<h2>Running Your QUnit Tests</h2>
+
+<p>Running the QUnit test that we just defined is easy. Simply open the index.html file in the app/tests folder in your browser either locally or via a local HTTP server. Note that it might be useful to have your Browser’s developers console open when viewing your test results.</p>
+
+<p>Once you open your index.html file you should see that the three tests we defined earlier did pass successfully. You can click on the test to expand the assertion results. The result should look like the following image:</p>
+
+<p><img class="<a" src="href="http://media.tumblr.com/4a371f56646efb6a0d1b289270c6a43d/tumblr_inline_mmrs6di6ju1qz4rgp.png">http://media.tumblr.com/4a371f56646efb6a0d1b289270c6a43d/tumblr_inline_mmrs6di6ju1qz4rgp.png</a>" title="&lsquo;First QUnit Test Results&rsquo;" ></p>
+
+<p>Now let’s edit one of our assertions in our tests.js to see what a failure would look like. I have changed my tests.js to the following:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">module</span><span class="p">(</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">Contact</span> <span class="nx">Backbone</span> <span class="nx">Model</span> <span class="nx">Tests</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;</span> <span class="p">);</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">pre</span><span class="o">&gt;&lt;</span><span class="nx">code</span><span class="o">&gt;</span><span class="nx">test</span><span class="p">(</span><span class="s2">&quot;Can be instantiated with correct default values&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Number of Assertions we Expect</span>
+</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span> <span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Instantiate Local Contact Backbone Model Object</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">contact</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Contact</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Default Attribute Value Assertions</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">),</span> <span class="s2">&quot;Wrong Name&quot;</span><span class="p">,</span> <span class="s2">&quot;Default Name Correct!&quot;</span> <span class="p">);</span>      <span class="c1">// Expected Name String has been changed to be incorrect</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span class="p">),</span> <span class="s2">&quot;example@domain.com&quot;</span><span class="p">,</span> <span class="s2">&quot;Default Email Correct!&quot;</span> <span class="p">);</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;telephone&quot;</span><span class="p">),</span> <span class="s2">&quot;555-555-5555&quot;</span><span class="p">,</span> <span class="s2">&quot;Default Telephone Correct!&quot;</span> <span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now run the QUnit test again by reloading the page or clicking the “rerun” link next to the test. You should be presented with one fail and the page should look like the following image:</p>
+
+<p><img class="<a" src="href="http://media.tumblr.com/666c5baa27f41e13edf7701c7dc0f4f9/tumblr_inline_mmrs7wLtbZ1qz4rgp.png">http://media.tumblr.com/666c5baa27f41e13edf7701c7dc0f4f9/tumblr_inline_mmrs7wLtbZ1qz4rgp.png</a>" title="&lsquo;Test Results with Error&rsquo;" ></p>
+
+<h1>Testing Our Model One Step Further</h1>
+
+<p>Now that we have more of an understanding of QUnit as it relates to testing our Backbone.js code. Let’s add another test for our Contact Model.</p>
+
+<p>In this test I am going to change the values for the model’s attributes and test that the changes did occur and return the correct results. I have changed my tests.js code to the following:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">module</span><span class="p">(</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">Contact</span> <span class="nx">Backbone</span> <span class="nx">Model</span> <span class="nx">Tests</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;</span> <span class="p">);</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">pre</span><span class="o">&gt;&lt;</span><span class="nx">code</span><span class="o">&gt;</span><span class="nx">test</span><span class="p">(</span><span class="s2">&quot;Can be instantiated with correct default values&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Number of Assertions we Expect</span>
+</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span> <span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Instantiate Local Contact Backbone Model Object</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">contact</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Contact</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Default Attribute Value Assertions</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">),</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span> <span class="s2">&quot;Default Name Correct!&quot;</span> <span class="p">);</span>        <span class="c1">// FIXED</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span class="p">),</span> <span class="s2">&quot;example@domain.com&quot;</span><span class="p">,</span> <span class="s2">&quot;Default Email Correct!&quot;</span> <span class="p">);</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;telephone&quot;</span><span class="p">),</span> <span class="s2">&quot;555-555-5555&quot;</span><span class="p">,</span> <span class="s2">&quot;Default Telephone Correct!&quot;</span> <span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">test</span><span class="p">(</span><span class="s2">&quot;Can be instantiated and attribute values changed&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Number of Assertions expected</span>
+</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span> <span class="mi">3</span> <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Instantiate Local Contact Backbone Model Object with Attr. Values</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">contact</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Contact</span><span class="p">({</span>
+</span><span class='line'>        <span class="nx">name</span>        <span class="o">:</span> <span class="s2">&quot;Kevin Coughlin&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">email</span>       <span class="o">:</span> <span class="s2">&quot;me@kevintcoughlin.com&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">telephone</span>   <span class="o">:</span> <span class="s2">&quot;222-222-2222&quot;</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Changed Attribute Value Assertions</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">),</span> <span class="s2">&quot;Kevin Coughlin&quot;</span><span class="p">,</span> <span class="s2">&quot;Name Correct!&quot;</span> <span class="p">);</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span class="p">),</span> <span class="s2">&quot;me@kevintcoughlin.com&quot;</span><span class="p">,</span> <span class="s2">&quot;Email Correct!&quot;</span> <span class="p">);</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span> <span class="nx">contact</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;telephone&quot;</span><span class="p">),</span> <span class="s2">&quot;222-222-2222&quot;</span><span class="p">,</span> <span class="s2">&quot;Telephone Correct!&quot;</span> <span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>In the new test, I am creating an object extended from our Contact Backbone Model object. However, I am passing the attribute values I wish for the object to have when it is created. I then have three assertions to test whether the changes were made as it should return the correct Strings that I expect. IMPORTANT: I corrected the test code that I made incorrect earlier so that everything would pass successfully.</p>
+
+<p>Once you have added this code to your tests.js rerun the QUnit tests by reloading the page. You should be presented with the following image:</p>
+
+<p><img class="<a" src="href="http://media.tumblr.com/2b9a31ba8f230e37e003a9da160be0b9/tumblr_inline_mmrs8vR6oW1qz4rgp.png">http://media.tumblr.com/2b9a31ba8f230e37e003a9da160be0b9/tumblr_inline_mmrs8vR6oW1qz4rgp.png</a>" title="&lsquo;Test Results Success&rsquo;" ></p>
+
+<h2>Conclusion</h2>
+
+<p>Feel free to browse / fork this tutorial&rsquo;s <a href="https://github.com/KevinTCoughlin/tutorials/tree/master/published/backbone-qunit-models">Github Repository</a>.</p>
+
+<p>I realize this tutorial barely scratches the surface the power of QUnit and how to properly and extensively test your Backbone Models. However, I hope that it serves as a good introduction to those that are unexperienced with Unit Testing their Backbone code and are looking to get their hands wet. I encourage you to take a look at <a href="http://github.com/jquery/api.qunitjs.com">QUnit’s API Documentation</a> to further expand your tests. Also, take a look at the “Further Reading” links below for more tutorials on QUnit &amp; Backbone testing.</p>
+
+<p>In my next tutorial I hope to cover Model testing further and move to testing your Collections. Thanks for reading!</p>
+
+<h2>Recommended Reading</h2>
+
+<ul>
+<li><a href="http://addyosmani.com/blog/unit-testing-backbone-js-apps-with-qunit-and-sinonjs/">Addyosmani’s Intro to Backbone.js, QUnit, and SinonJS</a></li>
+<li><a href="https://gist.github.com/peol/1915247">Gist Overview of Backbone.js, QUnit, and SinonJS</a></li>
+<li><a href="http://stackoverflow.com/questions/13991065/backbone-and-require-how-to-add-qunit">StackOverflow answer for Backbone.js, QUnit, and Require.js</a></li>
+<li><a href="http://qunitjs.com/">QUnit: JavaScript Unit Testing Framework</a></li>
+<li><a href="http://github.com/jquery/api.qunitjs.com">QUnit API Documentation</a></li>
+<li><a href="http://github.com/jquery/qunit">QUnit Github Repository</a></li>
+<li><a href="http://backbonejs.org">Backbone.js Documentation</a></li>
+</ul>
+
+
+<h2>Source Code</h2>
+
+<ul>
+<li><a href="https://github.com/KevinTCoughlin/tutorials/tree/master/published/backbone-qunit-models">Github Repository</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>
