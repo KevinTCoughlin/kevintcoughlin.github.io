@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: app store | Kevin Coughlin]]></title>
+  <link href="http://kevintcoughlin.com/blog/categories/app-store/atom.xml" rel="self"/>
+  <link href="http://kevintcoughlin.com/"/>
+  <updated>2014-01-10T00:09:37-05:00</updated>
+  <id>http://kevintcoughlin.com/</id>
+  <author>
+    <name><![CDATA[Kevin Coughlin]]></name>
+    <email><![CDATA[kevintcoughlin@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[From Idea to Apple App Store: The First Four Days]]></title>
+    <link href="http://kevintcoughlin.com/blog/2014/01/09/from-idea-to-apple-app-store-the-first-four-days/"/>
+    <updated>2014-01-09T13:00:00-05:00</updated>
+    <id>http://kevintcoughlin.com/blog/2014/01/09/from-idea-to-apple-app-store-the-first-four-days</id>
+    <content type="html"><![CDATA[<h1>The Idea</h1>
+
+<p>I&rsquo;m a podcast fanatic. For the past few years podcasts have filled hours of my day whether commuting, at work, at home, or while exercising. One of my favorite network of podcasts is the <a href="http://smodcast.com/">SModCo</a> network by Clerks director Kevin Smith. After listening to his podcasts on my iPod Touch for a year I received a decent Android phone and immediately began searching for a great SmodCo specific podcast app. I stumbled across an app named Smod Forever and it was decent. However, eventually the developer introduced abtrusive poorly coded advertisements and I had to give it up.</p>
+
+<p>No more than 2 months after abandoning Smod Forever, a company introduced an application for Kevin Smith&rsquo;s podcast that is a re-skinned version of their <a href="http://www.nerdist.com/">Nerdist</a> and the <a href="http://podcasts.joerogan.net/">Joe Rogan Experience</a> apps (Nerdist and Joe Rogan Experience are other popular podcasts). While the apps seemed better than the Smod Forever, I decided to try a general Podcast app that was highly rated &ndash; Doggcatcher.</p>
+
+<p>Unfortunately, I&rsquo;ve had a host of problems with Doggcatcher.</p>
+
+<ul>
+<li>It&rsquo;s really slow for my Samsung Galaxy Nexus</li>
+<li>Syncing often fails</li>
+<li>Sometimes Episodes are swapped</li>
+<li>The design is cluttered</li>
+<li>Error catching is non-existant</li>
+</ul>
+
+
+<p>Recently, my frustration reached its height and I decided it was time to write my own app.</p>
+
+<h1>Android Beginnings</h1>
+
+<p>For the past two years I&rsquo;ve dabbled with Android development. I like to think I know the platform very well, but due to my own shortcomings:</p>
+
+<ul>
+<li>Poor planning</li>
+<li>Feature Happy</li>
+<li>&lsquo;Perfectionism&rsquo;</li>
+</ul>
+
+
+<p>I&rsquo;ve never published an application to Google&rsquo;s Play Store. I figured that creating an app I would use daily for a personality that I admire would be a damn good way to motivate myself. I&rsquo;d also learned from previous projects to boil the initial implementation to a few tasks and to do them well. So I came up the following requirements for Phase 1 of my Smodcast Android App:</p>
+
+<ul>
+<li>Adhere to current Android Design Patterns</li>
+<li>Display list of Smodcast Episodes</li>
+<li>Bottom fragment with Play / Pause functionality and currently playing label</li>
+<li>At first only stream mp3 via HTTP</li>
+</ul>
+
+
+<p>However, my interests combined with a switch in projects at work has led me to&hellip;</p>
+
+<h1>iOS &ndash; The Promised Land?</h1>
+
+<p>I ended up working in iOS this past week at work. I know nothing of iOS aside from general principles and the syntax of Objective-C is still pretty much an unknown world to me. But I decided that it was time to take a deep-dive into XCode, Objective-C, and iOS development so that I knew what the hell I was doing both at home and at work.</p>
+
+<p>During my break on Monday I spent began researching what I&rsquo;d need to develop my Smodcast app on iOS. I boiled it down to the following:</p>
+
+<ul>
+<li>XML Parser (preferably SAX)</li>
+<li>List view to display the episodes</li>
+<li>Bottom view for currently playing text and Play / Pause button</li>
+<li>Audio API</li>
+</ul>
+
+
+<h1>The Process</h1>
+
+<h2>Day 1</h2>
+
+<p>Started developing the iOS version of Smodr by looking up a simple RSS reader tutorial. Using that project as a base, I implemented my own Episode object versus a dictionary implementation. The list of episode was easily completed so I moved to implementing the bottom currently playing view I envisioned (borrowing heavily from <a href="https://itunes.apple.com/us/app/spotify/id324684580?mt=8">Spotify&rsquo;s iOS app</a>). A few Google searches later I ended up on a StackOverflow thread recommending enabling the bottom toolbar property in the Navigation Controller. I quickly toggled the appropriate property, ran my application and saw my list of episodes with a bottom toolbar resembling an empty canvas. My work on Day 1 was complete.</p>
+
+<h2>Day 2</h2>
+
+<p>I&rsquo;m about 50% done with the rough phase 1 implementation. Today I focused on audio playback in iOS. I was led to two APIs, <a href="https://developer.apple.com/library/ios/DOCUMENTATION/AVFoundation/Reference/AVAudioPlayerClassReference/Reference/Reference.html">AVAudioPlayer</a> and <a href="https://developer.apple.com/library/ios/documentation/mediaplayer/reference/MPMusicPlayerController_ClassReference/Reference/Reference.html">MPMusicPlayerController</a> but since I was planning on HTTP streaming for this proof-of-concept stage and MPMusicPlayerController only allows access to the iPod media collection, I chose AVAudioPlayer. Within a few minutes was able to initialize the correct media file off of the table cell selection and invoke my audio player. My next job was to create two items on the bottom toolbar I created the night before. Populating the bottom toolbar was the timesink for the second night, but eventually I was able to right align a UIBarButtonItem with the system included Play icon and respond to taps. I wrote a simple conditional checking the rate of playback to see if audio was playing then resumed or paused playback. I was satisfied and hit the sack.</p>
+
+<h2>Day 3</h2>
+
+<p>The next day I continued with the bottom toolbar by including a UIButtonBarItem that includes a UILabel denoting the current episode or an empty string if nothing is playing. Although I had to handle the label overflow, I switched back to the playback button. I wanted to toggle state between play and pause depending on either the player&rsquo;s rate property or a boolean value. The switching of images proved to be the biggest time sink due to my unfamiliarity with the iOS UI structure and my sleep deprivation. A few StackOverflow threads recommended not using the provided play and pause buttons and instead suggested to swap the image. I grabbed a play and pause png using iconfinder, initialized the UIImages, but was unable to change the button&rsquo;s image. Frustrated, I went to sleep. The next morning I immediately fired-up my laptop and gave it another try. After a full night&rsquo;s rest I realized that I was setting the image property of the UIBarButtonItem instead of the UIBarButton. I quickly deleted the few unwanted characters and rebuilt the application. Just like magic I was pausing / playing the audio and showing the appropriate button images. Win! Here&rsquo;s a snapshot of the app in its current state:</p>
+
+<p><img src="http://i.imgur.com/s4bTTxc.png" alt="Smodr - iOS App" /></p>
+
+<h1>Conclusion</h1>
+
+<p>So far iOS has been a joy to work with. I&rsquo;m well aware that all I have in this initial phase is an app that&rsquo;s barely usable outside of the simulator due to:</p>
+
+<ul>
+<li>Lack of storage</li>
+<li>HTTP streaming</li>
+<li>Battery life</li>
+<li>Network requests and connectivity</li>
+<li>Data usage</li>
+<li>Etc.</li>
+</ul>
+
+
+<p>But I&rsquo;ve finally got the basic functionality down and started implementing the more advanced features today. And unlike usual, I&rsquo;m still having a great time developing. My biggest puzzle if I&rsquo;m not sure why I&rsquo;m making so much progress in such a short amount of time&hellip; I&rsquo;ve narrowed it down to a combination of the following:</p>
+
+<ul>
+<li>This new environment, language, opportunity has excited and motivated me</li>
+<li>I&rsquo;ve grown as a developer and my skillset has improved since I last attempted a mobile app</li>
+<li>The iOS framework is well designed.</li>
+<li>XCode is a superior IDE</li>
+<li>Tutorials and StackOverflow answers are of higher quality than other platforms</li>
+<li>I finally &ldquo;get it&rdquo; when it comes to the architecture of mobile apps</li>
+</ul>
+
+
+<p>However, what I do know for sure is that I&rsquo;m really enjoying myself and love seeing progress every day. I&rsquo;m totally amazed at the amount of work I&rsquo;ve done without being completely comfortable with the syntax of the language and Apple&rsquo;s APIs. So if anyone has been on the fence, I say &ldquo;Go for it!&rdquo;. You may very well surprise yourself like I did. Now back to coding so that I can finally ship quality software!</p>
+]]></content>
+  </entry>
+  
+</feed>
