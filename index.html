@@ -9,7 +9,7 @@
   <meta name="author" content="Kevin Coughlin">
 
   
-  <meta name="description" content="The Idea I&rsquo;m a podcast fanatic. For the past few years podcasts have filled hours of my day whether commuting, at work, at home, or while &hellip;">
+  <meta name="description" content="If you&rsquo;re just joining, I&rsquo;m keeping a journal of the development of my first iOS app &ndash; Smodr, an iOS application for director Kevin &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -29,6 +29,22 @@
   <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
 <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
 <link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<!-- Facebook Open Graph -->
+<meta property="og:title" content="Kevin Coughlin" />
+<meta property="og:site_name" content="Kevin Coughlin" />
+<meta property="og:url" content="http://kevintcoughlin.com/" />
+<meta property="og:description" content="If you&rsquo;re just joining, I&rsquo;m keeping a journal of the development of my first iOS app &ndash; Smodr, an iOS application for director Kevin Smith&rsquo;s network of podcasts, namely &hellip;" />
+<meta property="og:author" content="Kevin Coughlin" />
+
+<!-- Twitter Cards -->
+
+<meta property="twitter:card" content="summary" />
+<meta property="twitter:site" content="kevintcoughlin" />
+<meta property="twitter:url" content="http://kevintcoughlin.com" />
+<meta property="twitter:title" content="Kevin Coughlin" />
+<meta property="twitter:description" content="If you&rsquo;re just joining, I&rsquo;m keeping a journal of the development of my first iOS app &ndash; Smodr, an iOS application for director Kevin Smith&rsquo;s network of podcasts, namely &hellip;" />
+<meta property="twitter:creator" content="kevintcoughlin" />
+
 
   
   <script type="text/javascript">
@@ -77,6 +93,69 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/01/10/from-idea-to-apple-app-store-day-5-long-titles-and-the-uitoolbar-tint-struggle/">From Idea to Apple App Store: Day 5 Long Titles and the UIToolbar Tint Struggle</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-10T11:12:00-05:00" pubdate data-updated="true">Jan 10<span>th</span>, 2014</time>
+        
+           | <a href="/blog/2014/01/10/from-idea-to-apple-app-store-day-5-long-titles-and-the-uitoolbar-tint-struggle/#disqus_thread"
+             data-disqus-identifier="http://kevintcoughlin.com/blog/2014/01/10/from-idea-to-apple-app-store-day-5-long-titles-and-the-uitoolbar-tint-struggle/">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>If you&rsquo;re just joining, I&rsquo;m keeping a journal of the development of my first iOS app &ndash; Smodr, an iOS application for director <a href="http://en.wikipedia.org/wiki/Kevin_Smith">Kevin Smith</a>&rsquo;s network of podcasts, namely <a href="http://smodcast.com/home/">Smodcast</a>. You may want to read <a href="http://kevintcoughlin.com/blog/2014/01/09/from-idea-to-apple-app-store-the-first-four-days/">my entry for days 1 thru 4</a> if you have not already.</p>
+
+<h1>Day 5</h1>
+
+<p>For reference here&rsquo;s where we last left Smodr.</p>
+
+<p><img src="http://i.imgur.com/s4bTTxc.png" alt="Smodr at Day 4" /></p>
+
+<p>I spent the majority of my time today focused on how the app looks. There were two main changes I wanted to make:
+* Shorten the episode titles for the table cell and currently playing views
+* Change the bottom toolbar tint to the same tint as the status bar</p>
+
+<p>First, I tackled the episode title strings. Since the podcast channel is &ldquo;SModcast&rdquo; I felt that it was unnecessary to repeat it in every table cell. I also figured that I could display the episode number in a separate view later. Once I made my decision, I split the title string at the semi-colon while parsing and set the episode&rsquo;s number property from the value I received by scanning for numbers. I wasn&rsquo;t worried about losing the original episode title because I could always combine the title and number properties to reconstruct the original title. These changes turned out to be really trivial, but resulted in what I believe is a cleaner user experience.</p>
+
+<p>Lastly, I wanted to match the bottom toolbar&rsquo;s background color to the orange I had made the status bar. Once I did that I would change the text color to white for some contrast on the orange background. I struggled for way too long setting the toolbar background color for two reasons I discovered later:
+* I needed to grab a reference to the bottom toolbar
+* The appropriate method for setting the background color is setBackgroundColorTint not setBackgroundColor</p>
+
+<p>Go figure&hellip; that&rsquo;s objective-c naming conventions for you. Thankfully I got a response via Twitter for what the correct method was, made my toolbar orange, and quickly set the UILabelView&rsquo;s text color to white. I also set the toolbar&rsquo;s translucent property to YES for the time being.</p>
+
+<p>All in all, I was disappointed I wasted so much time on finding the correct toolbar background color method, but the plus-side is I&rsquo;ll never get stuck on that again. I&rsquo;m pretty content with the current state of Smodr&rsquo;s interface. Now comes the serious work. For the few days I&rsquo;ll be implementing saving and syncing using <a href="https://github.com/ccgus/fmdb">FMDB</a> instead of Core Data for reason&rsquo;s I&rsquo;ll cover in the next entry. Once I implement the database I&rsquo;m goin to work on the ability to download and delete the media files because I can&rsquo;t knowingly attempt to publish an app that only works via HTTP streaming. I&rsquo;m having nightmares about it just mentioning it.</p>
+
+<p>In summary, I&rsquo;m making progress. Hooray! And of course&hellip; a screenshot!</p>
+
+<p><img src="http://i.imgur.com/JTDABXt.png" alt="Smodr at Day 5" /></p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -201,7 +280,7 @@
 <li>This new environment, language, opportunity has excited and motivated me</li>
 <li>I&rsquo;ve grown as a developer and my skillset has improved since I last attempted a mobile app</li>
 <li>The iOS framework is well designed.</li>
-<li>XCode is a superior IDE</li>
+<li>XCode feels like THE complete package IDE. I&rsquo;ve just felt extremely comfortable with it.</li>
 <li>Tutorials and StackOverflow answers are of higher quality than other platforms</li>
 <li>I finally &ldquo;get it&rdquo; when it comes to the architecture of mobile apps</li>
 </ul>
@@ -605,6 +684,10 @@ http.proxyHost=[IP ADDRESS]
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/01/10/from-idea-to-apple-app-store-day-5-long-titles-and-the-uitoolbar-tint-struggle/">From Idea to Apple App Store: Day 5 Long Titles and the UIToolbar Tint Struggle</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/01/09/from-idea-to-apple-app-store-the-first-four-days/">From Idea to Apple App Store: The First Four Days</a>
       </li>
     
@@ -618,10 +701,6 @@ http.proxyHost=[IP ADDRESS]
     
       <li class="post">
         <a href="/blog/2013/11/14/android-development-behind-a-firewall/">Android Development Behind a Firewall</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/08/24/developing-for-firefox-os-setting-up-your-development-environment/">Developing for Firefox OS: Setting Up Your Development Environment</a>
       </li>
     
   </ul>
