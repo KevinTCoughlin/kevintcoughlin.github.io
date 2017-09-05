@@ -1,0 +1,17 @@
+{
+  "name": "kevintcoughlin.github.io",
+  "version": "1.0.0",
+  "description": "Repository containing my personal website.",
+  "scripts": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KevinTCoughlin/kevintcoughlin.github.io.git"
+  },
+  "author": "Kevin Coughlin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/KevinTCoughlin/kevintcoughlin.github.io/issues"
+  },
+  "homepage": "https://github.com/KevinTCoughlin/kevintcoughlin.github.io#readme"
+}
