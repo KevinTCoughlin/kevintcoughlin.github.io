@@ -2,8 +2,7 @@
   "name": "kevintcoughlin.github.io",
   "version": "1.0.0",
   "description": "Repository containing my personal website.",
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/KevinTCoughlin/kevintcoughlin.github.io.git"
