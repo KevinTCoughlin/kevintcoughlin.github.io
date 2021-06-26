@@ -2,7 +2,9 @@
   "name": "kevintcoughlin.github.io",
   "version": "1.0.0",
   "description": "Repository containing my personal website.",
-  "scripts": {},
+  "scripts": {
+    "start": "http-server . -o"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/KevinTCoughlin/kevintcoughlin.github.io.git"
@@ -12,5 +14,9 @@
   "bugs": {
     "url": "https://github.com/KevinTCoughlin/kevintcoughlin.github.io/issues"
   },
-  "homepage": "https://github.com/KevinTCoughlin/kevintcoughlin.github.io#readme"
+  "homepage": "https://github.com/KevinTCoughlin/kevintcoughlin.github.io#readme",
+  "dependencies": {
+    "global": "^4.4.0",
+    "http-server": "^0.12.3"
+  }
 }
