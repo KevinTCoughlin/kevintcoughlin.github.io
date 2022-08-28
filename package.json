@@ -1,7 +1,7 @@
 {
   "name": "kevintcoughlin.github.io",
   "version": "1.0.0",
-  "description": "Repository containing my personal website.",
+  "description": "My personal website",
   "scripts": {
     "start": "http-server . -o"
   },
@@ -14,9 +14,8 @@
   "bugs": {
     "url": "https://github.com/KevinTCoughlin/kevintcoughlin.github.io/issues"
   },
-  "homepage": "https://github.com/KevinTCoughlin/kevintcoughlin.github.io#readme",
-  "dependencies": {
-    "global": "^4.4.0",
-    "http-server": "^0.12.3"
+  "homepage": "https://www.kevintcoughlin.com",
+  "devDependencies": {
+    "http-server": "14.1.1"
   }
 }
