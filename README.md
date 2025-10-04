@@ -11,8 +11,8 @@ This repository includes a devcontainer configuration for development in VS Code
 ### Local Development
 
 ```bash
-npm install
-npm start
+yarn install
+yarn start
 ```
 
 ## Deployment

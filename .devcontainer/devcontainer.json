@@ -21,7 +21,7 @@
     }
   },
 
-  "postCreateCommand": "npm install",
+  "postCreateCommand": "yarn install",
 
   "forwardPorts": [8080],
 
