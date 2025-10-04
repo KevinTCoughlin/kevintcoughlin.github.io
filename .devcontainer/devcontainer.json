@@ -1,0 +1,34 @@
+{
+  "name": "Kevin Coughlin Personal Website",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.live-server"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+      }
+    }
+  },
+
+  "postCreateCommand": "yarn install",
+
+  "forwardPorts": [8080],
+
+  "portsAttributes": {
+    "8080": {
+      "label": "Local Development Server",
+      "onAutoForward": "notify"
+    }
+  }
+}
