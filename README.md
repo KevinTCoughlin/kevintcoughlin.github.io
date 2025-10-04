@@ -1,5 +1,20 @@
 # kevintcoughlin.com
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/91eda076-118c-469f-9252-c0abe4e2a2c0/deploy-status)](https://app.netlify.com/sites/kevintcoughlin/deploys)
+[![Deploy to GitHub Pages](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/deploy.yml/badge.svg)](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/deploy.yml)
 
 My personal website.
+
+## Development
+
+This repository includes a devcontainer configuration for development in VS Code or GitHub Codespaces.
+
+### Local Development
+
+```bash
+npm install
+npm start
+```
+
+## Deployment
+
+The site is automatically deployed to GitHub Pages when changes are pushed to the `master` branch.
