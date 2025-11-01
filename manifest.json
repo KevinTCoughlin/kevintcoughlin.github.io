@@ -1,25 +1,18 @@
 {
   "short_name": "kcoughlin",
   "name": "Kevin Coughlin's website",
+  "description": "Kevin Coughlin - Software Engineer",
   "icons": [
     {
-      "src": "launcher-icon-1x.png",
+      "src": "favicon.png",
       "type": "image/png",
-      "sizes": "48x48"
-    },
-    {
-      "src": "launcher-icon-2x.png",
-      "type": "image/png",
-      "sizes": "96x96"
-    },
-    {
-      "src": "launcher-icon-4x.png",
-      "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "48x48",
+      "purpose": "any"
     }
   ],
-  "start_url": "index.html?launcher=true",
+  "start_url": "/",
   "background_color": "#ff5f2e",
   "theme_color": "#ff5f2e",
-  "display": "browser"
+  "display": "standalone",
+  "categories": ["portfolio", "personal"]
 }

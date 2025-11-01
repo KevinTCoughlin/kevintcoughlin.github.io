@@ -1,4 +1,4 @@
 User-agent: *
 Disallow: 
 
-Sitemap: http://kevintcoughlin.com/sitemap.xml 
+Sitemap: https://kevintcoughlin.com/sitemap.xml 
