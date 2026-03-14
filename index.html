@@ -129,6 +129,9 @@
           bg.style.backgroundImage = 'url(' + img.src + ')';
           bg.classList.add('loaded');
         };
+        img.onerror = function() {
+          bg.parentNode.removeChild(bg);
+        };
         img.src = API + '/today';
 
         fetch(API + '/today.json')
@@ -144,7 +147,7 @@
               el.appendChild(link);
             }
           })
-          .catch(function() {});
+          .catch(function() { /* attribution is non-critical */ });
       })();
     </script>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6967310132431626"
