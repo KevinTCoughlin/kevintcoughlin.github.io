@@ -34,10 +34,9 @@
   .container {
     position: relative;
     z-index: 1;
-    bottom: 0;
-    left: 0;
     padding: 50px;
-    min-height: calc(100vh - 100px);
+    box-sizing: border-box;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -124,27 +123,32 @@
       (function() {
         var API = 'https://bauhaus.cascadiacollections.workers.dev/api';
         var bg = document.getElementById('bg');
+        var attribution = document.getElementById('attribution');
+        var loadStart = Date.now();
         var img = new Image();
         img.onload = function() {
           bg.style.backgroundImage = 'url(' + img.src + ')';
+          if (Date.now() - loadStart < 50) {
+            bg.style.transition = 'none';
+          }
           bg.classList.add('loaded');
         };
         img.onerror = function() {
           bg.parentNode.removeChild(bg);
+          attribution.parentNode.removeChild(attribution);
         };
         img.src = API + '/today';
 
         fetch(API + '/today.json')
           .then(function(r) { return r.json(); })
           .then(function(data) {
-            if (data && data.title) {
-              var el = document.getElementById('attribution');
+            if (data && data.title && document.getElementById('attribution')) {
               var link = document.createElement('a');
               link.href = 'https://github.com/cascadiacollections/bauhaus';
               link.target = '_blank';
               link.rel = 'noopener';
               link.textContent = '🎨 ' + data.title;
-              el.appendChild(link);
+              attribution.appendChild(link);
             }
           })
           .catch(function() { /* attribution is non-critical */ });
