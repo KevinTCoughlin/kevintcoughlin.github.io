@@ -123,8 +123,21 @@
       (function() {
         var API = 'https://bauhaus.cascadiacollections.workers.dev/api';
         var CACHE_LOAD_MS = 50;
+        var today = new Date().toISOString().slice(0, 10);
+        var dateParam = '?d=' + today;
         var bg = document.getElementById('bg');
         var attribution = document.getElementById('attribution');
+
+        function renderAttribution(title) {
+          if (!document.getElementById('attribution')) return;
+          var link = document.createElement('a');
+          link.href = 'https://github.com/cascadiacollections/bauhaus';
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.textContent = '🎨 ' + title;
+          attribution.appendChild(link);
+        }
+
         var loadStart = Date.now();
         var img = new Image();
         img.onload = function() {
@@ -138,18 +151,26 @@
           bg.parentNode.removeChild(bg);
           attribution.parentNode.removeChild(attribution);
         };
-        img.src = API + '/today';
+        img.src = API + '/today' + dateParam;
 
-        fetch(API + '/today.json')
+        try {
+          var cachedDate = localStorage.getItem('bg-date');
+          var cachedTitle = localStorage.getItem('bg-title');
+          if (cachedDate === today && cachedTitle) {
+            renderAttribution(cachedTitle);
+            return;
+          }
+        } catch (e) { /* localStorage unavailable */ }
+
+        fetch(API + '/today.json' + dateParam)
           .then(function(r) { return r.json(); })
           .then(function(data) {
-            if (data && data.title && document.getElementById('attribution')) {
-              var link = document.createElement('a');
-              link.href = 'https://github.com/cascadiacollections/bauhaus';
-              link.target = '_blank';
-              link.rel = 'noopener';
-              link.textContent = '🎨 ' + data.title;
-              attribution.appendChild(link);
+            if (data && data.title) {
+              try {
+                localStorage.setItem('bg-date', today);
+                localStorage.setItem('bg-title', data.title);
+              } catch (e) { /* localStorage unavailable */ }
+              renderAttribution(data.title);
             }
           })
           .catch(function() { /* attribution is non-critical */ });
