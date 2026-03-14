@@ -122,13 +122,14 @@
     <script>
       (function() {
         var API = 'https://bauhaus.cascadiacollections.workers.dev/api';
+        var CACHE_LOAD_MS = 50;
         var bg = document.getElementById('bg');
         var attribution = document.getElementById('attribution');
         var loadStart = Date.now();
         var img = new Image();
         img.onload = function() {
           bg.style.backgroundImage = 'url(' + img.src + ')';
-          if (Date.now() - loadStart < 50) {
+          if (Date.now() - loadStart < CACHE_LOAD_MS) {
             bg.style.transition = 'none';
           }
           bg.classList.add('loaded');
