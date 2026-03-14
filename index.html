@@ -32,10 +32,15 @@
   }
 
   .container {
-    position: absolute;
+    position: relative;
+    z-index: 1;
     bottom: 0;
     left: 0;
     padding: 50px;
+    min-height: calc(100vh - 100px);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
   }
 
   html, body {
@@ -44,6 +49,55 @@
     color: #444;
     margin: 0;
     padding: 0;
+    height: 100%;
+  }
+
+  #bg {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 60%;
+    height: 100%;
+    background-size: cover;
+    background-position: center right;
+    background-repeat: no-repeat;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+  }
+
+  #bg.loaded {
+    opacity: 1;
+  }
+
+  #bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(to right, #fff, transparent);
+    z-index: 1;
+  }
+
+  .attribution {
+    position: fixed;
+    bottom: 8px;
+    right: 12px;
+    z-index: 1;
+    font-size: 11px;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+  }
+
+  .attribution:hover {
+    opacity: 0.9;
+  }
+
+  .attribution a {
+    color: #666;
+    text-decoration: none;
   }
   </style>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-05KMX1JGS4"></script>
@@ -55,6 +109,7 @@
   </script>
   </head>
   <body>
+    <div id="bg"></div>
     <div class="container">
       <h1>Kevin Coughlin</h1>
       <p>Software Engineer</p>
@@ -64,6 +119,34 @@
         <li><a href="https://twitter.com/kevintcoughlin" target="_blank" rel="noopener">Twitter</a></li>
       </ul>
     </div>
+    <div id="attribution" class="attribution"></div>
+    <script>
+      (function() {
+        var API = 'https://bauhaus.cascadiacollections.workers.dev/api';
+        var bg = document.getElementById('bg');
+        var img = new Image();
+        img.onload = function() {
+          bg.style.backgroundImage = 'url(' + img.src + ')';
+          bg.classList.add('loaded');
+        };
+        img.src = API + '/today';
+
+        fetch(API + '/today.json')
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data && data.title) {
+              var el = document.getElementById('attribution');
+              var link = document.createElement('a');
+              link.href = 'https://github.com/cascadiacollections/bauhaus';
+              link.target = '_blank';
+              link.rel = 'noopener';
+              link.textContent = '🎨 ' + data.title;
+              el.appendChild(link);
+            }
+          })
+          .catch(function() {});
+      })();
+    </script>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6967310132431626"
      crossorigin="anonymous"></script>
   </body>
