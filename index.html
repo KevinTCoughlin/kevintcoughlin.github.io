@@ -129,13 +129,14 @@
         var attribution = document.getElementById('attribution');
 
         function renderAttribution(title) {
-          if (!document.getElementById('attribution')) return;
+          var el = document.getElementById('attribution');
+          if (!el) return;
           var link = document.createElement('a');
           link.href = 'https://github.com/cascadiacollections/bauhaus';
           link.target = '_blank';
           link.rel = 'noopener';
           link.textContent = '🎨 ' + title;
-          attribution.appendChild(link);
+          el.appendChild(link);
         }
 
         var loadStart = Date.now();
