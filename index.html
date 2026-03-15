@@ -8,34 +8,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#ff5f2e" />
     <link rel="me" href="https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4" />
-    <title>Kevin Coughlin</title>
+    <title>kcoughlin</title>
     <style>
       a {
         color: inherit;
-      }
-      li:nth-of-type(1):hover {
-        color: #f65314;
-      }
-
-      li:nth-of-type(2):hover {
-        color: #7cbb00;
-      }
-
-      li:nth-of-type(3):hover {
-        color: #00a1f1;
+        text-decoration: none;
+        transition: color 0.2s;
       }
 
       ul {
         list-style-type: none;
         margin: 0;
         padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0;
       }
+
       ul li {
-        font-size: clamp(0.875rem, 1.5vw, 1rem);
+        font-size: clamp(0.75rem, 1.5vw, 0.875rem);
         font-weight: 400;
         letter-spacing: 0.01em;
-        padding-top: 5px;
-        padding-bottom: 5px;
+        color: #888;
+      }
+
+      ul li + li::before {
+        content: '·';
+        margin: 0 0.6em;
+        color: #ccc;
+      }
+
+      ul li a {
+        background-image: linear-gradient(currentColor, currentColor);
+        background-size: 0% 1px;
+        background-repeat: no-repeat;
+        background-position: left bottom;
+        transition: background-size 0.25s ease, color 0.2s;
+      }
+
+      ul li a:hover {
+        color: #444;
+        background-size: 100% 1px;
       }
 
       .container {
@@ -68,6 +82,7 @@
         font-weight: 600;
         line-height: 1.1;
         letter-spacing: -0.02em;
+        margin: 0 0 0.4rem;
       }
 
       .role-label {
@@ -76,6 +91,23 @@
         letter-spacing: 0.14em;
         text-transform: uppercase;
         color: #666;
+        margin: 0 0 1.5rem;
+      }
+
+      .manpage {
+        font-family: 'SF Mono', ui-monospace, 'Fira Code', monospace;
+        font-weight: 400;
+        font-size: 0.8em;
+        opacity: 0.5;
+        letter-spacing: 0;
+      }
+
+      .fp-label {
+        font-family: 'SF Mono', ui-monospace, 'Fira Code', monospace;
+        font-size: 0.6875rem;
+        color: #bbb;
+        margin-right: 0.4em;
+        user-select: none;
       }
 
       .fingerprint {
@@ -179,21 +211,20 @@
     <div id="bg"></div>
     <div class="container">
       <h1>Kevin Coughlin</h1>
-      <p class="role-label">Software Engineer</p>
+      <p class="role-label">Programmer<span class="manpage">(1)</span></p>
       <ul>
         <li>
-          <a href="https://github.com/KevinTCoughlin" target="_blank" rel="noopener">Github</a>
+          <a href="https://github.com/KevinTCoughlin" target="_blank" rel="noopener">github.com</a>
         </li>
         <li>
-          <a href="https://www.linkedin.com/in/kevintcoughlin" target="_blank" rel="noopener"
-            >LinkedIn</a
-          >
+          <a href="https://www.linkedin.com/in/kevintcoughlin" target="_blank" rel="noopener">linkedin.com</a>
         </li>
         <li>
-          <a href="https://twitter.com/kevintcoughlin" target="_blank" rel="noopener">Twitter</a>
+          <a href="https://twitter.com/kevintcoughlin" target="_blank" rel="noopener">x.com</a>
         </li>
       </ul>
       <p class="fingerprint">
+        <span class="fp-label">pgp:</span>
         <a href="https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4" target="_blank" rel="noopener me">
           5261 704E 7C5C 2D39 F497&nbsp;&nbsp;86C1 F94A 3D5E BF85 67C4
         </a>
