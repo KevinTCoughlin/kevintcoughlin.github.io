@@ -1,7 +1,6 @@
 {
   "name": "kevintcoughlin.github.io",
   "version": "1.0.0",
-  "type": "module",
   "description": "My personal website",
   "scripts": {
     "start": "http-server -o",
