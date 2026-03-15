@@ -10,33 +10,127 @@
     <link rel="me" href="https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4" />
     <title>kcoughlin</title>
     <style>
+      /* ── Reset ───────────────────────────────────── */
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      /* ── Tokens ──────────────────────────────────── */
+      :root {
+        color-scheme: light;
+        --color-text:      #444;
+        --color-muted:     #666;
+        --color-faint:     #888;
+        --color-separator: #ccc;
+        --mono-muted:      #aaa;
+        --mono-label:      #bbb;
+        --font-mono: 'SF Mono', ui-monospace, 'Fira Code', monospace;
+      }
+
+      /* ── Base ────────────────────────────────────── */
+      html {
+        font-size: 100%;
+      }
+
+      body {
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        font-feature-settings: 'kern' 1, 'liga' 1;
+        color: var(--color-text);
+        margin: 0;
+      }
+
       a {
         color: inherit;
         text-decoration: none;
         transition: color 0.2s;
       }
 
+      /* ── Background ──────────────────────────────── */
+      #bg {
+        position: fixed;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        z-index: 0;
+        opacity: 0;
+        transition: opacity 1s ease-in-out;
+      }
+
+      #bg.loaded {
+        opacity: 1;
+      }
+
+      /* ── Layout ──────────────────────────────────── */
+      .container {
+        position: relative;
+        z-index: 1;
+        padding: 50px;
+        min-height: 100svh;
+        width: fit-content;
+        min-width: 300px;
+        max-width: min(55vw, 700px);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background: rgba(255, 255, 255, 0.78);
+        backdrop-filter: blur(28px) saturate(1.4);
+        -webkit-backdrop-filter: blur(28px) saturate(1.4);
+        box-shadow: 1px 0 40px rgba(0, 0, 0, 0.06);
+      }
+
+      /* ── Typography ──────────────────────────────── */
+      h1 {
+        font-size: clamp(2.25rem, 5vw + 1rem, 4.5rem);
+        font-weight: 600;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        margin: 0 0 0.4rem;
+        white-space: nowrap;
+      }
+
+      .role-label {
+        font-size: clamp(0.6875rem, 1vw + 0.25rem, 0.875rem);
+        font-weight: 500;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--color-muted);
+        margin: 0;
+      }
+
+      .manpage {
+        font-family: var(--font-mono);
+        font-weight: 400;
+        font-size: 0.8em;
+        opacity: 0.5;
+        letter-spacing: 0;
+      }
+
+      /* ── Navigation ──────────────────────────────── */
       ul {
-        list-style-type: none;
+        list-style: none;
         margin: 0;
         padding: 0;
         display: flex;
         flex-wrap: wrap;
         align-items: baseline;
-        gap: 0;
       }
 
       ul li {
         font-size: clamp(0.75rem, 1.5vw, 0.875rem);
         font-weight: 400;
         letter-spacing: 0.01em;
-        color: #888;
+        color: var(--color-faint);
       }
 
       ul li + li::before {
         content: '·';
         margin: 0 0.6em;
-        color: #ccc;
+        color: var(--color-separator);
       }
 
       ul li a {
@@ -48,152 +142,102 @@
       }
 
       ul li a:hover {
-        color: #444;
+        color: var(--color-text);
         background-size: 100% 1px;
       }
 
-      .container {
-        position: relative;
-        z-index: 1;
-        padding: 50px;
-        box-sizing: border-box;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-      }
-
-      html,
-      body {
-        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-        font-size: 16px;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        text-rendering: optimizeLegibility;
-        font-feature-settings: 'kern' 1, 'liga' 1;
-        color: #444;
-        margin: 0;
-        padding: 0;
-        height: 100%;
-      }
-
-      h1 {
-        font-size: clamp(2.25rem, 5vw + 1rem, 4.5rem);
-        font-weight: 600;
-        line-height: 1.1;
-        letter-spacing: -0.02em;
-        margin: 0 0 0.4rem;
-      }
-
-      .role-label {
-        font-size: clamp(0.6875rem, 1vw + 0.25rem, 0.875rem);
-        font-weight: 500;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: #666;
-        margin: 0 0 1.5rem;
-      }
-
-      .manpage {
-        font-family: 'SF Mono', ui-monospace, 'Fira Code', monospace;
-        font-weight: 400;
-        font-size: 0.8em;
-        opacity: 0.5;
-        letter-spacing: 0;
-      }
-
+      /* ── Fingerprint ─────────────────────────────── */
       .fp-label {
-        font-family: 'SF Mono', ui-monospace, 'Fira Code', monospace;
+        font-family: var(--font-mono);
         font-size: 0.6875rem;
-        color: #bbb;
+        color: var(--mono-label);
         margin-right: 0.4em;
         user-select: none;
       }
 
       .fingerprint {
         margin-top: 1.75rem;
-        font-family: 'SF Mono', ui-monospace, 'Fira Code', monospace;
+        font-family: var(--font-mono);
         font-size: 0.6875rem;
         letter-spacing: 0.06em;
-        color: #aaa;
+        color: var(--mono-muted);
+        white-space: nowrap;
       }
 
       .fingerprint a {
-        text-decoration: none;
         color: inherit;
         transition: color 0.15s;
       }
 
       .fingerprint a:hover {
-        color: #444;
+        color: var(--color-text);
       }
 
-      #bg {
-        position: fixed;
-        top: 0;
-        right: 0;
-        width: 60%;
-        height: 100%;
-        background-size: cover;
-        background-position: center right;
-        background-repeat: no-repeat;
-        z-index: 0;
-        opacity: 0;
-        transition: opacity 1s ease-in-out;
-      }
-
-      #bg.loaded {
-        opacity: 1;
-      }
-
-      #bg::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 50%;
-        height: 100%;
-        background: linear-gradient(to right, #fff, transparent);
-        z-index: 1;
-      }
-
+      /* ── Attribution ─────────────────────────────── */
       .attribution {
         position: fixed;
-        bottom: 8px;
-        right: 12px;
-        z-index: 1;
-        font-size: 11px;
-        opacity: 0.5;
+        bottom: 12px;
+        right: 16px;
+        z-index: 2;
+        font-size: 0.6875rem;
+        opacity: 0.6;
         transition: opacity 0.2s;
       }
 
       .attribution:hover {
-        opacity: 0.9;
+        opacity: 1;
       }
 
       .attribution a {
-        color: #666;
-        text-decoration: none;
+        color: #fff;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
       }
 
-      @media (max-width: 768px) and (orientation: portrait) {
-        #bg {
-          width: 100%;
-          background-position: center center;
+      /* ── Motion ──────────────────────────────────── */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
         }
+      }
 
-        #bg::before {
-          width: 100%;
-          background: linear-gradient(to bottom, transparent, transparent 50%, #fff);
-        }
-
+      /* ── Narrow viewport (any orientation) ───────── */
+      @media (max-width: 600px) {
         .container {
-          padding: 30px;
-          background: linear-gradient(
-            to bottom,
-            rgba(255, 255, 255, 0.9),
-            rgba(255, 255, 255, 0.95)
-          );
+          width: 100%;
+          min-width: 0;
+          max-width: none;
+          min-height: auto;
+          padding: 36px 28px 40px;
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          justify-content: flex-start;
+          gap: 1.25rem;
+          border-radius: 16px 16px 0 0;
+          box-shadow: 0 -1px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+          font-size: clamp(1.75rem, 8vw, 2.5rem);
+          white-space: normal;
+        }
+
+        .fingerprint {
+          white-space: normal;
+        }
+      }
+
+      /* ── Medium viewport ──────────────────────────── */
+      @media (min-width: 601px) and (max-width: 900px) {
+        .container {
+          min-width: 0;
+          max-width: 52vw;
+          padding: 36px;
+        }
+
+        .fingerprint {
+          white-space: normal;
         }
       }
     </style>
@@ -208,29 +252,33 @@
     </script>
   </head>
   <body>
-    <div id="bg"></div>
-    <div class="container">
-      <h1>Kevin Coughlin</h1>
-      <p class="role-label">Programmer<span class="manpage">(1)</span></p>
-      <ul>
-        <li>
-          <a href="https://github.com/KevinTCoughlin" target="_blank" rel="noopener">github.com</a>
-        </li>
-        <li>
-          <a href="https://www.linkedin.com/in/kevintcoughlin" target="_blank" rel="noopener">linkedin.com</a>
-        </li>
-        <li>
-          <a href="https://twitter.com/kevintcoughlin" target="_blank" rel="noopener">x.com</a>
-        </li>
-      </ul>
-      <p class="fingerprint">
-        <span class="fp-label">pgp:</span>
-        <a href="https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4" target="_blank" rel="noopener me">
-          5261 704E 7C5C 2D39 F497&nbsp;&nbsp;86C1 F94A 3D5E BF85 67C4
-        </a>
-      </p>
-    </div>
-    <div id="attribution" class="attribution"></div>
+    <div id="bg" aria-hidden="true"></div>
+    <main class="container">
+      <header class="identity">
+        <h1>Kevin Coughlin</h1>
+        <p class="role-label">Programmer<span class="manpage">(1)</span></p>
+      </header>
+      <nav class="links" aria-label="Profiles">
+        <ul>
+          <li>
+            <a href="https://github.com/KevinTCoughlin" target="_blank" rel="noopener noreferrer" aria-label="GitHub profile">github.com</a>
+          </li>
+          <li>
+            <a href="https://www.linkedin.com/in/kevintcoughlin" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile">linkedin.com</a>
+          </li>
+          <li>
+            <a href="https://twitter.com/kevintcoughlin" target="_blank" rel="noopener noreferrer" aria-label="X profile">x.com</a>
+          </li>
+        </ul>
+        <p class="fingerprint">
+          <span class="fp-label">pgp:</span>
+          <a href="https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4" target="_blank" rel="noopener noreferrer me" aria-label="PGP key on Keyoxide">
+            5261 704E 7C5C 2D39 F497&nbsp;&nbsp;86C1 F94A 3D5E BF85 67C4
+          </a>
+        </p>
+      </nav>
+    </main>
+    <footer id="attribution" class="attribution"></footer>
     <script>
       (function () {
         var API = 'https://bauhaus.cascadiacollections.workers.dev/api';
@@ -240,15 +288,15 @@
         var bg = document.getElementById('bg');
         var attribution = document.getElementById('attribution');
 
-        function renderAttribution(title) {
-          var el = document.getElementById('attribution');
-          if (!el) return;
-          var link = document.createElement('a');
-          link.href = 'https://github.com/cascadiacollections/bauhaus';
-          link.target = '_blank';
-          link.rel = 'noopener';
-          link.textContent = '🎨 ' + title;
-          el.appendChild(link);
+        var attrLink = document.createElement('a');
+        attrLink.href = 'https://github.com/cascadiacollections/bauhaus';
+        attrLink.target = '_blank';
+        attrLink.rel = 'noopener noreferrer';
+        attrLink.textContent = '🎨 bauhaus';
+        attribution.appendChild(attrLink);
+
+        function updateAttribution(title) {
+          attrLink.textContent = '🎨 ' + title;
         }
 
         var loadStart = Date.now();
@@ -270,7 +318,7 @@
           var cachedDate = localStorage.getItem('bg-date');
           var cachedTitle = localStorage.getItem('bg-title');
           if (cachedDate === today && cachedTitle) {
-            renderAttribution(cachedTitle);
+            updateAttribution(cachedTitle);
             return;
           }
         } catch (_e) {
@@ -289,7 +337,7 @@
               } catch (_e) {
                 /* localStorage unavailable */
               }
-              renderAttribution(data.title);
+              updateAttribution(data.title);
             }
           })
           .catch(function () {
