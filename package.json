@@ -3,7 +3,12 @@
   "version": "1.0.0",
   "description": "My personal website",
   "scripts": {
-    "start": "http-server -o"
+    "start": "http-server -o",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "validate": "npm run lint && npm run format"
   },
   "repository": {
     "type": "git",
@@ -16,6 +21,9 @@
   },
   "homepage": "https://www.kevintcoughlin.com",
   "devDependencies": {
-    "http-server": "14.1.1"
+    "eslint": "^9.16.0",
+    "eslint-plugin-html": "^8.1.2",
+    "http-server": "^14.1.1",
+    "prettier": "^3.4.2"
   }
 }
