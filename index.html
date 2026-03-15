@@ -2,6 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300..700&display=swap" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#ff5f2e" />
     <link rel="me" href="https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4" />
@@ -28,6 +31,9 @@
         padding: 0;
       }
       ul li {
+        font-size: clamp(0.875rem, 1.5vw, 1rem);
+        font-weight: 400;
+        letter-spacing: 0.01em;
         padding-top: 5px;
         padding-bottom: 5px;
       }
@@ -45,14 +51,31 @@
 
       html,
       body {
-        font-family:
-          'HelveticaNeue-Light', 'Helvetica Neue Light', 'Helvetica Neue', Helvetica, Arial,
-          'Lucida Grande', sans-serif;
-        font-weight: 300;
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        font-size: 16px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        font-feature-settings: 'kern' 1, 'liga' 1;
         color: #444;
         margin: 0;
         padding: 0;
         height: 100%;
+      }
+
+      h1 {
+        font-size: clamp(2.25rem, 5vw + 1rem, 4.5rem);
+        font-weight: 600;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+      }
+
+      .role-label {
+        font-size: clamp(0.6875rem, 1vw + 0.25rem, 0.875rem);
+        font-weight: 500;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #666;
       }
 
       #bg {
@@ -138,7 +161,7 @@
     <div id="bg"></div>
     <div class="container">
       <h1>Kevin Coughlin</h1>
-      <p>Software Engineer</p>
+      <p class="role-label">Software Engineer</p>
       <ul>
         <li>
           <a href="https://github.com/KevinTCoughlin" target="_blank" rel="noopener">Github</a>
