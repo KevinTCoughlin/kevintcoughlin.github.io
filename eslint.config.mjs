@@ -1,11 +1,9 @@
-import html from 'eslint-plugin-html';
+import htmlPlugin from '@html-eslint/eslint-plugin';
+import htmlParser from '@html-eslint/parser';
 
 export default [
   {
-    plugins: {
-      html,
-    },
-    files: ['**/*.html', '**/*.js'],
+    files: ['**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
@@ -25,6 +23,23 @@ export default [
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       'no-console': 'off',
       'no-undef': 'error',
+    },
+  },
+  {
+    files: ['**/*.html'],
+    plugins: {
+      '@html-eslint': htmlPlugin,
+    },
+    languageOptions: {
+      parser: htmlParser,
+    },
+    rules: {
+      '@html-eslint/require-doctype': 'error',
+      '@html-eslint/no-duplicate-id': 'error',
+      '@html-eslint/require-lang': 'error',
+      '@html-eslint/require-title': 'error',
+      '@html-eslint/no-multiple-h1': 'warn',
+      '@html-eslint/require-closing-tags': ['error', { selfClosing: 'always' }],
     },
   },
   {

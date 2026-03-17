@@ -21,9 +21,10 @@
   },
   "homepage": "https://www.kevintcoughlin.com",
   "devDependencies": {
-    "eslint": "^9.16.0",
-    "eslint-plugin-html": "^8.1.2",
+    "@html-eslint/eslint-plugin": "^0.58.1",
+    "@html-eslint/parser": "^0.58.1",
+    "eslint": "^10.0.3",
     "http-server": "^14.1.1",
-    "prettier": "^3.4.2"
+    "prettier": "^3.8.1"
   }
 }

@@ -1,12 +1,29 @@
 [build]
-  # No build command needed - this is a static site
-  command = ""
   publish = "."
 
 [build.environment]
-  # Explicitly set Node version for consistency
-  NODE_VERSION = "20"
+  NODE_VERSION = "22"
 
-# Disable automatic framework detection
-[build.processing]
-  skip_processing = false
+# Security and performance headers for all pages
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=()"
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+    X-XSS-Protection = "0"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://pagead2.googlesyndication.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https://bauhaus.cascadiacollections.workers.dev data:; connect-src 'self' https://bauhaus.cascadiacollections.workers.dev https://www.google-analytics.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
+
+# Long-lived cache for static image assets
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache manifest with shorter TTL
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
