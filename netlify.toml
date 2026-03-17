@@ -2,7 +2,7 @@
   publish = "."
 
 [build.environment]
-  NODE_VERSION = "22"
+  NODE_VERSION = "24"
 
 # Security and performance headers for all pages
 [[headers]]
