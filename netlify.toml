@@ -13,7 +13,6 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=()"
     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
-    X-XSS-Protection = "0"
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://pagead2.googlesyndication.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https://bauhaus.cascadiacollections.workers.dev data:; connect-src 'self' https://bauhaus.cascadiacollections.workers.dev https://www.google-analytics.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
 
 # Long-lived cache for static image assets
