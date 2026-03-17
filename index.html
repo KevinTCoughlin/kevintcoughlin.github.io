@@ -4,26 +4,31 @@
     <meta charset="UTF-8" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300..700&display=swap" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300..700&display=swap"
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#ff5f2e" />
     <link rel="me" href="https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4" />
     <title>kcoughlin</title>
     <style>
       /* ── Reset ───────────────────────────────────── */
-      *, *::before, *::after {
+      *,
+      *::before,
+      *::after {
         box-sizing: border-box;
       }
 
       /* ── Tokens ──────────────────────────────────── */
       :root {
         color-scheme: light;
-        --color-text:      #444;
-        --color-muted:     #666;
-        --color-faint:     #888;
+        --color-text: #444;
+        --color-muted: #666;
+        --color-faint: #888;
         --color-separator: #ccc;
-        --mono-muted:      #aaa;
-        --mono-label:      #bbb;
+        --mono-muted: #aaa;
+        --mono-label: #bbb;
         --font-mono: 'SF Mono', ui-monospace, 'Fira Code', monospace;
       }
 
@@ -33,12 +38,18 @@
       }
 
       body {
-        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        font-family:
+          'Plus Jakarta Sans',
+          system-ui,
+          -apple-system,
+          sans-serif;
         line-height: 1.5;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         text-rendering: optimizeLegibility;
-        font-feature-settings: 'kern' 1, 'liga' 1;
+        font-feature-settings:
+          'kern' 1,
+          'liga' 1;
         color: var(--color-text);
         margin: 0;
       }
@@ -138,7 +149,9 @@
         background-size: 0% 1px;
         background-repeat: no-repeat;
         background-position: left bottom;
-        transition: background-size 0.25s ease, color 0.2s;
+        transition:
+          background-size 0.25s ease,
+          color 0.2s;
       }
 
       ul li a:hover {
@@ -147,24 +160,27 @@
       }
 
       /* ── Fingerprint ─────────────────────────────── */
-      .fp-label {
-        font-family: var(--font-mono);
-        font-size: 0.6875rem;
-        color: var(--mono-label);
-        margin-right: 0.4em;
-        user-select: none;
-      }
-
       .fingerprint {
         margin-top: 1.75rem;
         font-family: var(--font-mono);
         font-size: 0.6875rem;
         letter-spacing: 0.06em;
         color: var(--mono-muted);
-        white-space: nowrap;
+        display: flex;
+        align-items: baseline;
+      }
+
+      .fp-label {
+        color: var(--mono-label);
+        margin-right: 0.4em;
+        flex-shrink: 0;
+        user-select: none;
       }
 
       .fingerprint a {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 0.3em 0.6em;
         color: inherit;
         transition: color 0.15s;
       }
@@ -195,7 +211,9 @@
 
       /* ── Motion ──────────────────────────────────── */
       @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after {
+        *,
+        *::before,
+        *::after {
           transition-duration: 0.01ms !important;
           animation-duration: 0.01ms !important;
         }
@@ -222,10 +240,6 @@
           font-size: clamp(1.75rem, 8vw, 2.5rem);
           white-space: normal;
         }
-
-        .fingerprint {
-          white-space: normal;
-        }
       }
 
       /* ── Medium viewport ──────────────────────────── */
@@ -234,10 +248,6 @@
           min-width: 0;
           max-width: 52vw;
           padding: 36px;
-        }
-
-        .fingerprint {
-          white-space: normal;
         }
       }
     </style>
@@ -261,19 +271,51 @@
       <nav class="links" aria-label="Profiles">
         <ul>
           <li>
-            <a href="https://github.com/KevinTCoughlin" target="_blank" rel="noopener noreferrer" aria-label="GitHub profile">github.com</a>
+            <a
+              href="https://github.com/KevinTCoughlin"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub profile"
+              >github.com</a
+            >
           </li>
           <li>
-            <a href="https://www.linkedin.com/in/kevintcoughlin" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile">linkedin.com</a>
+            <a
+              href="https://www.linkedin.com/in/kevintcoughlin"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn profile"
+              >linkedin.com</a
+            >
           </li>
           <li>
-            <a href="https://twitter.com/kevintcoughlin" target="_blank" rel="noopener noreferrer" aria-label="X profile">x.com</a>
+            <a
+              href="https://twitter.com/kevintcoughlin"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="X profile"
+              >x.com</a
+            >
           </li>
         </ul>
         <p class="fingerprint">
           <span class="fp-label">pgp:</span>
-          <a href="https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4" target="_blank" rel="noopener noreferrer me" aria-label="PGP key on Keyoxide">
-            5261 704E 7C5C 2D39 F497&nbsp;&nbsp;86C1 F94A 3D5E BF85 67C4
+          <a
+            href="https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4"
+            target="_blank"
+            rel="noopener noreferrer me"
+            aria-label="PGP key on Keyoxide"
+          >
+            <span>5261</span>
+            <span>704E</span>
+            <span>7C5C</span>
+            <span>2D39</span>
+            <span>F497</span>
+            <span>86C1</span>
+            <span>F94A</span>
+            <span>3D5E</span>
+            <span>BF85</span>
+            <span>67C4</span>
           </a>
         </p>
       </nav>
