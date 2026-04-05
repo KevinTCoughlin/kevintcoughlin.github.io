@@ -18,8 +18,8 @@ This repository includes a devcontainer configuration for development in VS Code
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 20.x or later
-- [Yarn](https://yarnpkg.com/) package manager
+- [Node.js](https://nodejs.org/) 24.x or later
+- [Yarn](https://yarnpkg.com/) 4.x (via [Corepack](https://nodejs.org/api/corepack.html))
 
 ### Local Development
 

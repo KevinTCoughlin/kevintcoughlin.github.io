@@ -1,7 +1,7 @@
 {
   "short_name": "kcoughlin",
   "name": "Kevin Coughlin's website",
-  "description": "Kevin Coughlin - Software Engineer",
+  "description": "Kevin Coughlin — programmer, software engineer, and open-source contributor.",
   "icons": [
     {
       "src": "favicon.png",
@@ -23,6 +23,7 @@
     }
   ],
   "start_url": "/",
+  "scope": "/",
   "background_color": "#ff5f2e",
   "theme_color": "#ff5f2e",
   "display": "standalone",
