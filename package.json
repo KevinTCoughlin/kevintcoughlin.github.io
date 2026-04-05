@@ -21,10 +21,11 @@
   },
   "homepage": "https://www.kevintcoughlin.com",
   "devDependencies": {
-    "@html-eslint/eslint-plugin": "^0.58.1",
-    "@html-eslint/parser": "^0.58.1",
-    "eslint": "^10.0.3",
+    "@html-eslint/eslint-plugin": "^0.59.0",
+    "@html-eslint/parser": "^0.59.0",
+    "eslint": "^10.2.0",
     "http-server": "^14.1.1",
     "prettier": "^3.8.1"
-  }
+  },
+  "packageManager": "yarn@4.13.0+sha512.5c20ba010c99815433e5c8453112165e673f1c7948d8d2b267f4b5e52097538658388ebc9f9580656d9b75c5cc996f990f611f99304a2197d4c56d21eea370e7"
 }
