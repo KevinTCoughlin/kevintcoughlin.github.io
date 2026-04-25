@@ -1,0 +1,6 @@
+# NOTE: Production is served via GitHub Pages (see .github/workflows/deploy.yml).
+# This file exists only so Netlify Deploy Previews keep working for PRs.
+# Do NOT add security/cache headers here — they would not reflect production.
+
+[build]
+  publish = "."
