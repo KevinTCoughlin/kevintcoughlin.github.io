@@ -1,0 +1,66 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  schedule:
+    # Weekly link-rot check (Mondays 09:00 UTC)
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Stage site assets
+        run: |
+          mkdir -p _site/.well-known
+          cp index.html manifest.json sitemap.xml robots.txt CNAME humans.txt _site/
+          cp favicon.png icon-192.png icon-512.png og-image.png _site/
+          cp .well-known/security.txt _site/.well-known/
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          configPath: ./.lighthouserc.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+  links:
+    name: Link check (lychee)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Restore lychee cache
+        uses: actions/cache@v4
+        with:
+          path: .lycheecache
+          key: cache-lychee-${{ github.sha }}
+          restore-keys: cache-lychee-
+
+      - name: Run lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --cache --max-cache-age 1d
+            --no-progress
+            --exclude-mail
+            --accept 200,206,301,302,403,429
+            'index.html' 'README.md' 'sitemap.xml'
+          fail: true

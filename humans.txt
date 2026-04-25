@@ -1,0 +1,13 @@
+/* TEAM */
+Programmer: Kevin Coughlin
+Site: https://kevintcoughlin.com
+GitHub: https://github.com/KevinTCoughlin
+PGP: 5261 704E 7C5C 2D39 F497 86C1 F94A 3D5E BF85 67C4
+Location: United States
+
+/* SITE */
+Last update: rolling
+Standards: HTML5, CSS3, JavaScript
+Components: none — single static HTML file
+Hosted: GitHub Pages, Cloudflare
+Background: bauhaus.cascadiacollections.workers.dev

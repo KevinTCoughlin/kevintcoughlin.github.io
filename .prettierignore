@@ -5,3 +5,6 @@ yarn.lock
 package-lock.json
 *.min.js
 *.min.css
+*.txt
+*.xml
+.well-known/
