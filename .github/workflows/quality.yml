@@ -63,7 +63,7 @@ jobs:
           args: >-
             --cache --max-cache-age 1d
             --no-progress
-            --base .
+            --root-dir ${{ github.workspace }}
             --exclude '^http://localhost'
             --accept 200,206,301,302,403,429
             'index.html' 'README.md' 'sitemap.xml'
