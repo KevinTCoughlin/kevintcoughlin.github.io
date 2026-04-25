@@ -8,7 +8,7 @@ My personal website built as a static site and deployed to GitHub Pages.
 
 - Static HTML/CSS/JavaScript site (no build step required)
 - Daily rotating background images from the [Bauhaus Collection](https://github.com/cascadiacollections/bauhaus)
-- PWA-ready with manifest and service worker support
+- PWA-ready with linked manifest and maskable icons
 - Optimized caching strategy using localStorage and query parameters
 - Responsive design with smooth animations
 
