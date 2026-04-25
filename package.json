@@ -19,7 +19,7 @@
   "bugs": {
     "url": "https://github.com/KevinTCoughlin/kevintcoughlin.github.io/issues"
   },
-  "homepage": "https://www.kevintcoughlin.com",
+  "homepage": "https://kevintcoughlin.com",
   "devDependencies": {
     "@html-eslint/eslint-plugin": "^0.59.0",
     "@html-eslint/parser": "^0.59.0",
