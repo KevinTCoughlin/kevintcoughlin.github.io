@@ -2,13 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://bauhaus.cascadiacollections.workers.dev" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300..700&display=swap"
-    />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
@@ -24,7 +18,7 @@
     <!-- Security headers (GitHub Pages cannot deliver server headers; meta covers what it can) -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https://bauhaus.cascadiacollections.workers.dev https://www.google-analytics.com data:; connect-src 'self' https://bauhaus.cascadiacollections.workers.dev https://www.google-analytics.com; object-src 'none'; base-uri 'self'"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://bauhaus.cascadiacollections.workers.dev https://www.google-analytics.com data:; connect-src 'self' https://bauhaus.cascadiacollections.workers.dev https://www.google-analytics.com; object-src 'none'; base-uri 'self'"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
@@ -79,9 +73,12 @@
 
       body {
         font-family:
-          'Plus Jakarta Sans',
           system-ui,
           -apple-system,
+          'Segoe UI',
+          Roboto,
+          'Helvetica Neue',
+          Arial,
           sans-serif;
         line-height: 1.5;
         -webkit-font-smoothing: antialiased;
@@ -361,76 +358,7 @@
       </nav>
     </main>
     <footer id="attribution" class="attribution"></footer>
-    <script>
-      (function () {
-        var API = 'https://bauhaus.cascadiacollections.workers.dev/api';
-        var CACHE_LOAD_MS = 50;
-        var now = new Date();
-        var pad = function (n) {
-          return n < 10 ? '0' + n : '' + n;
-        };
-        var today = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
-        var dateParam = '?d=' + today;
-        var bg = document.getElementById('bg');
-        var attribution = document.getElementById('attribution');
-
-        var attrLink = document.createElement('a');
-        attrLink.href = 'https://github.com/cascadiacollections/bauhaus';
-        attrLink.target = '_blank';
-        attrLink.rel = 'noopener noreferrer';
-        attrLink.textContent = '🎨 bauhaus';
-        attribution.appendChild(attrLink);
-
-        function updateAttribution(title) {
-          attrLink.textContent = '🎨 ' + title;
-        }
-
-        var loadStart = Date.now();
-        var img = new Image();
-        img.onload = function () {
-          bg.style.backgroundImage = 'url(' + img.src + ')';
-          if (Date.now() - loadStart < CACHE_LOAD_MS) {
-            bg.style.transition = 'none';
-          }
-          bg.classList.add('loaded');
-        };
-        img.onerror = function () {
-          bg.parentNode.removeChild(bg);
-          attribution.parentNode.removeChild(attribution);
-        };
-        img.src = API + '/today' + dateParam;
-
-        try {
-          var cachedDate = localStorage.getItem('bg-date');
-          var cachedTitle = localStorage.getItem('bg-title');
-          if (cachedDate === today && cachedTitle) {
-            updateAttribution(cachedTitle);
-            return;
-          }
-        } catch (_e) {
-          /* localStorage unavailable */
-        }
-
-        fetch(API + '/today.json' + dateParam)
-          .then(function (r) {
-            return r.json();
-          })
-          .then(function (data) {
-            if (data && data.title) {
-              try {
-                localStorage.setItem('bg-date', today);
-                localStorage.setItem('bg-title', data.title);
-              } catch (_e) {
-                /* localStorage unavailable */
-              }
-              updateAttribution(data.title);
-            }
-          })
-          .catch(function () {
-            /* attribution is non-critical */
-          });
-      })();
-    </script>
+    <script src="/bauhaus.js" defer></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",

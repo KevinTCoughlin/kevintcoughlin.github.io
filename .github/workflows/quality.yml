@@ -33,7 +33,7 @@ jobs:
       - name: Stage site assets
         run: |
           mkdir -p _site/.well-known
-          cp index.html manifest.json sitemap.xml robots.txt CNAME humans.txt _site/
+          cp index.html manifest.json sitemap.xml robots.txt CNAME humans.txt bauhaus.js _site/
           cp favicon.png icon-192.png icon-512.png og-image.png _site/
           cp .well-known/security.txt _site/.well-known/
 
