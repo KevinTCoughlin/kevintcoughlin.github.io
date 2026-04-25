@@ -22,6 +22,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
@@ -60,7 +63,6 @@ jobs:
           args: >-
             --cache --max-cache-age 1d
             --no-progress
-            --exclude-mail
             --accept 200,206,301,302,403,429
             'index.html' 'README.md' 'sitemap.xml'
           fail: true
