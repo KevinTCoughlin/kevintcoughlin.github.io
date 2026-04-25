@@ -1,0 +1,6 @@
+Contact: https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4
+Contact: https://github.com/KevinTCoughlin
+Expires: 2027-04-25T18:58:54Z
+Encryption: https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4
+Preferred-Languages: en
+Canonical: https://kevintcoughlin.com/.well-known/security.txt

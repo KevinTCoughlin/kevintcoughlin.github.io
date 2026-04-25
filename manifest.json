@@ -24,8 +24,8 @@
   ],
   "start_url": "/",
   "scope": "/",
-  "background_color": "#ff5f2e",
+  "background_color": "#ffffff",
   "theme_color": "#ff5f2e",
   "display": "standalone",
-  "categories": ["portfolio", "personal"]
+  "categories": ["personal"]
 }
