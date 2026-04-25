@@ -4,3 +4,8 @@
 
 [build]
   publish = "."
+  command = "echo 'Static site, no build needed'"
+
+[build.environment]
+  NODE_VERSION = "24"
+  YARN_VERSION = "4.13.0"
