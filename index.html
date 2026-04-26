@@ -3,6 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="preconnect" href="https://bauhaus.cascadiacollections.workers.dev" crossorigin />
+    <link
+      rel="preload"
+      as="image"
+      href="https://bauhaus.cascadiacollections.workers.dev/api/today"
+      fetchpriority="high"
+      type="image/avif"
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
@@ -101,9 +108,10 @@
       #bg {
         position: fixed;
         inset: 0;
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
         z-index: 0;
         opacity: 0;
         transition: opacity 1s ease-in-out;
@@ -295,7 +303,7 @@
     ></script>
   </head>
   <body>
-    <div id="bg" aria-hidden="true"></div>
+    <img id="bg" alt="" aria-hidden="true" />
     <main class="container">
       <header class="identity">
         <h1>Kevin Coughlin</h1>
