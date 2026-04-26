@@ -15,8 +15,6 @@ export default [
         fetch: 'readonly',
         Image: 'readonly',
         Date: 'readonly',
-        gtag: 'readonly',
-        dataLayer: 'readonly',
       },
     },
     rules: {
