@@ -18,7 +18,7 @@
     <!-- Security headers (GitHub Pages cannot deliver server headers; meta covers what it can) -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://bauhaus.cascadiacollections.workers.dev https://www.google-analytics.com data:; connect-src 'self' https://bauhaus.cascadiacollections.workers.dev https://www.google-analytics.com; object-src 'none'; base-uri 'self'"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://bauhaus.cascadiacollections.workers.dev data:; connect-src 'self' https://bauhaus.cascadiacollections.workers.dev https://cloudflareinsights.com; object-src 'none'; base-uri 'self'"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
@@ -288,15 +288,11 @@
         }
       }
     </style>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-05KMX1JGS4"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag('js', new Date());
-      gtag('config', 'G-05KMX1JGS4');
-    </script>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
   </head>
   <body>
     <div id="bg" aria-hidden="true"></div>
