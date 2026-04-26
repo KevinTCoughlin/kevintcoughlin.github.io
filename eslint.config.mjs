@@ -19,17 +19,7 @@ export default [
         addEventListener: 'readonly',
         JSON: 'readonly',
         String: 'readonly',
-        PerformanceObserver: 'readonly',
-        performance: 'readonly',
-        requestAnimationFrame: 'readonly',
-        requestIdleCallback: 'readonly',
-        cancelIdleCallback: 'readonly',
-        clearTimeout: 'readonly',
-        setTimeout: 'readonly',
-        queueMicrotask: 'readonly',
-        globalThis: 'readonly',
-        removeEventListener: 'readonly',
-        PerformanceEventTiming: 'readonly',
+        ErrorEvent: 'readonly',
       },
     },
     rules: {
@@ -66,6 +56,6 @@ export default [
     },
   },
   {
-    ignores: ['node_modules/**', 'dist/**', '.git/**'],
+    ignores: ['node_modules/**', 'dist/**', '.git/**', 'web-vitals.js'],
   },
 ];

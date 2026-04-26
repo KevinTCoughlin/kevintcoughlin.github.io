@@ -8,3 +8,4 @@ package-lock.json
 *.txt
 *.xml
 .well-known/
+web-vitals.js
