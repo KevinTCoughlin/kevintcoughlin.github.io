@@ -1,4 +1,8 @@
 version: 2
+# Dependency strategy: Dependabot.
+# Renovate evaluated and skipped — for a 4-dev-dep static-HTML repo, Renovate's
+# grouping/scheduling/dashboard adds no value over Dependabot's defaults.
+# Revisit if dep count grows or grouped multi-ecosystem PRs become useful.
 updates:
   - package-ecosystem: 'npm'
     directory: '/'
