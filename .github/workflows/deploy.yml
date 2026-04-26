@@ -58,7 +58,7 @@ jobs:
           mkdir -p _site/.well-known
           # Copy only files needed at runtime; exclude tooling, lockfiles, docs
           cp index.html manifest.json sitemap.xml robots.txt CNAME humans.txt bauhaus.js _site/
-          cp favicon.png icon-192.png icon-512.png og-image.png _site/
+          cp favicon.png icon-192.png icon-512.png og-image.png apple-touch-icon-180.png _site/
           cp .well-known/security.txt _site/.well-known/
 
       - name: Upload artifact
