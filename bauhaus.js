@@ -32,7 +32,7 @@
     bg.parentNode.removeChild(bg);
     attribution.parentNode.removeChild(attribution);
   };
-  bg.src = API + '/today' + dateParam;
+  bg.src = API + '/today';
 
   try {
     var cachedDate = localStorage.getItem('bg-date');
