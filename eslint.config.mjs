@@ -15,6 +15,11 @@ export default [
         fetch: 'readonly',
         Image: 'readonly',
         Date: 'readonly',
+        navigator: 'readonly',
+        addEventListener: 'readonly',
+        JSON: 'readonly',
+        String: 'readonly',
+        ErrorEvent: 'readonly',
       },
     },
     rules: {
@@ -51,6 +56,6 @@ export default [
     },
   },
   {
-    ignores: ['node_modules/**', 'dist/**', '.git/**'],
+    ignores: ['node_modules/**', 'dist/**', '.git/**', 'web-vitals.js'],
   },
 ];
