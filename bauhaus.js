@@ -22,19 +22,17 @@
   }
 
   var loadStart = Date.now();
-  var img = new Image();
-  img.onload = function () {
-    bg.style.backgroundImage = 'url(' + img.src + ')';
+  bg.onload = function () {
     if (Date.now() - loadStart < CACHE_LOAD_MS) {
       bg.style.transition = 'none';
     }
     bg.classList.add('loaded');
   };
-  img.onerror = function () {
+  bg.onerror = function () {
     bg.parentNode.removeChild(bg);
     attribution.parentNode.removeChild(attribution);
   };
-  img.src = API + '/today' + dateParam;
+  bg.src = API + '/today';
 
   try {
     var cachedDate = localStorage.getItem('bg-date');
