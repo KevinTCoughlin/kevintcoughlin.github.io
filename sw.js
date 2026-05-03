@@ -33,8 +33,10 @@ self.addEventListener('fetch', (event) => {
       const cached = await cache.match(request);
       const networkPromise = fetch(request)
         .then((response) => {
-          if (response.ok) {
-            cache.put(request, response.clone());
+          if (response.ok || response.type === 'opaque') {
+            return cache.put(request, response.clone()).catch(() => {
+              /* cache write failures are non-fatal */
+            }).then(() => response);
           }
           return response;
         })
