@@ -56,6 +56,17 @@ export default [
     },
   },
   {
+    files: ['sw.js'],
+    languageOptions: {
+      globals: {
+        self: 'readonly',
+        caches: 'readonly',
+        URL: 'readonly',
+        Response: 'readonly',
+      },
+    },
+  },
+  {
     ignores: ['node_modules/**', 'dist/**', '.git/**', 'web-vitals.js'],
   },
 ];
