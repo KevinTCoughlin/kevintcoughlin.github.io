@@ -6,14 +6,24 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys.map((key) => {
+            if (key !== IMAGE_CACHE) {
+              return caches.delete(key);
+            }
+            return Promise.resolve(false);
+          })
+        )
+      )
+      .then(() => self.clients.claim())
+  );
 });
 
 function isImageRequest(request) {
-  if (request.destination === 'image') {
-    return true;
-  }
-
   const url = new URL(request.url);
   if (url.hostname === IMAGE_HOST && url.pathname.startsWith('/api/today')) {
     return true;
@@ -34,9 +44,12 @@ self.addEventListener('fetch', (event) => {
       const networkPromise = fetch(request)
         .then((response) => {
           if (response.ok || response.type === 'opaque') {
-            return cache.put(request, response.clone()).catch(() => {
-              /* cache write failures are non-fatal */
-            }).then(() => response);
+            return cache
+              .put(request, response.clone())
+              .catch(() => {
+                /* cache write failures are non-fatal */
+              })
+              .then(() => response);
           }
           return response;
         })
