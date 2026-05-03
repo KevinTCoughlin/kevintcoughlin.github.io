@@ -362,6 +362,15 @@
       </nav>
     </main>
     <footer id="attribution" class="attribution"></footer>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js').catch(function () {
+            /* best effort */
+          });
+        });
+      }
+    </script>
     <script src="/bauhaus.js" defer></script>
     <script type="module" src="/telemetry.js"></script>
     <script type="application/ld+json">
