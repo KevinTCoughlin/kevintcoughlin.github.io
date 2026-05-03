@@ -1,4 +1,5 @@
-const IMAGE_CACHE = 'image-cache-v1';
+const CACHE_PREFIX = 'kevintcoughlin-site-';
+const IMAGE_CACHE = CACHE_PREFIX + 'image-v1';
 const IMAGE_HOST = 'bauhaus.cascadiacollections.workers.dev';
 
 self.addEventListener('install', (event) => {
@@ -12,7 +13,7 @@ self.addEventListener('activate', (event) => {
       .then((keys) =>
         Promise.all(
           keys.map((key) => {
-            if (key !== IMAGE_CACHE) {
+            if (key.startsWith(CACHE_PREFIX) && key !== IMAGE_CACHE) {
               return caches.delete(key);
             }
             return Promise.resolve(false);
@@ -23,9 +24,9 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-function isImageRequest(request) {
+function isBauhausImageRequest(request) {
   const url = new URL(request.url);
-  if (url.hostname === IMAGE_HOST && url.pathname.startsWith('/api/today')) {
+  if (url.hostname === IMAGE_HOST && url.pathname === '/api/today') {
     return true;
   }
 
@@ -34,7 +35,7 @@ function isImageRequest(request) {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  if (request.method !== 'GET' || !isImageRequest(request)) {
+  if (request.method !== 'GET' || !isBauhausImageRequest(request)) {
     return;
   }
 

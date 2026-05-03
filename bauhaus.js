@@ -32,7 +32,16 @@
     bg.parentNode.removeChild(bg);
     attribution.parentNode.removeChild(attribution);
   };
+  bg.crossOrigin = 'anonymous';
   bg.src = API + '/today';
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {
+        /* best effort */
+      });
+    });
+  }
 
   try {
     var cachedDate = localStorage.getItem('bg-date');
