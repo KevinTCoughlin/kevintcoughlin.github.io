@@ -88,31 +88,31 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@html-eslint/core@npm:^0.59.0":
-  version: 0.59.0
-  resolution: "@html-eslint/core@npm:0.59.0"
+"@html-eslint/core@npm:^0.60.0":
+  version: 0.60.0
+  resolution: "@html-eslint/core@npm:0.60.0"
   dependencies:
-    "@html-eslint/types": "npm:^0.59.0"
+    "@html-eslint/types": "npm:^0.60.0"
     html-standard: "npm:^0.0.13"
-  checksum: 10c0/59de8a85181a0a6cf34956796dff982d9355c91eb860b2c515e66d7a6c7683d89929c72777f7e67189305f4ed565d9a37e11223e48a12ca798dd19414642f4ae
+  checksum: 10c0/0a57cbbfa571b2ad92992771476b52c0c1cc1000d6e10890197ec318f75cc1bc9c86800492beddbaf220c15acd9e2e3f8178ea225462eb55304d1a7a79216eaf
   languageName: node
   linkType: hard
 
-"@html-eslint/eslint-plugin@npm:^0.59.0":
-  version: 0.59.0
-  resolution: "@html-eslint/eslint-plugin@npm:0.59.0"
+"@html-eslint/eslint-plugin@npm:^0.60.0":
+  version: 0.60.0
+  resolution: "@html-eslint/eslint-plugin@npm:0.60.0"
   dependencies:
     "@eslint/plugin-kit": "npm:^0.4.1"
-    "@html-eslint/core": "npm:^0.59.0"
-    "@html-eslint/parser": "npm:^0.59.0"
-    "@html-eslint/template-parser": "npm:^0.59.0"
-    "@html-eslint/template-syntax-parser": "npm:^0.59.0"
-    "@html-eslint/types": "npm:^0.59.0"
+    "@html-eslint/core": "npm:^0.60.0"
+    "@html-eslint/parser": "npm:^0.60.0"
+    "@html-eslint/template-parser": "npm:^0.60.0"
+    "@html-eslint/template-syntax-parser": "npm:^0.60.0"
+    "@html-eslint/types": "npm:^0.60.0"
     "@rviscomi/capo.js": "npm:^2.1.0"
     html-standard: "npm:^0.0.13"
   peerDependencies:
     eslint: ">=8.0.0 || ^10.0.0-0"
-  checksum: 10c0/87f419ec25ce7efcce077dbc94e04e79b117f3509d42af995be2b9b6eb1f78091a5af1f3e272ad6e57c56e1cdeacb484c9275aa705e7a2b11235698aa354ad2c
+  checksum: 10c0/3b615e54ab22bffe5bfb19790491022698a0048b41f38c87dc1f96f0ad0ac29b921607ecb2a6d431c090eba239dd78c43212ec7cbb3b95c1adc16743c2cc592a
   languageName: node
   linkType: hard
 
@@ -128,13 +128,25 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@html-eslint/template-parser@npm:^0.59.0":
-  version: 0.59.0
-  resolution: "@html-eslint/template-parser@npm:0.59.0"
+"@html-eslint/parser@npm:^0.60.0":
+  version: 0.60.0
+  resolution: "@html-eslint/parser@npm:0.60.0"
   dependencies:
-    "@html-eslint/types": "npm:^0.59.0"
+    "@html-eslint/template-syntax-parser": "npm:^0.60.0"
+    "@html-eslint/types": "npm:^0.60.0"
+    css-tree: "npm:^3.1.0"
     es-html-parser: "npm:0.3.1"
-  checksum: 10c0/a4a7215afa42a78e22afb7a0073112f92967d1ffb915d01fdd107834da71335b38a2226ba691b963b2240b678be71c1b09926f5c911833ab8813ba66dcf9eba3
+  checksum: 10c0/71931b7ed2d631dd97950f9224101c475abfa0b48314da18913fa7f7c630b477f9ef9f53c59af392d8cf9cf180c01aa3643bd300e723db0ed13de54277900878
+  languageName: node
+  linkType: hard
+
+"@html-eslint/template-parser@npm:^0.60.0":
+  version: 0.60.0
+  resolution: "@html-eslint/template-parser@npm:0.60.0"
+  dependencies:
+    "@html-eslint/types": "npm:^0.60.0"
+    es-html-parser: "npm:0.3.1"
+  checksum: 10c0/beb4811f85527dcfea6d81f6d04359697a65e8723c4dda23776538d3cf9a8684e16f5670658b5f63cbb1640472f5f22ef561a9b629e29c58621e288932ff779f
   languageName: node
   linkType: hard
 
@@ -147,6 +159,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@html-eslint/template-syntax-parser@npm:^0.60.0":
+  version: 0.60.0
+  resolution: "@html-eslint/template-syntax-parser@npm:0.60.0"
+  dependencies:
+    "@html-eslint/types": "npm:^0.60.0"
+  checksum: 10c0/59a9c0cc3ca38def7e6d7f4f6191ac40362097dd986aac2eb78dc465a7b6ca9995c84b3bdffae7614ada76f77c26938eca3de6fc8a8f18aa2f32e0c9e4cbc104
+  languageName: node
+  linkType: hard
+
 "@html-eslint/types@npm:^0.59.0":
   version: 0.59.0
   resolution: "@html-eslint/types@npm:0.59.0"
@@ -155,6 +176,17 @@ __metadata:
     "@types/estree": "npm:^1.0.6"
     es-html-parser: "npm:0.3.1"
   checksum: 10c0/b82dd3fd52b7463c393623bdf9a5b22432a705dbba3a1570a58e8ba0e1f4481d79520f57cdf100ad4824d51277a9506c3de2375ad79bf7c412f1bfbdc853989b
+  languageName: node
+  linkType: hard
+
+"@html-eslint/types@npm:^0.60.0":
+  version: 0.60.0
+  resolution: "@html-eslint/types@npm:0.60.0"
+  dependencies:
+    "@types/css-tree": "npm:^2.3.11"
+    "@types/estree": "npm:^1.0.6"
+    es-html-parser: "npm:0.3.1"
+  checksum: 10c0/0ea1a2bd1458ded00c4208220ce42ea3ec1ecb656c6b44965a462ca41fa526be98e941581054367129c92266787f9811822ba7ee490fddb4f5ce6e850bc6a40b
   languageName: node
   linkType: hard
 
@@ -862,7 +894,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "kevintcoughlin.github.io@workspace:."
   dependencies:
-    "@html-eslint/eslint-plugin": "npm:^0.59.0"
+    "@html-eslint/eslint-plugin": "npm:^0.60.0"
     "@html-eslint/parser": "npm:^0.59.0"
     eslint: "npm:^10.2.1"
     http-server: "npm:^14.1.1"
