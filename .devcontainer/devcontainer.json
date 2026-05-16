@@ -1,13 +1,7 @@
 {
   "name": "Kevin Coughlin Personal Website",
-  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
-
-  "features": {
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "26"
-    },
-    "ghcr.io/devcontainers/features/git:1": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {}
+  "build": {
+    "dockerfile": "Dockerfile"
   },
 
   "customizations": {
@@ -29,7 +23,7 @@
     }
   },
 
-  "postCreateCommand": "bash -c 'export NVM_DIR=/usr/local/share/nvm && . $NVM_DIR/nvm.sh && corepack enable && yarn install --immutable'",
+  "postCreateCommand": "corepack enable && yarn install --immutable",
 
   "forwardPorts": [8080],
 

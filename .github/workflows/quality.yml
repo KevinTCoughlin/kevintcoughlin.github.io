@@ -70,22 +70,13 @@ jobs:
           push: never
           runCmd: |
             set -e
-            # The node devcontainer feature installs Node via nvm under
-            # /usr/local/share/nvm. Source nvm explicitly — bash -lc /
-            # -ilc proved unreliable across CI shells. This is what the
-            # feature itself instructs users to do.
-            bash -c '
-              set -e
-              export NVM_DIR=/usr/local/share/nvm
-              . $NVM_DIR/nvm.sh
-              node --version
-              corepack enable
-              yarn --version
-              yarn install --immutable
-              yarn validate
-              bash scripts/stage-site.sh _site
-              test -f _site/index.html
-            '
+            node --version
+            corepack enable
+            yarn --version
+            yarn install --immutable
+            yarn validate
+            bash scripts/stage-site.sh _site
+            test -f _site/index.html
 
   links:
     name: Link check (lychee)
