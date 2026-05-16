@@ -33,7 +33,7 @@
     attribution.parentNode.removeChild(attribution);
   };
   bg.crossOrigin = 'anonymous';
-  bg.src = API + '/today';
+  bg.src = API + '/today' + dateParam;
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
