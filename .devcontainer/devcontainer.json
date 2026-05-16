@@ -29,7 +29,7 @@
     }
   },
 
-  "postCreateCommand": "yarn install",
+  "postCreateCommand": "corepack enable && yarn install --immutable",
 
   "forwardPorts": [8080],
 
