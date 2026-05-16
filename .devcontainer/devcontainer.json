@@ -29,7 +29,7 @@
     }
   },
 
-  "postCreateCommand": "bash -lc 'corepack enable && yarn install --immutable'",
+  "postCreateCommand": "bash -ilc 'corepack enable && yarn install --immutable'",
 
   "forwardPorts": [8080],
 

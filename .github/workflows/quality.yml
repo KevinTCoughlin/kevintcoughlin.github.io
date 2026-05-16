@@ -70,8 +70,9 @@ jobs:
           push: never
           runCmd: |
             set -e
-            # Login shell so the node feature's nvm shim is on PATH
-            bash -lc '
+            # -i (interactive) so /etc/bash.bashrc is sourced (where the node
+            # feature wires nvm); -l (login) so /etc/profile is also sourced.
+            bash -ilc '
               set -e
               node --version
               yarn --version
