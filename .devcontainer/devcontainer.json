@@ -1,8 +1,6 @@
 {
   "name": "Kevin Coughlin Personal Website",
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
+  "image": "ghcr.io/kevintcoughlin/kevintcoughlin.github.io/devcontainer:latest",
 
   "customizations": {
     "vscode": {
