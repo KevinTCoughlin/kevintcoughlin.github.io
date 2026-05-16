@@ -29,7 +29,7 @@
     }
   },
 
-  "postCreateCommand": "bash -ilc 'corepack enable && yarn install --immutable'",
+  "postCreateCommand": "bash -c 'export NVM_DIR=/usr/local/share/nvm && . $NVM_DIR/nvm.sh && corepack enable && yarn install --immutable'",
 
   "forwardPorts": [8080],
 
