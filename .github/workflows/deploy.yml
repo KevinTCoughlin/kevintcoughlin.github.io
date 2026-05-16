@@ -10,7 +10,6 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  attestations: write
 
 concurrency:
   group: 'pages'
@@ -22,11 +21,6 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
-        with:
-          egress-policy: audit
-
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -36,7 +30,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '26'
+          node-version-file: '.nvmrc'
           cache: 'yarn'
 
       - name: Install dependencies
@@ -55,11 +49,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
-        with:
-          egress-policy: audit
-
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -68,11 +57,6 @@ jobs:
 
       - name: Stage site assets
         run: bash scripts/stage-site.sh _site
-
-      - name: Generate build provenance attestation
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-path: '_site/**/*'
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5

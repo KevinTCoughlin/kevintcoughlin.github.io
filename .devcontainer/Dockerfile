@@ -1,8 +1,8 @@
-# Devcontainer image — official Node 26 on Debian Bookworm.
+# Devcontainer image — official Node 24 LTS on Debian Bookworm.
 # Using the official image (rather than mcr.microsoft.com/devcontainers/javascript-node)
 # means Node sits in /usr/local/bin and is on PATH for any shell — no nvm, no
 # profile-sourcing required for postCreateCommand.
-FROM node:26-bookworm-slim
+FROM node:24-bookworm-slim
 
 # Node.js 25+ no longer bundles Corepack. Install it explicitly so
 # `packageManager: yarn@4.x` in package.json works out of the box.

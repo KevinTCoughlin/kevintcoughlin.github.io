@@ -7,7 +7,7 @@
 ## TL;DR
 
 - Static personal website. No framework. No build step. No backend.
-- Node 26 + Yarn 4 (Corepack). ESLint v10 flat config. Prettier 3.
+- Node 24 LTS + Yarn 4 (Corepack). ESLint v10 flat config. Prettier 3.
 - `master` auto-deploys to GitHub Pages → <https://kevintcoughlin.com>.
 - Analytics: **Cloudflare Web Analytics** (Google Analytics + AdSense were removed in #47).
 - Background images: Cloudflare Worker at `bauhaus.cascadiacollections.workers.dev`.
@@ -20,7 +20,6 @@
 | `yarn start`          | http-server on :8080 (raw repo)                    |
 | `yarn stage`          | Produce `./_site` — **what Pages actually serves** |
 | `yarn preview`        | stage + http-server `./_site`                      |
-| `yarn dev:docker`     | Hot-reload preview via nginx (bind-mounted)        |
 | `yarn preview:docker` | Production-parity preview via nginx                |
 | `yarn validate`       | ESLint + Prettier (matches CI)                     |
 
@@ -36,9 +35,7 @@ runtime file, add it there too.
 - **Don't modify `web-vitals.js` by hand** — it's vendored.
 - **CSP is in `index.html`** via `<meta http-equiv="Content-Security-Policy">`.
   Any new external origin must be added there.
-- **Third-party GitHub Actions are pinned to commit SHA** in workflows with
-  write permissions. First-party actions (`actions/*`, `github/*`) may use
-  major-version tags.
+- **GitHub Actions** pinned to major-version tags; Dependabot bumps weekly.
 
 ## Quality bars (enforced by CI)
 
@@ -57,7 +54,7 @@ runtime file, add it there too.
 - `.well-known/security.txt` — disclosure contact
 - `scripts/stage-site.sh` — staging script
 - `Dockerfile`, `docker-compose.yml` — local preview parity
-- `.github/workflows/` — CI/CD (deploy, quality, scorecard, copilot-setup-steps)
+- `.github/workflows/` — CI/CD (deploy, quality, copilot-setup-steps)
 
 ## When unsure
 

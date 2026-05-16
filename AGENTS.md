@@ -10,7 +10,7 @@ This file is the canonical entry point for AI coding agents working in this repo
 - **Production:** GitHub Pages — auto-deployed on push to `master`
 - **Domain:** <https://kevintcoughlin.com> (via `CNAME`)
 - **Stack:** vanilla HTML / CSS / ES modules, served by GitHub Pages
-- **Toolchain:** Node 26, Yarn 4 (via Corepack), ESLint v10 (flat config), Prettier 3
+- **Toolchain:** Node 24 LTS, Yarn 4 (via Corepack), ESLint v10 (flat config), Prettier 3
 - **Analytics:** Cloudflare Web Analytics (Google Analytics + AdSense were removed in #47)
 - **Background images:** Cloudflare Worker at `bauhaus.cascadiacollections.workers.dev`
 
@@ -29,22 +29,20 @@ This file is the canonical entry point for AI coding agents working in this repo
 | `scripts/stage-site.sh`                   | **Source of truth** for "what files ship to prod"                                                         |
 | `Dockerfile` + `docker-compose.yml`       | Production-parity local preview via nginx                                                                 |
 | `.github/workflows/deploy.yml`            | Validate → stage → Pages deploy                                                                           |
-| `.github/workflows/quality.yml`           | Lighthouse CI + lychee link check                                                                         |
+| `.github/workflows/quality.yml`           | Lighthouse CI + lychee link check (PRs); devcontainer smoke test (weekly cron)                            |
 | `.github/workflows/codeql.yml`            | _(removed — GitHub's default Code Scanning setup is enabled in repo settings; no workflow file required)_ |
-| `.github/workflows/scorecard.yml`         | OSSF Scorecard supply-chain score                                                                         |
 
 ## Commands
 
 ```bash
 yarn install            # Corepack auto-pins Yarn 4
-yarn start              # http-server on :8080 (dev only — no headers)
+yarn start              # http-server on :8080 — fastest local loop
 yarn lint               # ESLint
 yarn format             # Prettier check
 yarn validate           # lint + format (matches CI)
 yarn stage              # Produce ./_site (what Pages will serve)
 
-docker compose --profile dev up      # Hot-reload dev preview (bind-mounted)
-docker compose up                    # Production-parity preview (built image)
+docker compose up       # Production-parity preview (built nginx image)
 ```
 
 ## Hard rules for agents
@@ -60,13 +58,9 @@ docker compose up                    # Production-parity preview (built image)
 5. **CSP is set via `<meta http-equiv>` in `index.html`.** Any new external origin
    (script, image, fetch) must be added to the appropriate directive.
 6. **No secrets in this repo.** There is no server, so there's no place for them anyway.
-7. **Pin third-party GitHub Actions to commit SHA** in any workflow with write
-   permissions (`deploy.yml`, `scorecard.yml`). First-party actions under
-   `actions/*` and `github/*` may use major-version tags — they're trusted via
-   the GITHUB_TOKEN provenance and bumped by Dependabot. Examples in this repo:
-   `step-security/harden-runner` and `ossf/scorecard-action` are SHA-pinned;
-   `actions/checkout`, `actions/setup-node`, `actions/deploy-pages`,
-   `github/codeql-action/*` are tag-pinned.
+7. **GitHub Actions pinning:** any action can use a major-version tag — Dependabot
+   bumps them weekly. Pinning to SHA is optional; only do it if there's a concrete
+   threat model (a personal static site doesn't have one).
 8. **Yarn is the package manager.** `package-lock.json` should never appear.
 
 ## Quality bars (enforced by CI)

@@ -28,9 +28,30 @@
     }
     bg.classList.add('loaded');
   };
+  // Inline SVG fallback — used when the bauhaus Worker is unreachable so
+  // visitors don't see a blank hero. Small (~1KB), Bauhaus-palette nod.
+  var FALLBACK =
+    'data:image/svg+xml;utf8,' +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">' +
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+        '<stop offset="0" stop-color="#1a1a1a"/><stop offset="1" stop-color="#3a2a1a"/>' +
+        '</linearGradient></defs>' +
+        '<rect width="1200" height="800" fill="url(#g)"/>' +
+        '<circle cx="380" cy="320" r="170" fill="#ff5f2e"/>' +
+        '<rect x="600" y="120" width="320" height="320" fill="#f3c623"/>' +
+        '<rect x="180" y="540" width="780" height="40" fill="#0b7a75"/>' +
+        '</svg>'
+    );
+
   bg.onerror = function () {
-    bg.parentNode.removeChild(bg);
-    attribution.parentNode.removeChild(attribution);
+    // Don't tear the element down — swap to the offline fallback so the
+    // hero never goes blank. The bauhaus Worker is otherwise a SPOF.
+    if (bg.src.indexOf('data:image/svg') !== 0) {
+      bg.onerror = null;
+      bg.src = FALLBACK;
+      updateAttribution('bauhaus (offline fallback)');
+    }
   };
   bg.crossOrigin = 'anonymous';
   bg.src = API + '/today' + dateParam;
