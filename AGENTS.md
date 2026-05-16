@@ -10,7 +10,7 @@ This file is the canonical entry point for AI coding agents working in this repo
 - **Production:** GitHub Pages — auto-deployed on push to `master`
 - **Domain:** <https://kevintcoughlin.com> (via `CNAME`)
 - **Stack:** vanilla HTML / CSS / ES modules, served by GitHub Pages
-- **Toolchain:** Node 24, Yarn 4 (via Corepack), ESLint v10 (flat config), Prettier 3
+- **Toolchain:** Node 26, Yarn 4 (via Corepack), ESLint v10 (flat config), Prettier 3
 - **Analytics:** Cloudflare Web Analytics (Google Analytics + AdSense were removed in #47)
 - **Background images:** Cloudflare Worker at `bauhaus.cascadiacollections.workers.dev`
 

@@ -7,7 +7,7 @@
 ## TL;DR
 
 - Static personal website. No framework. No build step. No backend.
-- Node 24 + Yarn 4 (Corepack). ESLint v10 flat config. Prettier 3.
+- Node 26 + Yarn 4 (Corepack). ESLint v10 flat config. Prettier 3.
 - `master` auto-deploys to GitHub Pages → <https://kevintcoughlin.com>.
 - Analytics: **Cloudflare Web Analytics** (Google Analytics + AdSense were removed in #47).
 - Background images: Cloudflare Worker at `bauhaus.cascadiacollections.workers.dev`.
