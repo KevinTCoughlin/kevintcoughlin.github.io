@@ -41,7 +41,7 @@ runtime file, add it there too.
 
 - Lighthouse: perf ≥ 90, a11y ≥ 95, best-practices ≥ 90, SEO ≥ 95
 - Lychee: no broken links in `index.html`, `README.md`, `sitemap.xml`
-- CodeQL: clean for JavaScript and Actions
+- CodeQL: clean for JavaScript (provided by GitHub's default Code Scanning setup)
 - OSSF Scorecard: monitored weekly
 
 ## File map (selected)
@@ -54,7 +54,7 @@ runtime file, add it there too.
 - `.well-known/security.txt` — disclosure contact
 - `scripts/stage-site.sh` — staging script
 - `Dockerfile`, `docker-compose.yml` — local preview parity
-- `.github/workflows/` — CI/CD (deploy, quality, codeql, scorecard, copilot-setup-steps)
+- `.github/workflows/` — CI/CD (deploy, quality, scorecard, copilot-setup-steps)
 
 ## When unsure
 

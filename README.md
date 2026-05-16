@@ -2,7 +2,6 @@
 
 [![Deploy](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/deploy.yml/badge.svg)](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/deploy.yml)
 [![Quality](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/quality.yml/badge.svg)](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/quality.yml)
-[![CodeQL](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/codeql.yml/badge.svg)](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/codeql.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/KevinTCoughlin/kevintcoughlin.github.io/badge)](https://scorecard.dev/viewer/?uri=github.com/KevinTCoughlin/kevintcoughlin.github.io)
 
 My personal website. Static, framework-free, deployed to GitHub Pages.
@@ -69,9 +68,11 @@ Push to `master` → [`deploy.yml`](.github/workflows/deploy.yml) runs:
 | ------------------------- | --------------------------------------------------- | ------------------------ |
 | `deploy.yml`              | Validate → stage → attest → deploy to Pages         | push to `master`, manual |
 | `quality.yml`             | Lighthouse CI (desktop, 3 runs) + lychee link check | PRs, push, weekly cron   |
-| `codeql.yml`              | Static analysis (JS/TS + Actions)                   | PRs, push, weekly cron   |
 | `scorecard.yml`           | OSSF Scorecard supply-chain rating                  | weekly cron, push        |
 | `copilot-setup-steps.yml` | Preinstall env for Copilot Coding Agent             | manual                   |
+
+CodeQL is provided by GitHub's **default Code Scanning setup** (configured in
+repository Settings → Code security), so no workflow file is needed.
 
 All workflows use [`step-security/harden-runner`](https://github.com/step-security/harden-runner)
 in audit mode. The deploy workflow uses commit-SHA-pinned actions for any step
