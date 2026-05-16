@@ -72,12 +72,12 @@ Push to `master` → [`deploy.yml`](.github/workflows/deploy.yml) runs:
 
 ## CI workflows
 
-| Workflow                  | Purpose                                             | Trigger                  |
-| ------------------------- | --------------------------------------------------- | ------------------------ |
-| `deploy.yml`              | Validate → stage → attest → deploy to Pages                     | push to `master`, manual |
-| `quality.yml`             | Lighthouse CI + lychee link check + devcontainer smoke test     | PRs, push, weekly cron   |
-| `scorecard.yml`           | OSSF Scorecard supply-chain rating                              | weekly cron, push        |
-| `copilot-setup-steps.yml` | Preinstall env for Copilot Coding Agent                         | manual                   |
+| Workflow                  | Purpose                                                     | Trigger                  |
+| ------------------------- | ----------------------------------------------------------- | ------------------------ |
+| `deploy.yml`              | Validate → stage → attest → deploy to Pages                 | push to `master`, manual |
+| `quality.yml`             | Lighthouse CI + lychee link check + devcontainer smoke test | PRs, push, weekly cron   |
+| `scorecard.yml`           | OSSF Scorecard supply-chain rating                          | weekly cron, push        |
+| `copilot-setup-steps.yml` | Preinstall env for Copilot Coding Agent                     | manual                   |
 
 CodeQL is provided by GitHub's **default Code Scanning setup** (configured in
 repository Settings → Code security), so no workflow file is needed.
