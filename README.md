@@ -22,7 +22,7 @@ My personal website. Static, framework-free, deployed to GitHub Pages.
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 24.x (via [Corepack](https://nodejs.org/api/corepack.html))
+- [Node.js](https://nodejs.org/) 26.x (via [Corepack](https://nodejs.org/api/corepack.html))
 - [Yarn](https://yarnpkg.com/) 4 — installed automatically by Corepack
 - [Docker](https://www.docker.com/) (optional — for production-parity preview)
 
@@ -72,12 +72,12 @@ Push to `master` → [`deploy.yml`](.github/workflows/deploy.yml) runs:
 
 ## CI workflows
 
-| Workflow                  | Purpose                                             | Trigger                  |
-| ------------------------- | --------------------------------------------------- | ------------------------ |
-| `deploy.yml`              | Validate → stage → attest → deploy to Pages         | push to `master`, manual |
-| `quality.yml`             | Lighthouse CI (desktop, 3 runs) + lychee link check | PRs, push, weekly cron   |
-| `scorecard.yml`           | OSSF Scorecard supply-chain rating                  | weekly cron, push        |
-| `copilot-setup-steps.yml` | Preinstall env for Copilot Coding Agent             | manual                   |
+| Workflow                  | Purpose                                                     | Trigger                  |
+| ------------------------- | ----------------------------------------------------------- | ------------------------ |
+| `deploy.yml`              | Validate → stage → attest → deploy to Pages                 | push to `master`, manual |
+| `quality.yml`             | Lighthouse CI + lychee link check + devcontainer smoke test | PRs, push, weekly cron   |
+| `scorecard.yml`           | OSSF Scorecard supply-chain rating                          | weekly cron, push        |
+| `copilot-setup-steps.yml` | Preinstall env for Copilot Coding Agent                     | manual                   |
 
 CodeQL is provided by GitHub's **default Code Scanning setup** (configured in
 repository Settings → Code security), so no workflow file is needed.
