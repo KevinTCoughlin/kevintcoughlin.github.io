@@ -44,13 +44,21 @@ yarn validate           # lint + format — matches CI
 
 ### Docker preview
 
+Two profiles:
+
 ```bash
-docker compose up --build
-# → http://localhost:8080
+# Rapid prototyping — bind-mounts the repo; edits are live, no rebuild.
+docker compose --profile dev up        # or: yarn dev:docker
+# → http://localhost:8080  (Cache-Control: no-store, autoindex on)
+
+# Production-parity — builds the image with staged _site/ baked in.
+docker compose up --build              # or: yarn preview:docker
+# → http://localhost:8080  (read-only rootfs, non-root, hardened)
 ```
 
-The container runs nginx as non-root on port 8080, serving the same files
-GitHub Pages would. Useful for sanity-checking before merge.
+Use `dev` while iterating, `prod` for a sanity check before opening a PR.
+The dev container has no build step, so startup is < 2 s; the prod container
+runs the same nginx config that gets bundled in the image.
 
 ## Deployment
 

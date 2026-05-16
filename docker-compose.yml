@@ -1,14 +1,45 @@
 services:
+  # Production-parity preview — builds the image with staged _site/ baked in.
+  # Use for pre-merge sanity checks. Rebuild required after each edit.
+  #   docker compose up --build
   site:
     build: .
     image: kevintcoughlin-site:local
     container_name: kevintcoughlin-site
+    profiles: ['', 'prod']
     ports:
       - '8080:8080'
     read_only: true
     tmpfs:
       - /var/cache/nginx
       - /tmp
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  # Rapid-prototyping dev preview — bind-mounts the repo so edits are live.
+  # No build step; nginx serves files directly from your working tree.
+  #   docker compose --profile dev up        # → http://localhost:8080
+  # Then edit any file and hit refresh.
+  dev:
+    image: nginx:1.27-alpine
+    container_name: kevintcoughlin-site-dev
+    profiles: ['dev']
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./:/srv:ro
+    command: >-
+      sh -c "
+      sed -i 's/listen\\s*80;/listen 8080;/' /etc/nginx/conf.d/default.conf &&
+      sed -i 's|/usr/share/nginx/html|/srv|g' /etc/nginx/conf.d/default.conf &&
+      sed -i -E 's|^pid\\s+.*;|pid /tmp/nginx.pid;|' /etc/nginx/nginx.conf &&
+      printf 'add_header Cache-Control \"no-store\";\\nautoindex on;\\n' > /etc/nginx/conf.d/dev.conf &&
+      exec nginx -g 'daemon off;'
+      "
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
     security_opt:
       - no-new-privileges:true
     restart: unless-stopped
