@@ -20,6 +20,7 @@
 | `yarn start`          | http-server on :8080 (raw repo)                    |
 | `yarn stage`          | Produce `./_site` — **what Pages actually serves** |
 | `yarn preview`        | stage + http-server `./_site`                      |
+| `yarn dev:docker`     | Hot-reload preview via nginx (bind-mounted)        |
 | `yarn preview:docker` | Production-parity preview via nginx                |
 | `yarn validate`       | ESLint + Prettier (matches CI)                     |
 

@@ -43,7 +43,8 @@ yarn format             # Prettier check
 yarn validate           # lint + format (matches CI)
 yarn stage              # Produce ./_site (what Pages will serve)
 
-docker compose up       # Production-parity preview at :8080 (nginx)
+docker compose --profile dev up      # Hot-reload dev preview (bind-mounted)
+docker compose up                    # Production-parity preview (built image)
 ```
 
 ## Hard rules for agents
