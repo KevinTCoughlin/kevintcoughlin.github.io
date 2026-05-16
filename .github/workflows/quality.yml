@@ -70,12 +70,16 @@ jobs:
           push: never
           runCmd: |
             set -e
-            node --version
-            yarn --version
-            yarn install --immutable
-            yarn validate
-            bash scripts/stage-site.sh _site
-            test -f _site/index.html
+            # Login shell so the node feature's nvm shim is on PATH
+            bash -lc '
+              set -e
+              node --version
+              yarn --version
+              yarn install --immutable
+              yarn validate
+              bash scripts/stage-site.sh _site
+              test -f _site/index.html
+            '
 
   links:
     name: Link check (lychee)
