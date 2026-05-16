@@ -6,7 +6,7 @@ on:
     branches:
       - master
   schedule:
-    # Weekly link-rot check (Mondays 09:00 UTC)
+    # Weekly link-rot check + devcontainer smoke test (Mondays 09:00 UTC)
     - cron: '0 9 * * 1'
   workflow_dispatch:
 
@@ -21,20 +21,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
-        with:
-          egress-policy: audit
-
       - uses: actions/checkout@v6
-
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '26'
 
       - name: Stage site assets
         run: bash scripts/stage-site.sh _site
@@ -46,49 +33,12 @@ jobs:
           uploadArtifacts: true
           temporaryPublicStorage: true
 
-  devcontainer:
-    name: Devcontainer smoke test
-    runs-on: ubuntu-latest
-    if: github.event_name != 'schedule'
-    permissions:
-      contents: read
-    steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
-        with:
-          egress-policy: audit
-
-      - uses: actions/checkout@v6
-
-      # Builds .devcontainer/devcontainer.json end-to-end and runs the same
-      # validation commands a contributor would run locally. Catches silent
-      # regressions like a stale base-image tag or a feature that no longer
-      # resolves.
-      - name: Build devcontainer and validate
-        uses: devcontainers/ci@v0.3
-        with:
-          push: never
-          runCmd: |
-            set -e
-            node --version
-            corepack enable
-            yarn --version
-            yarn install --immutable
-            yarn validate
-            bash scripts/stage-site.sh _site
-            test -f _site/index.html
-
   links:
     name: Link check (lychee)
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
-        with:
-          egress-policy: audit
-
       - uses: actions/checkout@v6
 
       - name: Restore lychee cache
@@ -109,3 +59,29 @@ jobs:
             --accept 200,206,301,302,403,429
             'index.html' 'README.md' 'sitemap.xml'
           fail: true
+
+  devcontainer:
+    name: Devcontainer smoke test
+    # Run on weekly schedule + manual dispatch only. Catches devcontainer
+    # rot (broken base image, missing tool, postCreate regression) without
+    # paying the cost on every PR.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build devcontainer and validate
+        uses: devcontainers/ci@v0.3
+        with:
+          push: never
+          runCmd: |
+            set -e
+            node --version
+            corepack enable
+            yarn --version
+            yarn install --immutable
+            yarn validate
+            bash scripts/stage-site.sh _site
+            test -f _site/index.html
