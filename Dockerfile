@@ -18,7 +18,8 @@ FROM nginx:1.27-alpine AS runtime
 # nginx:alpine ships a 'nginx' user (uid 101). We:
 #   - flip listen port from 80 → 8080 (non-root can't bind <1024)
 #   - point document root at /srv
-#   - relocate the pid file under /var/run/nginx (writable by nginx user)
+#   - relocate the pid file to /tmp (mounted as tmpfs in compose) so the
+#     container can run with a read-only root filesystem
 RUN sed -i 's/listen\s*80;/listen 8080;/' /etc/nginx/conf.d/default.conf \
  && sed -i 's|/usr/share/nginx/html|/srv|g' /etc/nginx/conf.d/default.conf \
  && sed -i -E 's|^pid\s+.*;|pid /tmp/nginx.pid;|' /etc/nginx/nginx.conf \

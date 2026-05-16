@@ -4,6 +4,8 @@
 set -euo pipefail
 
 OUT="${1:-_site}"
+# Recreate the output dir so removed files don't linger from a previous run.
+rm -rf "$OUT"
 mkdir -p "$OUT/.well-known"
 
 # Runtime files only — exclude lockfiles, configs, tooling, docs.

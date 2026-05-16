@@ -35,7 +35,9 @@ runtime file, add it there too.
 - **Don't modify `web-vitals.js` by hand** — it's vendored.
 - **CSP is in `index.html`** via `<meta http-equiv="Content-Security-Policy">`.
   Any new external origin must be added there.
-- **GitHub Actions in write-permission workflows are pinned to commit SHA.**
+- **Third-party GitHub Actions are pinned to commit SHA** in workflows with
+  write permissions. First-party actions (`actions/*`, `github/*`) may use
+  major-version tags.
 
 ## Quality bars (enforced by CI)
 

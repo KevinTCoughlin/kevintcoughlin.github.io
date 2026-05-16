@@ -8,7 +8,7 @@ Use one of these channels instead, in order of preference:
 
 1. **GitHub Private Vulnerability Reporting**:
    <https://github.com/KevinTCoughlin/kevintcoughlin.github.io/security/advisories/new>
-2. Email the address listed in [`.well-known/security.txt`](./.well-known/security.txt).
+2. Email the address listed in [`../.well-known/security.txt`](../.well-known/security.txt).
 
 Expect an initial acknowledgement within **72 hours**.
 

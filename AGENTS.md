@@ -59,8 +59,13 @@ docker compose up       # Production-parity preview at :8080 (nginx)
 5. **CSP is set via `<meta http-equiv>` in `index.html`.** Any new external origin
    (script, image, fetch) must be added to the appropriate directive.
 6. **No secrets in this repo.** There is no server, so there's no place for them anyway.
-7. **Pin GitHub Actions to commit SHA**, not version tags, for any workflow with
-   write permissions (`deploy.yml`). Tag-pinning is acceptable for read-only workflows.
+7. **Pin third-party GitHub Actions to commit SHA** in any workflow with write
+   permissions (`deploy.yml`, `scorecard.yml`). First-party actions under
+   `actions/*` and `github/*` may use major-version tags — they're trusted via
+   the GITHUB_TOKEN provenance and bumped by Dependabot. Examples in this repo:
+   `step-security/harden-runner` and `ossf/scorecard-action` are SHA-pinned;
+   `actions/checkout`, `actions/setup-node`, `actions/deploy-pages`,
+   `github/codeql-action/*` are tag-pinned.
 8. **Yarn is the package manager.** `package-lock.json` should never appear.
 
 ## Quality bars (enforced by CI)

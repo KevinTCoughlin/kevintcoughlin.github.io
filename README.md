@@ -75,8 +75,9 @@ CodeQL is provided by GitHub's **default Code Scanning setup** (configured in
 repository Settings → Code security), so no workflow file is needed.
 
 All workflows use [`step-security/harden-runner`](https://github.com/step-security/harden-runner)
-in audit mode. The deploy workflow uses commit-SHA-pinned actions for any step
-with `write` permissions.
+in audit mode (SHA-pinned). Third-party actions in write-permission workflows
+are SHA-pinned; first-party `actions/*` and `github/*` use major-version tags
+and are auto-bumped by Dependabot.
 
 ## External integrations
 
