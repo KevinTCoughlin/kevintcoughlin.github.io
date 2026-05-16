@@ -1,0 +1,14 @@
+services:
+  site:
+    build: .
+    image: kevintcoughlin-site:local
+    container_name: kevintcoughlin-site
+    ports:
+      - '8080:8080'
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped

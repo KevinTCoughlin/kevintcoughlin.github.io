@@ -12,14 +12,20 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
   lighthouse:
     name: Lighthouse CI
     runs-on: ubuntu-latest
     if: github.event_name != 'schedule'
+    permissions:
+      contents: read
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v6
 
       - name: Enable Corepack
@@ -31,11 +37,7 @@ jobs:
           node-version: '24'
 
       - name: Stage site assets
-        run: |
-          mkdir -p _site/.well-known
-          cp index.html manifest.json sitemap.xml robots.txt CNAME humans.txt bauhaus.js sw.js telemetry.js web-vitals.js _site/
-          cp favicon.png icon-192.png icon-512.png og-image.png apple-touch-icon-180.png _site/
-          cp .well-known/security.txt _site/.well-known/
+        run: bash scripts/stage-site.sh _site
 
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v12
@@ -47,7 +49,14 @@ jobs:
   links:
     name: Link check (lychee)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v6
 
       - name: Restore lychee cache

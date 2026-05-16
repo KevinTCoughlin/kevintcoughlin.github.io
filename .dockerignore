@@ -1,0 +1,20 @@
+# Keep the build context minimal — only files needed by scripts/stage-site.sh.
+.git
+.github
+.devcontainer
+node_modules
+_site
+.yarn
+.yarnrc.yml
+yarn.lock
+package.json
+eslint.config.mjs
+.prettierrc.json
+.prettierignore
+.lighthouserc.json
+netlify.toml
+README.md
+AGENTS.md
+Dockerfile
+docker-compose.yml
+.dockerignore

@@ -1,46 +1,65 @@
 # Copilot Instructions for kevintcoughlin.github.io
 
-This repository is a personal website, statically served via GitHub Pages. Follow these guidelines to ensure AI coding agents are productive and consistent with project conventions.
+> **Canonical guide:** [`AGENTS.md`](../AGENTS.md) at the repo root.
+> This file remains for tooling that specifically reads `.github/copilot-instructions.md`.
+> When the two conflict, `AGENTS.md` wins.
 
-## Project Overview
+## TL;DR
 
-- **Type:** Static personal website
-- **Deployment:** Auto-deployed to GitHub Pages on every push to `master`
-- **Dev Environment:** VS Code Dev Containers or GitHub Codespaces (see devcontainer config)
+- Static personal website. No framework. No build step. No backend.
+- Node 24 + Yarn 4 (Corepack). ESLint v10 flat config. Prettier 3.
+- `master` auto-deploys to GitHub Pages → <https://kevintcoughlin.com>.
+- Analytics: **Cloudflare Web Analytics** (Google Analytics + AdSense were removed in #47).
+- Background images: Cloudflare Worker at `bauhaus.cascadiacollections.workers.dev`.
 
-## Key Workflows
+## Workflows you need to know
 
-- **Local Development:**
-  - Install dependencies: `yarn install`
-  - Start local server: `yarn start`
-- **Deployment:**
-  - No manual steps; deployment is handled by GitHub Actions on push to `master`.
+| Command               | What it does                                       |
+| --------------------- | -------------------------------------------------- |
+| `yarn install`        | Install dev deps                                   |
+| `yarn start`          | http-server on :8080 (raw repo)                    |
+| `yarn stage`          | Produce `./_site` — **what Pages actually serves** |
+| `yarn preview`        | stage + http-server `./_site`                      |
+| `yarn preview:docker` | Production-parity preview via nginx                |
+| `yarn validate`       | ESLint + Prettier (matches CI)                     |
 
-## File/Directory Conventions
+The deploy workflow uses [`scripts/stage-site.sh`](../scripts/stage-site.sh) as the
+single source of truth for the file list shipped to production. If you add a new
+runtime file, add it there too.
 
-- `index.html`: Main entry point for the site
-- `manifest.json`, `robots.txt`, `CNAME`: Standard static site config files
-- `package.json`: Defines dependencies and scripts (uses Yarn)
-- `.github/`: GitHub-specific configuration (actions, instructions)
+## Conventions
 
-## Patterns & Practices
+- **Commits:** Conventional Commits. Dependabot uses `chore(deps)` / `chore(ci)`.
+- **Branch:** trunk-based on `master`.
+- **Don't introduce frameworks/bundlers/transpilers.**
+- **Don't modify `web-vitals.js` by hand** — it's vendored.
+- **CSP is in `index.html`** via `<meta http-equiv="Content-Security-Policy">`.
+  Any new external origin must be added there.
+- **Third-party GitHub Actions are pinned to commit SHA** in workflows with
+  write permissions. First-party actions (`actions/*`, `github/*`) may use
+  major-version tags.
 
-- **No build step**: Site is served as static files; avoid introducing frameworks or build tools unless explicitly requested.
-- **Minimal external dependencies**: Only add packages if necessary and document their purpose in `README.md`.
-- **Keep HTML/CSS/JS simple**: Prioritize maintainability and clarity over complexity.
-- **No backend/server code**: All logic should run client-side.
+## Quality bars (enforced by CI)
 
-## Examples
+- Lighthouse: perf ≥ 90, a11y ≥ 95, best-practices ≥ 90, SEO ≥ 95
+- Lychee: no broken links in `index.html`, `README.md`, `sitemap.xml`
+- CodeQL: clean for JavaScript (provided by GitHub's default Code Scanning setup)
+- OSSF Scorecard: monitored weekly
 
-- To add a new page, create a new HTML file and link it from `index.html`.
-- To update site metadata, edit `manifest.json` and `index.html`.
+## File map (selected)
 
-## Integration Points
+- `index.html` — entry point (inline `<style>`, ES module imports)
+- `bauhaus.js` — daily background image + caching
+- `sw.js` — service worker (image cache)
+- `telemetry.js`, `web-vitals.js` — self-hosted beacons
+- `manifest.json` — PWA
+- `.well-known/security.txt` — disclosure contact
+- `scripts/stage-site.sh` — staging script
+- `Dockerfile`, `docker-compose.yml` — local preview parity
+- `.github/workflows/` — CI/CD (deploy, quality, scorecard, copilot-setup-steps)
 
-- **GitHub Actions**: See `.github/workflows/deploy.yml` for deployment automation.
-- **Custom Domain**: Managed via `CNAME` file.
+## When unsure
 
-## When in Doubt
-
-- Reference `README.md` for up-to-date workflow instructions.
-- Ask for clarification before introducing new tools or major changes.
+- Read [`AGENTS.md`](../AGENTS.md).
+- Look at recent merged PRs (`gh pr list --state merged --limit 10`).
+- Open a draft PR with a question rather than guessing on architecture.
