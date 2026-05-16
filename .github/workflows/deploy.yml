@@ -10,6 +10,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  attestations: write
 
 concurrency:
   group: 'pages'
@@ -18,7 +19,14 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
+        with:
+          egress-policy: audit
+
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -47,6 +55,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
+        with:
+          egress-policy: audit
+
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -54,12 +67,12 @@ jobs:
         uses: actions/configure-pages@v6
 
       - name: Stage site assets
-        run: |
-          mkdir -p _site/.well-known
-          # Copy only files needed at runtime; exclude tooling, lockfiles, docs
-          cp index.html manifest.json sitemap.xml robots.txt CNAME humans.txt bauhaus.js sw.js telemetry.js web-vitals.js _site/
-          cp favicon.png icon-192.png icon-512.png og-image.png apple-touch-icon-180.png _site/
-          cp .well-known/security.txt _site/.well-known/
+        run: bash scripts/stage-site.sh _site
+
+      - name: Generate build provenance attestation
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: '_site/**/*'
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5

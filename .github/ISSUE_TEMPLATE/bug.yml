@@ -1,0 +1,41 @@
+name: Bug report
+description: Something on the site doesn't work the way it should.
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill out as much as you can.
+        For security issues, see [SECURITY.md](../SECURITY.md) instead.
+  - type: input
+    id: url
+    attributes:
+      label: URL where the bug occurs
+      placeholder: https://kevintcoughlin.com/
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect to see?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Go to ...
+        2. Click on ...
+        3. See error
+  - type: input
+    id: browser
+    attributes:
+      label: Browser / OS / device
+      placeholder: 'Safari 17 on macOS 14, iPhone 15 / Safari, Edge 131 on Windows 11, ...'
+  - type: textarea
+    id: console
+    attributes:
+      label: Console errors (if any)
+      render: shell

@@ -1,93 +1,93 @@
 # kevintcoughlin.com
 
-[![Deploy to GitHub Pages](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/deploy.yml/badge.svg)](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/deploy.yml)
+[![Deploy](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/deploy.yml/badge.svg)](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/deploy.yml)
+[![Quality](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/quality.yml/badge.svg)](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/quality.yml)
+[![CodeQL](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/codeql.yml/badge.svg)](https://github.com/KevinTCoughlin/kevintcoughlin.github.io/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/KevinTCoughlin/kevintcoughlin.github.io/badge)](https://scorecard.dev/viewer/?uri=github.com/KevinTCoughlin/kevintcoughlin.github.io)
 
-My personal website built as a static site and deployed to GitHub Pages.
+My personal website. Static, framework-free, deployed to GitHub Pages.
+
+> **For AI coding agents:** start with [`AGENTS.md`](./AGENTS.md).
 
 ## Features
 
-- Static HTML/CSS/JavaScript site (no build step required)
-- Daily rotating background images from the [Bauhaus Collection](https://github.com/cascadiacollections/bauhaus)
-- PWA-ready with a linked web app manifest
-- Optimized caching strategy using localStorage and query parameters
-- Responsive design with smooth animations
+- Single-page static site — no framework, no build step
+- Daily rotating background from the [Bauhaus](https://github.com/cascadiacollections/bauhaus) Cloudflare Worker
+- PWA manifest + service-worker image cache (`sw.js`)
+- Self-hosted error / Web Vitals beacons (`telemetry.js`)
+- Cloudflare Web Analytics (privacy-respecting, no cookies)
+- CSP via `<meta>`, `security.txt`, signed `WebFinger`-style identity link
+- Build provenance attestations on every Pages deploy
 
 ## Development
 
-This repository includes a devcontainer configuration for development in VS Code or GitHub Codespaces.
-
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 24.x or later
-- [Yarn](https://yarnpkg.com/) 4.x (via [Corepack](https://nodejs.org/api/corepack.html))
+- [Node.js](https://nodejs.org/) 24.x (via [Corepack](https://nodejs.org/api/corepack.html))
+- [Yarn](https://yarnpkg.com/) 4 — installed automatically by Corepack
+- [Docker](https://www.docker.com/) (optional — for production-parity preview)
 
-### Local Development
+A [devcontainer](.devcontainer/devcontainer.json) is provided for VS Code and Codespaces.
+
+### Common commands
 
 ```bash
-# Install dependencies
-yarn install
+yarn install            # Install dev deps
+yarn start              # http-server on :8080 (raw repo, no staging)
+yarn stage              # Produce ./_site (exactly what Pages serves)
+yarn preview            # stage + http-server ./_site
+yarn preview:docker     # stage + nginx via docker compose (prod parity)
 
-# Start local development server (opens browser automatically)
-yarn start
-
-# Run linting
-yarn lint
-
-# Fix linting issues automatically
-yarn lint:fix
-
-# Check code formatting
-yarn format
-
-# Fix formatting issues automatically
-yarn format:fix
-
-# Run all validations (lint + format)
-yarn validate
+yarn lint               # ESLint (incl. html-eslint)
+yarn format             # Prettier check
+yarn validate           # lint + format — matches CI
 ```
 
-The development server runs on http://localhost:8080.
+### Docker preview
 
-### Code Quality
+```bash
+docker compose up --build
+# → http://localhost:8080
+```
 
-This project uses:
-
-- **ESLint** for JavaScript linting (with HTML plugin support)
-- **Prettier** for code formatting
-- **GitHub Actions** for automated validation on every push
-
-All code is validated automatically in CI/CD before deployment.
+The container runs nginx as non-root on port 8080, serving the same files
+GitHub Pages would. Useful for sanity-checking before merge.
 
 ## Deployment
 
-The site is automatically deployed to GitHub Pages when changes are pushed to the `master` branch. The deployment process:
+Push to `master` → [`deploy.yml`](.github/workflows/deploy.yml) runs:
 
-1. Validates code with ESLint and Prettier
-2. Deploys static files to GitHub Pages
-3. Makes the site available at [kevintcoughlin.com](https://kevintcoughlin.com)
+1. **Validate** — ESLint + Prettier
+2. **Stage** — `scripts/stage-site.sh _site` (single source of truth for the file
+   list that ships to production — also reused by Lighthouse CI and Docker)
+3. **Attest** — `actions/attest-build-provenance` signs the artifact
+4. **Deploy** — `actions/deploy-pages` publishes to <https://kevintcoughlin.com>
 
-## External Integrations
+## CI workflows
 
-- **Bauhaus API**: Daily background images from `https://bauhaus.cascadiacollections.workers.dev`
-- **Google Analytics**: Site analytics (GA4)
-- **Google AdSense**: Ad management
+| Workflow                  | Purpose                                             | Trigger                  |
+| ------------------------- | --------------------------------------------------- | ------------------------ |
+| `deploy.yml`              | Validate → stage → attest → deploy to Pages         | push to `master`, manual |
+| `quality.yml`             | Lighthouse CI (desktop, 3 runs) + lychee link check | PRs, push, weekly cron   |
+| `codeql.yml`              | Static analysis (JS/TS + Actions)                   | PRs, push, weekly cron   |
+| `scorecard.yml`           | OSSF Scorecard supply-chain rating                  | weekly cron, push        |
+| `copilot-setup-steps.yml` | Preinstall env for Copilot Coding Agent             | manual                   |
 
-## Project Structure
+All workflows use [`step-security/harden-runner`](https://github.com/step-security/harden-runner)
+in audit mode. The deploy workflow uses commit-SHA-pinned actions for any step
+with `write` permissions.
 
-```
-.
-├── .devcontainer/          # VS Code devcontainer configuration
-├── .github/workflows/      # GitHub Actions CI/CD
-├── index.html              # Main site page
-├── manifest.json           # PWA manifest
-├── robots.txt              # Search engine directives
-├── sitemap.xml             # Site map
-├── CNAME                   # Custom domain configuration
-├── LICENSE                 # MIT License
-├── package.json            # Dependencies and scripts
-└── README.md               # This file
-```
+## External integrations
+
+- **Bauhaus API** — daily backgrounds from `bauhaus.cascadiacollections.workers.dev`
+- **Cloudflare Web Analytics** — cookieless page-load and Web Vitals
+- **Cloudflare Insights** — telemetry beacon endpoint
+
+## Security
+
+See [`.github/SECURITY.md`](./.github/SECURITY.md) and
+[`.well-known/security.txt`](./.well-known/security.txt).
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+[MIT](./LICENSE).

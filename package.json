@@ -4,6 +4,9 @@
   "description": "My personal website",
   "scripts": {
     "start": "http-server -o",
+    "stage": "bash scripts/stage-site.sh _site",
+    "preview": "yarn stage && http-server _site -o -p 8080",
+    "preview:docker": "docker compose up --build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --check .",
