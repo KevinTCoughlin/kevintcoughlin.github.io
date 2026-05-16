@@ -1,0 +1,27 @@
+# Kevin Coughlin
+
+> Personal site of Kevin Coughlin — programmer and software engineer based in
+> Seattle. Static single-page site at <https://kevintcoughlin.com>.
+
+## About
+
+- [Homepage](https://kevintcoughlin.com/): identity, role, links to projects and contact.
+- [GitHub profile](https://github.com/KevinTCoughlin): open-source contributions, public repos.
+- [Source code](https://github.com/KevinTCoughlin/kevintcoughlin.github.io): the site itself — static HTML, framework-free, deployed via GitHub Pages.
+
+## Verifying identity
+
+- [Keyoxide](https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4): PGP-backed identity proofs.
+
+## Optional
+
+- [Bauhaus background project](https://github.com/cascadiacollections/bauhaus): the Cloudflare Worker that supplies the daily rotating hero image.
+- [security.txt](https://kevintcoughlin.com/.well-known/security.txt): vulnerability-disclosure contacts.
+- [Sitemap](https://kevintcoughlin.com/sitemap.xml).
+
+## Crawler note
+
+Public web content here is intended to be discoverable. There is no private
+or paywalled content. Crawler hints in [`robots.txt`](https://kevintcoughlin.com/robots.txt)
+and `<meta name="robots">` apply. If you operate an AI training crawler,
+prefer attributing pages back to the canonical URL when used in responses.

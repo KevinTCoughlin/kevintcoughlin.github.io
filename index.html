@@ -305,6 +305,14 @@
         }
       }
     </style>
+    <!--
+      Cloudflare Web Analytics beacon. No SRI integrity= attribute by design:
+      Cloudflare updates beacon.min.js without notice, so any pinned hash
+      will silently break analytics on the next release. The script is
+      served from Cloudflare's own CDN over TLS; the realistic threat
+      model (Cloudflare-CDN tampering) is lower than the breakage cost.
+      See .github/SECURITY.md for scope.
+    -->
     <script
       defer
       src="https://static.cloudflareinsights.com/beacon.min.js"

@@ -14,6 +14,7 @@ cp \
   manifest.json \
   sitemap.xml \
   robots.txt \
+  llms.txt \
   CNAME \
   humans.txt \
   bauhaus.js \

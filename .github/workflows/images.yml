@@ -1,0 +1,65 @@
+name: Images
+
+on:
+  pull_request:
+    paths:
+      - '**.png'
+      - '**.jpg'
+      - '**.jpeg'
+      - '**.gif'
+      - '.github/workflows/images.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  oxipng:
+    name: PNG losslessly minifiable?
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # oxipng ships a static-linked binary; grab the latest release.
+      - name: Install oxipng
+        run: |
+          set -euo pipefail
+          VER=$(curl -fsSL https://api.github.com/repos/shssoichiro/oxipng/releases/latest \
+                | grep -oE '"tag_name": *"v[^"]+"' | head -1 | sed 's/.*v//;s/"//')
+          curl -fsSL -o /tmp/oxipng.tar.gz \
+            "https://github.com/shssoichiro/oxipng/releases/download/v${VER}/oxipng-${VER}-x86_64-unknown-linux-musl.tar.gz"
+          tar -xzf /tmp/oxipng.tar.gz -C /tmp
+          sudo mv /tmp/oxipng-*/oxipng /usr/local/bin/
+          oxipng --version
+
+      - name: Check PNGs for unnecessary bytes
+        run: |
+          set -euo pipefail
+          # Only check root-level shipping PNGs (the ones in stage-site.sh).
+          # Aggressive level (-o 4) — what we'd actually ship.
+          # 'oxipng --pretend' exits 0 but reports bytes-saveable;
+          # we fail the job if any single image could shed ≥ 5% bytes.
+          THRESHOLD_PCT=5
+          fail=0
+          for f in favicon.png icon-192.png icon-512.png apple-touch-icon-180.png og-image.png; do
+            [ -f "$f" ] || continue
+            before=$(stat -c%s "$f")
+            # Run a real optimization into a temp file to measure savings
+            cp "$f" /tmp/check.png
+            oxipng -o 4 --strip safe --quiet /tmp/check.png
+            after=$(stat -c%s /tmp/check.png)
+            saved=$(( before - after ))
+            pct=$(( saved * 100 / before ))
+            printf '%-30s  %8d → %8d  (%3d%% saved)\n' "$f" "$before" "$after" "$pct"
+            if [ "$pct" -ge "$THRESHOLD_PCT" ]; then
+              fail=1
+            fi
+          done
+          if [ "$fail" -ne 0 ]; then
+            echo
+            echo "❌ One or more PNGs can lose ≥ ${THRESHOLD_PCT}% bytes losslessly."
+            echo "   Run locally:  oxipng -o 4 --strip safe <file>.png"
+            exit 1
+          fi
+          echo
+          echo "✓ All PNGs are reasonably optimized."

@@ -30,6 +30,8 @@ This file is the canonical entry point for AI coding agents working in this repo
 | `Dockerfile` + `docker-compose.yml`       | Production-parity local preview via nginx                                                                 |
 | `.github/workflows/deploy.yml`            | Validate → stage → Pages deploy                                                                           |
 | `.github/workflows/quality.yml`           | Lighthouse CI + lychee link check (PRs); devcontainer smoke test (weekly cron)                            |
+| `.github/workflows/images.yml`            | Fails PR if any shipping PNG can be losslessly minified by ≥ 5% (oxipng)                                  |
+| `.github/rulesets/branch-master.json`     | Branch-protection rules for `master`, version-controlled (apply via `gh api`)                             |
 | `.github/workflows/codeql.yml`            | _(removed — GitHub's default Code Scanning setup is enabled in repo settings; no workflow file required)_ |
 
 ## Commands
