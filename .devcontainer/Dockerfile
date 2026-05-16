@@ -4,6 +4,11 @@
 # profile-sourcing required for postCreateCommand.
 FROM node:26-bookworm-slim
 
+# Node.js 25+ no longer bundles Corepack. Install it explicitly so
+# `packageManager: yarn@4.x` in package.json works out of the box.
+RUN npm install -g corepack@latest \
+ && corepack enable
+
 # Common dev tooling
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
