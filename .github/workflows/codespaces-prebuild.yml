@@ -8,7 +8,7 @@ on:
     branches:
       - master
   schedule:
-    - cron: "0 8 * * 1" # Weekly Monday rebuild
+    - cron: '0 8 * * 1' # Weekly Monday rebuild
   workflow_dispatch:
 
 jobs:
