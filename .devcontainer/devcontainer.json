@@ -1,12 +1,20 @@
 {
-  "name": "Kevin Coughlin Personal Website",
-  "build": {
-    "dockerfile": "Dockerfile"
+  "name": "kevintcoughlin.github.io",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-24-bookworm",
+
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "upgradePackages": false
+    }
   },
 
   "customizations": {
     "vscode": {
       "extensions": [
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "ms-vscode.live-server",
@@ -18,19 +26,22 @@
         "editor.codeActionsOnSave": {
           "source.fixAll.eslint": "explicit"
         },
-        "eslint.validate": ["javascript", "html"]
+        "eslint.validate": ["javascript", "html"],
+        "chat.agent.enabled": true
       }
     }
   },
 
-  "postCreateCommand": "corepack enable && yarn install --immutable",
+  "onCreateCommand": "corepack enable",
+  "postCreateCommand": "yarn install --immutable",
 
   "forwardPorts": [8080],
-
   "portsAttributes": {
     "8080": {
-      "label": "Local Development Server",
+      "label": "Dev Server",
       "onAutoForward": "notify"
     }
-  }
+  },
+
+  "remoteUser": "node"
 }
