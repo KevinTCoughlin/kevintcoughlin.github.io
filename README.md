@@ -24,7 +24,7 @@ My personal website. Static, framework-free, deployed to GitHub Pages.
 - [Yarn](https://yarnpkg.com/) 4 — installed automatically by Corepack
 - [Docker](https://www.docker.com/) (optional — for production-parity preview)
 
-A [devcontainer](.devcontainer/Dockerfile) is provided for VS Code and Codespaces.
+A [devcontainer](.devcontainer/devcontainer.json) is provided for VS Code and Codespaces.
 
 ### Common commands
 
