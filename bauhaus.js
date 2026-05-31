@@ -12,7 +12,6 @@
 
   var attrLink = document.createElement('a');
   attrLink.href = 'https://github.com/cascadiacollections/bauhaus';
-  attrLink.target = '_blank';
   attrLink.rel = 'noopener noreferrer';
   attrLink.textContent = '🎨 bauhaus';
   attribution.appendChild(attrLink);
