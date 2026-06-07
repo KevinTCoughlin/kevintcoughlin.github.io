@@ -1,6 +1,7 @@
 (function () {
   var API = 'https://bauhaus.cascadiacollections.workers.dev/api';
   var CACHE_LOAD_MS = 50;
+  var SWIPE_THRESHOLD = 50;
   var now = new Date();
   var pad = function (n) {
     return n < 10 ? '0' + n : '' + n;
@@ -10,6 +11,9 @@
   var bg = document.getElementById('bg');
   var attribution = document.getElementById('attribution');
 
+  // Tracks the date currently shown; starts as today, changes on swipe.
+  var currentDate = today;
+
   var attrLink = document.createElement('a');
   attrLink.href = 'https://github.com/cascadiacollections/bauhaus';
   attrLink.rel = 'noopener noreferrer';
@@ -18,6 +22,71 @@
 
   function updateAttribution(title) {
     attrLink.textContent = '🎨 ' + title;
+  }
+
+  // Returns an ISO date string (YYYY-MM-DD) offset by `days` from `dateStr`.
+  function offsetDate(dateStr, days) {
+    var d = new Date(dateStr + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + days);
+    return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
+  }
+
+  // Loads the image and metadata for `date`, fading out then in.
+  function loadDate(date) {
+    bg.classList.remove('loaded');
+    bg.onerror = function () {
+      if (bg.src.indexOf('data:image/svg') !== 0) {
+        bg.onerror = null;
+        bg.src = FALLBACK;
+        updateAttribution('bauhaus (offline fallback)');
+      }
+    };
+    var loadStartSwipe = Date.now();
+    bg.onload = function () {
+      if (Date.now() - loadStartSwipe < CACHE_LOAD_MS) {
+        bg.style.transition = 'none';
+      } else {
+        bg.style.transition = '';
+      }
+      bg.classList.add('loaded');
+    };
+    bg.src = date === today ? API + '/today' + dateParam : API + '/' + date;
+
+    // Update attribution text immediately while fetch completes.
+    if (date === today) {
+      try {
+        var cachedTitle = localStorage.getItem('bg-title');
+        var cachedDate = localStorage.getItem('bg-date');
+        if (cachedDate === today && cachedTitle) {
+          updateAttribution(cachedTitle);
+          return;
+        }
+      } catch (_e) {
+        /* localStorage unavailable */
+      }
+    }
+
+    var metaUrl = date === today ? API + '/today.json' + dateParam : API + '/' + date + '.json';
+    fetch(metaUrl)
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (data) {
+        if (data && data.title) {
+          if (date === today) {
+            try {
+              localStorage.setItem('bg-date', today);
+              localStorage.setItem('bg-title', data.title);
+            } catch (_e) {
+              /* localStorage unavailable */
+            }
+          }
+          updateAttribution(data.title);
+        }
+      })
+      .catch(function () {
+        /* attribution is non-critical */
+      });
   }
 
   var loadStart = Date.now();
@@ -92,4 +161,43 @@
     .catch(function () {
       /* attribution is non-critical */
     });
+
+  // ── Touch swipe navigation ──────────────────────────
+  // Swipe right → previous day; swipe left → next day (capped at today).
+  var touchStartX = 0;
+  var touchStartY = 0;
+
+  document.addEventListener(
+    'touchstart',
+    function (e) {
+      touchStartX = e.changedTouches[0].clientX;
+      touchStartY = e.changedTouches[0].clientY;
+    },
+    { passive: true }
+  );
+
+  document.addEventListener(
+    'touchend',
+    function (e) {
+      var dx = e.changedTouches[0].clientX - touchStartX;
+      var dy = e.changedTouches[0].clientY - touchStartY;
+      // Require a mostly-horizontal swipe to avoid triggering on scrolls.
+      if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) < Math.abs(dy)) return;
+
+      var nextDate;
+      if (dx > 0) {
+        // Swipe right → go back one day.
+        nextDate = offsetDate(currentDate, -1);
+      } else {
+        // Swipe left → go forward one day, but not past today.
+        var candidate = offsetDate(currentDate, 1);
+        if (candidate > today) return;
+        nextDate = candidate;
+      }
+
+      currentDate = nextDate;
+      loadDate(currentDate);
+    },
+    { passive: true }
+  );
 })();
