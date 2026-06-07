@@ -132,35 +132,38 @@
     });
   }
 
+  var hasCachedTodayTitle = false;
   try {
     var cachedDate = localStorage.getItem('bg-date');
     var cachedTitle = localStorage.getItem('bg-title');
     if (cachedDate === today && cachedTitle) {
       updateAttribution(cachedTitle);
-      return;
+      hasCachedTodayTitle = true;
     }
   } catch (_e) {
     /* localStorage unavailable */
   }
 
-  fetch(API + '/today.json' + dateParam)
-    .then(function (r) {
-      return r.json();
-    })
-    .then(function (data) {
-      if (data && data.title) {
-        try {
-          localStorage.setItem('bg-date', today);
-          localStorage.setItem('bg-title', data.title);
-        } catch (_e) {
-          /* localStorage unavailable */
+  if (!hasCachedTodayTitle) {
+    fetch(API + '/today.json' + dateParam)
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (data) {
+        if (data && data.title) {
+          try {
+            localStorage.setItem('bg-date', today);
+            localStorage.setItem('bg-title', data.title);
+          } catch (_e) {
+            /* localStorage unavailable */
+          }
+          updateAttribution(data.title);
         }
-        updateAttribution(data.title);
-      }
-    })
-    .catch(function () {
-      /* attribution is non-critical */
-    });
+      })
+      .catch(function () {
+        /* attribution is non-critical */
+      });
+  }
 
   // ── Touch swipe navigation ──────────────────────────
   // Swipe right → previous day; swipe left → next day (capped at today).
