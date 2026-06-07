@@ -41,9 +41,9 @@
         updateAttribution('bauhaus (offline fallback)');
       }
     };
-    var loadStartSwipe = Date.now();
+    var imageLoadStart = Date.now();
     bg.onload = function () {
-      if (Date.now() - loadStartSwipe < CACHE_LOAD_MS) {
+      if (Date.now() - imageLoadStart < CACHE_LOAD_MS) {
         bg.style.transition = 'none';
       } else {
         bg.style.transition = '';
