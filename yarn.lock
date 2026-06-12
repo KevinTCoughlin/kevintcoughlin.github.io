@@ -116,18 +116,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@html-eslint/parser@npm:^0.61.0":
-  version: 0.61.0
-  resolution: "@html-eslint/parser@npm:0.61.0"
-  dependencies:
-    "@html-eslint/template-syntax-parser": "npm:^0.61.0"
-    "@html-eslint/types": "npm:^0.61.0"
-    css-tree: "npm:^3.1.0"
-    es-html-parser: "npm:0.3.1"
-  checksum: 10c0/2e321233af8cb8ed244ac75d403ea6b1e6099b316a61932f4672780d19ee6d740e6a26aff00c7f5f133c7e42a20df88e39f1a7478c0f7b6aebd067c13003f843
-  languageName: node
-  linkType: hard
-
 "@html-eslint/parser@npm:^0.62.0":
   version: 0.62.0
   resolution: "@html-eslint/parser@npm:0.62.0"
@@ -150,32 +138,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@html-eslint/template-syntax-parser@npm:^0.61.0":
-  version: 0.61.0
-  resolution: "@html-eslint/template-syntax-parser@npm:0.61.0"
-  dependencies:
-    "@html-eslint/types": "npm:^0.61.0"
-  checksum: 10c0/00469c17c3d6a9d2efd018643ebfdb07d53067842b97c147ee36a96beb161220113f213f03e0d85a517887d4a9888cfa21ae0ee41bdeccad9e1709d78b476092
-  languageName: node
-  linkType: hard
-
 "@html-eslint/template-syntax-parser@npm:^0.62.0":
   version: 0.62.0
   resolution: "@html-eslint/template-syntax-parser@npm:0.62.0"
   dependencies:
     "@html-eslint/types": "npm:^0.62.0"
   checksum: 10c0/4e8246dc0b2a523e63ae3f6ea1c6213d4e6c47bcb5da4210a6b93e84e2a23008c89bc6d0103d9bf1c2bd524a1c075e43aea280bd347ca55ed0056afa731d6b5a
-  languageName: node
-  linkType: hard
-
-"@html-eslint/types@npm:^0.61.0":
-  version: 0.61.0
-  resolution: "@html-eslint/types@npm:0.61.0"
-  dependencies:
-    "@types/css-tree": "npm:^2.3.11"
-    "@types/estree": "npm:^1.0.6"
-    es-html-parser: "npm:0.3.1"
-  checksum: 10c0/b5d0b2c8a6ae39268b4bfcb25557a4fd1e3b14613003f5d4b7f3585f3a27c16913b59dbbe0ba65815af227de1fec4b9155b4468ca54f82c635319f1bd7ede7ee
   languageName: node
   linkType: hard
 
@@ -895,7 +863,7 @@ __metadata:
   resolution: "kevintcoughlin.github.io@workspace:."
   dependencies:
     "@html-eslint/eslint-plugin": "npm:^0.62.0"
-    "@html-eslint/parser": "npm:^0.61.0"
+    "@html-eslint/parser": "npm:^0.62.0"
     eslint: "npm:^10.5.0"
     http-server: "npm:^14.1.1"
     prettier: "npm:^3.8.4"
