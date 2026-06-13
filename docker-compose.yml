@@ -1,19 +1,19 @@
 services:
   # Production-parity preview — builds the image with staged _site/ baked in.
-  # For day-to-day editing, `yarn start` is faster (no rebuild needed).
+  # For day-to-day editing, `bun start` is faster (no rebuild needed).
   #   docker compose up --build
   site:
     build: .
     image: kevintcoughlin-site:local
     container_name: kevintcoughlin-site
     ports:
-      - '8080:8080'
+      - '8084:8080'
     read_only: true
     tmpfs:
-      # tmpfs mounts are owned by root by default; nginx (uid 101) needs
-      # write access for client_temp/proxy_temp under /var/cache/nginx.
-      - /var/cache/nginx:uid=101,gid=101
-      - /tmp
+      # Podman/Docker both support tmpfs mode; keep /var/cache/nginx writable
+      # for nginx's client/proxy temp directories without relying on uid/gid.
+      - /var/cache/nginx:mode=1777
+      - /tmp:mode=1777
     security_opt:
       - no-new-privileges:true
     restart: unless-stopped

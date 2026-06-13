@@ -21,7 +21,7 @@ My personal website. Static, framework-free, deployed to GitHub Pages.
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) 24.x (LTS) — pinned via [`.nvmrc`](.nvmrc)
-- [Yarn](https://yarnpkg.com/) 4 — installed automatically by Corepack
+- [Bun](https://bun.sh/) 1.3.x — installed via Bun setup / local toolchain
 - [Docker](https://www.docker.com/) (optional — for production-parity preview)
 
 A [devcontainer](.devcontainer/devcontainer.json) is provided for VS Code and Codespaces.
@@ -29,26 +29,28 @@ A [devcontainer](.devcontainer/devcontainer.json) is provided for VS Code and Co
 ### Common commands
 
 ```bash
-yarn install            # Install dev deps
-yarn start              # http-server on :8080 — fastest local loop
-yarn stage              # Produce ./_site (exactly what Pages serves)
-yarn preview            # stage + http-server ./_site
-yarn preview:docker     # stage + nginx via docker compose (prod parity)
+bun install             # Install dev deps
+bun start               # http-server on :8080 — fastest local loop
+bun run stage           # Produce ./_site (exactly what Pages serves)
+bun run preview         # stage + http-server ./_site
+bun run preview:docker  # stage + nginx via docker compose (prod parity)
 
-yarn lint               # ESLint (incl. html-eslint)
-yarn format             # Prettier check
-yarn validate           # lint + format — matches CI
+bun run lint            # ESLint (incl. html-eslint)
+bun run format          # Prettier check
+bun run validate        # lint + format — matches CI
 ```
 
 ### Docker preview
 
 ```bash
-docker compose up --build       # → http://localhost:8080
+docker compose up --build       # → http://localhost:8084
+# or, on this machine:
+podman compose up --build       # → http://localhost:8084
 ```
 
 Runs nginx as non-root on a read-only rootfs — the same configuration GitHub
 Pages would serve. Use for a final sanity check before opening a PR. For
-day-to-day editing, `yarn start` is faster (no build step).
+day-to-day editing, `bun start` is faster (no build step).
 
 ## Deployment
 

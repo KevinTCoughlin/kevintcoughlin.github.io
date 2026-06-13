@@ -7,21 +7,21 @@
 ## TL;DR
 
 - Static personal website. No framework. No build step. No backend.
-- Node 24 LTS + Yarn 4 (Corepack). ESLint v10 flat config. Prettier 3.
+- Node 24 LTS + Bun 1.3.14. ESLint v10 flat config. Prettier 3.
 - `master` auto-deploys to GitHub Pages → <https://kevintcoughlin.com>.
 - Analytics: **Cloudflare Web Analytics** (Google Analytics + AdSense were removed in #47).
 - Background images: Cloudflare Worker at `bauhaus.cascadiacollections.workers.dev`.
 
 ## Workflows you need to know
 
-| Command               | What it does                                       |
-| --------------------- | -------------------------------------------------- |
-| `yarn install`        | Install dev deps                                   |
-| `yarn start`          | http-server on :8080 (raw repo)                    |
-| `yarn stage`          | Produce `./_site` — **what Pages actually serves** |
-| `yarn preview`        | stage + http-server `./_site`                      |
-| `yarn preview:docker` | Production-parity preview via nginx                |
-| `yarn validate`       | ESLint + Prettier (matches CI)                     |
+| Command                  | What it does                                       |
+| ------------------------ | -------------------------------------------------- |
+| `bun install`            | Install dev deps                                   |
+| `bun start`              | http-server on :8080 (raw repo)                    |
+| `bun run stage`          | Produce `./_site` — **what Pages actually serves** |
+| `bun run preview`        | stage + http-server `./_site`                      |
+| `bun run preview:docker` | Production-parity preview via nginx                |
+| `bun run validate`       | ESLint + Prettier (matches CI)                     |
 
 The deploy workflow uses [`scripts/stage-site.sh`](../scripts/stage-site.sh) as the
 single source of truth for the file list shipped to production. If you add a new

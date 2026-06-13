@@ -1,24 +1,26 @@
 {
   "name": "kevintcoughlin.github.io",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bookworm",
+  "image": "mcr.microsoft.com/devcontainers/base:debian-12",
 
   "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24"
+    },
+    "ghcr.io/devcontainers-extra/features/bun:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/common-utils:2": {
       "installZsh": false,
-      "upgradePackages": false
+      "upgradePackages": true
     }
   },
 
   "customizations": {
     "vscode": {
       "extensions": [
-        "GitHub.copilot",
-        "GitHub.copilot-chat",
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "ms-vscode.live-server",
-        "editorconfig.editorconfig"
+        "EditorConfig.EditorConfig"
       ],
       "settings": {
         "editor.formatOnSave": true,
@@ -26,14 +28,13 @@
         "editor.codeActionsOnSave": {
           "source.fixAll.eslint": "explicit"
         },
-        "eslint.validate": ["javascript", "html"],
-        "chat.agent.enabled": true
+        "eslint.validate": ["javascript", "html"]
       }
     }
   },
 
   "onCreateCommand": "corepack enable",
-  "postCreateCommand": "yarn install --immutable",
+  "postCreateCommand": "bun install --frozen-lockfile",
 
   "forwardPorts": [8080],
   "portsAttributes": {
@@ -43,5 +44,5 @@
     }
   },
 
-  "remoteUser": "node"
+  "remoteUser": "vscode"
 }
