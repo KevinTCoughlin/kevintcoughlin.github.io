@@ -1,0 +1,35 @@
+[
+  {
+    "label": "Preview Site",
+    "command": "npm",
+    "args": ["run", "preview"],
+    "presentation": {
+      "reveal": "always",
+      "panel": "dedicated",
+      "clear": true
+    },
+    "problemMatcher": []
+  },
+  {
+    "label": "Lint",
+    "command": "npm",
+    "args": ["run", "lint"],
+    "presentation": {
+      "reveal": "always",
+      "panel": "dedicated",
+      "clear": true
+    },
+    "problemMatcher": []
+  },
+  {
+    "label": "Format Check",
+    "command": "npm",
+    "args": ["run", "format"],
+    "presentation": {
+      "reveal": "always",
+      "panel": "dedicated",
+      "clear": true
+    },
+    "problemMatcher": []
+  }
+]
