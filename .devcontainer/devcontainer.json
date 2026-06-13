@@ -1,6 +1,6 @@
 {
   "name": "kevintcoughlin.github.io",
-  "image": "ghcr.io/devcontainers/base:debian",
+  "image": "mcr.microsoft.com/devcontainers/base:debian-12",
 
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
