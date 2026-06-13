@@ -10,7 +10,7 @@ This file is the canonical entry point for AI coding agents working in this repo
 - **Production:** GitHub Pages — auto-deployed on push to `master`
 - **Domain:** <https://kevintcoughlin.com> (via `CNAME`)
 - **Stack:** vanilla HTML / CSS / ES modules, served by GitHub Pages
-- **Toolchain:** Node 24 LTS, Yarn 4 (via Corepack), ESLint v10 (flat config), Prettier 3
+- **Toolchain:** Node 24 LTS, Bun 1.3.14, ESLint v10 (flat config), Prettier 3
 - **Analytics:** Cloudflare Web Analytics (Google Analytics + AdSense were removed in #47)
 - **Background images:** Cloudflare Worker at `bauhaus.cascadiacollections.workers.dev`
 
@@ -37,12 +37,12 @@ This file is the canonical entry point for AI coding agents working in this repo
 ## Commands
 
 ```bash
-yarn install            # Corepack auto-pins Yarn 4
-yarn start              # http-server on :8080 — fastest local loop
-yarn lint               # ESLint
-yarn format             # Prettier check
-yarn validate           # lint + format (matches CI)
-yarn stage              # Produce ./_site (what Pages will serve)
+bun install             # Bun lockfile + package resolution
+bun start               # http-server on :8080 — fastest local loop
+bun run lint            # ESLint
+bun run format          # Prettier check
+bun run validate        # lint + format (matches CI)
+bun run stage           # Produce ./_site (what Pages will serve)
 
 docker compose up       # Production-parity preview (built nginx image)
 ```
@@ -63,7 +63,7 @@ docker compose up       # Production-parity preview (built nginx image)
 7. **GitHub Actions pinning:** any action can use a major-version tag — Dependabot
    bumps them weekly. Pinning to SHA is optional; only do it if there's a concrete
    threat model (a personal static site doesn't have one).
-8. **Yarn is the package manager.** `package-lock.json` should never appear.
+8. **Bun is the package manager.** `package-lock.json` should never appear.
 
 ## Quality bars (enforced by CI)
 

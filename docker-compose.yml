@@ -1,6 +1,6 @@
 services:
   # Production-parity preview — builds the image with staged _site/ baked in.
-  # For day-to-day editing, `yarn start` is faster (no rebuild needed).
+  # For day-to-day editing, `bun start` is faster (no rebuild needed).
   #   docker compose up --build
   site:
     build: .

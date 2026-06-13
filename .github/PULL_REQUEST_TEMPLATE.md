@@ -13,11 +13,11 @@
 
 ## Verification
 
-- [ ] `yarn validate` passes locally
-- [ ] `yarn stage && ls _site/` includes any new runtime files
+- [ ] `bun run validate` passes locally
+- [ ] `bun run stage && ls _site/` includes any new runtime files
 - [ ] Lighthouse CI thresholds (perf ≥ 90, a11y ≥ 95) not regressed
 - [ ] CSP in `index.html` updated if a new external origin was added
-- [ ] Tested at <http://localhost:8080> via `yarn start` or `docker compose up`
+- [ ] Tested at <http://localhost:8080> via `bun start` or `docker compose up`
 
 ## Notes for reviewers
 

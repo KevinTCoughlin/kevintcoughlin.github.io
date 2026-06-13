@@ -1,9 +1,6 @@
 {
   "format_on_save": "on",
-  "language_servers": [
-    "eslint",
-    "html"
-  ],
+  "language_servers": ["eslint", "html"],
   "terminal": {
     "env": {
       "PATH": "${env:PATH}"

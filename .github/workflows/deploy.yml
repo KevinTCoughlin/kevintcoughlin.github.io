@@ -3,6 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
+      - main
       - master
   workflow_dispatch:
 
@@ -24,23 +25,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version-file: '.nvmrc'
-          cache: 'yarn'
+          bun-version: '1.3.14'
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: bun install --frozen-lockfile
 
       - name: Run lint
-        run: yarn lint
+        run: bun run lint
 
       - name: Run format check
-        run: yarn format
+        run: bun run format
 
   deploy:
     needs: validate

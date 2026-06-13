@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches:
+      - main
       - master
   schedule:
     # Weekly link-rot check + devcontainer smoke test (Mondays 09:00 UTC)
@@ -79,9 +80,8 @@ jobs:
           runCmd: |
             set -e
             node --version
-            corepack enable
-            yarn --version
-            yarn install --immutable
-            yarn validate
+            bun --version
+            bun install --frozen-lockfile
+            bun run validate
             bash scripts/stage-site.sh _site
             test -f _site/index.html

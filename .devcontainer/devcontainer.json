@@ -6,6 +6,7 @@
     "ghcr.io/devcontainers/features/node:1": {
       "version": "24"
     },
+    "ghcr.io/devcontainers-extra/features/bun:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/common-utils:2": {
       "installZsh": false,
@@ -33,7 +34,7 @@
   },
 
   "onCreateCommand": "corepack enable",
-  "postCreateCommand": "corepack yarn install --immutable",
+  "postCreateCommand": "bun install --frozen-lockfile",
 
   "forwardPorts": [8080],
   "portsAttributes": {
