@@ -43,7 +43,9 @@ bun run validate        # lint + format — matches CI
 ### Docker preview
 
 ```bash
-docker compose up --build       # → http://localhost:8080
+docker compose up --build       # → http://localhost:8084
+# or, on this machine:
+podman compose up --build       # → http://localhost:8084
 ```
 
 Runs nginx as non-root on a read-only rootfs — the same configuration GitHub
