@@ -52,6 +52,14 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v6
 
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends imagemagick
+
+      - name: Sync favicon from Gravatar
+        env:
+          GRAVATAR_EMAIL: ${{ secrets.GRAVATAR_EMAIL }}
+        run: bash scripts/sync-favicon.sh
+
       - name: Stage site assets
         run: bash scripts/stage-site.sh _site
 
