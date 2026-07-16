@@ -18,7 +18,7 @@ jobs:
     name: PNG losslessly minifiable?
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # oxipng ships a static-linked binary; grab the latest release.
       - name: Install oxipng
