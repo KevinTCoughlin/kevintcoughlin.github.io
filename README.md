@@ -14,7 +14,7 @@ My personal website. Static, framework-free, deployed to GitHub Pages.
 - PWA manifest + service-worker image cache (`sw.js`)
 - Self-hosted error / Web Vitals beacons (`telemetry.js`)
 - Cloudflare Web Analytics (privacy-respecting, no cookies)
-- CSP via `<meta>`, `security.txt`, signed WebFinger-style identity link
+- CSP via `<meta>`, `security.txt`, and a Keyoxide identity link
 
 ## Development
 
@@ -76,7 +76,7 @@ repository Settings → Code security), so no workflow file is needed.
 
 - **Bauhaus API** — daily backgrounds from `bauhaus.cascadiacollections.workers.dev`
 - **Cloudflare Web Analytics** — cookieless page-load and Web Vitals
-- **Cloudflare Insights** — telemetry beacon endpoint
+- **Bauhaus Worker** — error and Web Vitals telemetry endpoints
 
 ## Security
 

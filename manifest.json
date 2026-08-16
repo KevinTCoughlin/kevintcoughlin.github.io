@@ -1,6 +1,7 @@
 {
   "short_name": "kcoughlin",
   "name": "Kevin Coughlin's website",
+  "id": "/",
   "description": "Kevin Coughlin — programmer, software engineer, and open-source contributor.",
   "icons": [
     {

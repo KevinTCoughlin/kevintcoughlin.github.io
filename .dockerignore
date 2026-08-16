@@ -4,9 +4,6 @@
 .devcontainer
 node_modules
 _site
-.yarn
-.yarnrc.yml
-yarn.lock
 package.json
 eslint.config.mjs
 .prettierrc.json
