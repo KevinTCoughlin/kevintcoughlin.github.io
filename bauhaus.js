@@ -36,6 +36,7 @@
   function loadDate(date) {
     var token = ++loadToken;
     bg.classList.remove('loaded');
+    updateAttribution('bauhaus');
     bg.onerror = function () {
       if (token !== loadToken) return;
       if (bg.src.indexOf('data:image/svg') !== 0) {
