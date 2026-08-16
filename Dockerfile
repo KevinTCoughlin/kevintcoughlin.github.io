@@ -6,7 +6,7 @@
 #   docker compose up
 
 # ---------- Stage 1: stage runtime assets ----------
-FROM alpine:3.22 AS stage
+FROM alpine:3.24 AS stage
 WORKDIR /src
 COPY . .
 RUN sh scripts/stage-site.sh /out
