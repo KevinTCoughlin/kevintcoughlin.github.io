@@ -1,20 +1,16 @@
 name: Deploy to GitHub Pages
 
 on:
+  pull_request:
+    branches:
+      - master
   push:
     branches:
-      - main
       - master
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: 'pages'
-  cancel-in-progress: false
 
 jobs:
   validate:
@@ -40,11 +36,19 @@ jobs:
         run: bun run format
 
   deploy:
+    if: github.event_name != 'pull_request'
     needs: validate
+    concurrency:
+      group: 'pages'
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7

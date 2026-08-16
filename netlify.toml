@@ -3,9 +3,5 @@
 # Do NOT add security/cache headers here — they would not reflect production.
 
 [build]
-  publish = "."
-  command = "echo 'Static site, no build needed'"
-
-[build.environment]
-  NODE_VERSION = "24"
-  YARN_VERSION = "4.13.0"
+  publish = "_site"
+  command = "bash scripts/stage-site.sh _site"

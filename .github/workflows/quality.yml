@@ -4,7 +4,6 @@ on:
   pull_request:
   push:
     branches:
-      - main
       - master
   schedule:
     # Weekly link-rot check + devcontainer smoke test (Mondays 09:00 UTC)

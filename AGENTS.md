@@ -55,7 +55,7 @@ docker compose up       # Production-parity preview (built nginx image)
    not new server-side code in this repo.
 3. **Keep the shipped surface small.** If you add a file that must ship to production,
    add it to `scripts/stage-site.sh` and verify it appears in `_site/` after running
-   `yarn stage`. The deploy workflow only copies files listed in that script.
+   `bun run stage`. The deploy workflow only copies files listed in that script.
 4. **Don't modify `web-vitals.js` by hand** — it's vendored. Replace it wholesale if upgrading.
 5. **CSP is set via `<meta http-equiv>` in `index.html`.** Any new external origin
    (script, image, fetch) must be added to the appropriate directive.

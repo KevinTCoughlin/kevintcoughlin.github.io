@@ -33,6 +33,14 @@ function isBauhausImageRequest(request) {
   return false;
 }
 
+async function updateImageCache(cache, request, response) {
+  await cache.put(request, response);
+  const entries = await cache.keys();
+  await Promise.all(
+    entries.filter((entry) => entry.url !== request.url).map((entry) => cache.delete(entry))
+  );
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET' || !isBauhausImageRequest(request)) {
@@ -45,8 +53,7 @@ self.addEventListener('fetch', (event) => {
       const networkPromise = fetch(request)
         .then((response) => {
           if (response.ok || response.type === 'opaque') {
-            return cache
-              .put(request, response.clone())
+            return updateImageCache(cache, request, response.clone())
               .catch(() => {
                 /* cache write failures are non-fatal */
               })

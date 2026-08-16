@@ -3,14 +3,26 @@ import { onCLS, onFCP, onINP, onLCP, onTTFB } from '/web-vitals.js';
 const API = 'https://bauhaus.cascadiacollections.workers.dev/api';
 
 function beacon(url, body) {
+  const fetchFallback = () => {
+    void fetch(url, {
+      method: 'POST',
+      body,
+      keepalive: true,
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer',
+    }).catch(() => {
+      /* telemetry is non-critical */
+    });
+  };
+
   try {
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(url, body);
+    if (navigator.sendBeacon && navigator.sendBeacon(url, body)) {
+      return;
     } else {
-      fetch(url, { method: 'POST', body, keepalive: true });
+      fetchFallback();
     }
   } catch (_e) {
-    /* telemetry is non-critical */
+    fetchFallback();
   }
 }
 

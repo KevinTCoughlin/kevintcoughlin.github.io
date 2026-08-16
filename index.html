@@ -3,13 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="preconnect" href="https://bauhaus.cascadiacollections.workers.dev" crossorigin />
-    <link
-      rel="preload"
-      as="image"
-      href="https://bauhaus.cascadiacollections.workers.dev/api/today"
-      fetchpriority="high"
-      type="image/avif"
-    />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
@@ -29,7 +22,7 @@
     <!-- Security headers (GitHub Pages cannot deliver server headers; meta covers what it can) -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://bauhaus.cascadiacollections.workers.dev data:; connect-src 'self' https://bauhaus.cascadiacollections.workers.dev https://cloudflareinsights.com; object-src 'none'; base-uri 'self'"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://bauhaus.cascadiacollections.workers.dev data:; connect-src 'self' https://bauhaus.cascadiacollections.workers.dev https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
@@ -60,6 +53,7 @@
       content="Programmer, software engineer, and open-source contributor."
     />
     <meta name="twitter:image" content="https://kevintcoughlin.com/og-image.png" />
+    <meta name="twitter:image:alt" content="Kevin Coughlin" />
 
     <title>Kevin Coughlin — Programmer</title>
     <style>
@@ -75,10 +69,10 @@
         color-scheme: light;
         --color-text: #444;
         --color-muted: #666;
-        --color-faint: #888;
+        --color-faint: #5f6368;
         --color-separator: #ccc;
-        --mono-muted: #aaa;
-        --mono-label: #bbb;
+        --mono-muted: #666;
+        --mono-label: #737373;
         --font-mono: 'SF Mono', ui-monospace, 'Fira Code', monospace;
       }
 
@@ -111,6 +105,12 @@
         color: inherit;
         text-decoration: none;
         transition: color 0.2s;
+      }
+
+      a:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 4px;
+        border-radius: 2px;
       }
 
       /* ── Background ──────────────────────────────── */
@@ -155,7 +155,6 @@
         line-height: 1.1;
         letter-spacing: -0.02em;
         margin: 0 0 0.4rem;
-        white-space: nowrap;
       }
 
       .role-label {
@@ -208,7 +207,8 @@
           color 0.2s;
       }
 
-      ul li a:hover {
+      ul li a:hover,
+      ul li a:focus-visible {
         color: var(--color-text);
         background-size: 100% 1px;
       }
@@ -250,17 +250,14 @@
         right: 16px;
         z-index: 2;
         font-size: 0.6875rem;
-        opacity: 0.6;
-        transition: opacity 0.2s;
-      }
-
-      .attribution:hover {
-        opacity: 1;
       }
 
       .attribution a {
         color: #fff;
-        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+        display: inline-block;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+        background: rgba(0, 0, 0, 0.7);
       }
 
       /* ── Motion ──────────────────────────────────── */
@@ -275,15 +272,22 @@
 
       /* ── Narrow viewport (any orientation) ───────── */
       @media (max-width: 600px) {
+        .attribution {
+          top: 12px;
+          bottom: auto;
+        }
+
         .container {
           width: 100%;
           min-width: 0;
           max-width: none;
           min-height: auto;
+          max-height: 100svh;
           padding: 36px 28px 40px;
           position: fixed;
           bottom: 0;
           left: 0;
+          overflow-y: auto;
           justify-content: flex-start;
           gap: 1.25rem;
           border-radius: 16px 16px 0 0;
@@ -305,6 +309,7 @@
         }
       }
     </style>
+    <script src="/bauhaus.js" defer></script>
     <!--
       Cloudflare Web Analytics beacon. No SRI integrity= attribute by design:
       Cloudflare updates beacon.min.js without notice, so any pinned hash
@@ -320,7 +325,7 @@
     ></script>
   </head>
   <body>
-    <img id="bg" alt="" aria-hidden="true" />
+    <img id="bg" alt="" aria-hidden="true" fetchpriority="high" />
     <main class="container">
       <header class="identity">
         <h1>Kevin Coughlin</h1>
@@ -375,7 +380,6 @@
       </nav>
     </main>
     <footer id="attribution" class="attribution"></footer>
-    <script src="/bauhaus.js" defer></script>
     <script type="module" src="/telemetry.js"></script>
     <script type="application/ld+json">
       {

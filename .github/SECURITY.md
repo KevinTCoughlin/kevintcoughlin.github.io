@@ -18,10 +18,10 @@ This repository is a static personal website. There is no server-side code, no
 authentication, and no user data is collected by the site itself. Realistic
 attack surface is limited to:
 
-- Cross-site scripting via the inline CSS / inline JSON-LD in `index.html`
+- Content Security Policy regressions and third-party script loading in `index.html`
 - Service-worker cache poisoning (`sw.js`)
 - Subresource issues with the Cloudflare Worker image origin
-- Supply-chain compromise of npm dev dependencies
+- Supply-chain compromise of JavaScript development dependencies
 
 Bugs in those areas are in-scope. Issues in third-party services we link to
 (GitHub Pages, Cloudflare, the Bauhaus Worker) should be reported upstream.

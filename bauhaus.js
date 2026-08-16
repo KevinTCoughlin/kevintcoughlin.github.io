@@ -10,6 +10,7 @@
   var dateParam = '?d=' + today;
   var bg = document.getElementById('bg');
   var attribution = document.getElementById('attribution');
+  var loadToken = 0;
 
   // Tracks the date currently shown; starts as today, changes on swipe.
   var currentDate = today;
@@ -33,8 +34,11 @@
 
   // Loads the image and metadata for `date`, fading out then in.
   function loadDate(date) {
+    var token = ++loadToken;
     bg.classList.remove('loaded');
+    updateAttribution('bauhaus');
     bg.onerror = function () {
+      if (token !== loadToken) return;
       if (bg.src.indexOf('data:image/svg') !== 0) {
         bg.onerror = null;
         bg.src = FALLBACK;
@@ -43,6 +47,7 @@
     };
     var imageLoadStart = Date.now();
     bg.onload = function () {
+      if (token !== loadToken) return;
       if (Date.now() - imageLoadStart < CACHE_LOAD_MS) {
         bg.style.transition = 'none';
       } else {
@@ -69,9 +74,11 @@
     var metaUrl = date === today ? API + '/today.json' + dateParam : API + '/' + date + '.json';
     fetch(metaUrl)
       .then(function (r) {
+        if (!r.ok) throw new Error('Bauhaus metadata request failed: ' + r.status);
         return r.json();
       })
       .then(function (data) {
+        if (token !== loadToken) return;
         if (data && data.title) {
           if (date === today) {
             try {
@@ -89,13 +96,6 @@
       });
   }
 
-  var loadStart = Date.now();
-  bg.onload = function () {
-    if (Date.now() - loadStart < CACHE_LOAD_MS) {
-      bg.style.transition = 'none';
-    }
-    bg.classList.add('loaded');
-  };
   // Inline SVG fallback — used when the bauhaus Worker is unreachable so
   // visitors don't see a blank hero. Small (~1KB), Bauhaus-palette nod.
   var FALLBACK =
@@ -112,17 +112,8 @@
         '</svg>'
     );
 
-  bg.onerror = function () {
-    // Don't tear the element down — swap to the offline fallback so the
-    // hero never goes blank. The bauhaus Worker is otherwise a SPOF.
-    if (bg.src.indexOf('data:image/svg') !== 0) {
-      bg.onerror = null;
-      bg.src = FALLBACK;
-      updateAttribution('bauhaus (offline fallback)');
-    }
-  };
   bg.crossOrigin = 'anonymous';
-  bg.src = API + '/today' + dateParam;
+  loadDate(today);
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
@@ -130,39 +121,6 @@
         /* best effort */
       });
     });
-  }
-
-  var hasCachedTodayTitle = false;
-  try {
-    var cachedDate = localStorage.getItem('bg-date');
-    var cachedTitle = localStorage.getItem('bg-title');
-    if (cachedDate === today && cachedTitle) {
-      updateAttribution(cachedTitle);
-      hasCachedTodayTitle = true;
-    }
-  } catch (_e) {
-    /* localStorage unavailable */
-  }
-
-  if (!hasCachedTodayTitle) {
-    fetch(API + '/today.json' + dateParam)
-      .then(function (r) {
-        return r.json();
-      })
-      .then(function (data) {
-        if (data && data.title) {
-          try {
-            localStorage.setItem('bg-date', today);
-            localStorage.setItem('bg-title', data.title);
-          } catch (_e) {
-            /* localStorage unavailable */
-          }
-          updateAttribution(data.title);
-        }
-      })
-      .catch(function () {
-        /* attribution is non-critical */
-      });
   }
 
   // ── Touch swipe navigation ──────────────────────────

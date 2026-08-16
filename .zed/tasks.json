@@ -1,7 +1,7 @@
 [
   {
     "label": "Preview Site",
-    "command": "npm",
+    "command": "bun",
     "args": ["run", "preview"],
     "presentation": {
       "reveal": "always",
@@ -12,7 +12,7 @@
   },
   {
     "label": "Lint",
-    "command": "npm",
+    "command": "bun",
     "args": ["run", "lint"],
     "presentation": {
       "reveal": "always",
@@ -23,7 +23,7 @@
   },
   {
     "label": "Format Check",
-    "command": "npm",
+    "command": "bun",
     "args": ["run", "format"],
     "presentation": {
       "reveal": "always",
