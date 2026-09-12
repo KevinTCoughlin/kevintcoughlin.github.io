@@ -6,13 +6,13 @@
 #   docker compose up
 
 # ---------- Stage 1: stage runtime assets ----------
-FROM alpine:3.22 AS stage
+FROM alpine:3.24 AS stage
 WORKDIR /src
 COPY . .
 RUN sh scripts/stage-site.sh /out
 
 # ---------- Stage 2: nginx serving the staged site ----------
-FROM nginx:1.27-alpine AS runtime
+FROM nginx:1.31-alpine AS runtime
 
 # Run as non-root for parity with restricted environments.
 # nginx:alpine ships a 'nginx' user (uid 101). We:
