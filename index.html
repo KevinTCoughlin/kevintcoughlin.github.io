@@ -116,10 +116,13 @@
         position: sticky;
         top: 0;
         z-index: 3;
+        width: 100%;
+        margin-right: 0;
+        margin-left: 0;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 18px 0;
+        padding: 18px max(32px, calc((100% - 1240px) / 2));
         border-bottom: 1px solid var(--line);
         background: rgba(20, 33, 29, 0.86);
         backdrop-filter: blur(18px);
@@ -418,7 +421,7 @@
           width: min(100% - 32px, 580px);
         }
         .site-header {
-          padding: 20px 0;
+          padding: 20px 16px;
         }
         .site-nav {
           font-size: 0.58rem;
