@@ -1,7 +1,7 @@
 # Kevin Coughlin
 
 > Personal site of Kevin Coughlin — programmer and software engineer based in
-> Seattle. Static single-page site at <https://kevintcoughlin.com>.
+> Redmond, Washington. Static single-page site at <https://kevintcoughlin.com>.
 
 ## About
 
