@@ -422,36 +422,51 @@
         border-radius: 3px;
       }
       @media (max-width: 760px) {
+        html {
+          scroll-padding-top: 110px;
+        }
         .shell {
           width: min(100% - 32px, 580px);
         }
         .site-header {
-          row-gap: 12px;
-          padding: 20px 16px;
+          flex-wrap: wrap;
+          row-gap: 14px;
+          padding: 16px;
+        }
+        .wordmark {
+          font-size: 1.15rem;
         }
         .site-nav {
-          font-size: 0.58rem;
+          width: 100%;
+          justify-content: space-between;
+          font-size: 0.7rem;
         }
         .site-nav a {
-          padding: 6px 8px;
+          padding: 14px 12px;
+          white-space: nowrap;
         }
         .attribution {
-          top: 12px;
-          right: 16px;
-          bottom: auto;
+          position: static;
+          width: min(100% - 32px, 580px);
+          margin: 0 auto 24px;
+          text-align: right;
         }
         .hero {
           display: block;
-          padding: 100px 0 90px;
+          padding: 64px 0 72px;
         }
         .hero::after {
-          margin-top: 55px;
+          margin-top: 42px;
         }
         h1 {
-          font-size: clamp(4rem, 19vw, 7rem);
+          font-size: clamp(3rem, 13vw, 5rem);
+          line-height: 0.96;
+        }
+        .hero-copy {
+          font-size: 1.05rem;
         }
         .hero-aside {
-          margin-top: 45px;
+          margin-top: 36px;
         }
         .section {
           padding: 64px 0;
@@ -491,12 +506,13 @@
           grid-template-columns: repeat(2, 1fr);
         }
       }
-      @media (max-width: 420px) {
-        .site-header {
-          flex-wrap: wrap;
-        }
+      @media (max-width: 360px) {
         .site-nav {
-          margin-left: auto;
+          font-size: 0.64rem;
+          letter-spacing: 0.06em;
+        }
+        .site-nav a {
+          padding-inline: 8px;
         }
       }
       @media (prefers-reduced-motion: reduce) {
