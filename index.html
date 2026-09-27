@@ -429,6 +429,7 @@
           width: min(100% - 32px, 580px);
         }
         .site-header {
+          width: 100%;
           flex-wrap: wrap;
           row-gap: 14px;
           padding: 16px;
@@ -448,8 +449,15 @@
         .attribution {
           position: static;
           width: min(100% - 32px, 580px);
-          margin: 0 auto 24px;
-          text-align: right;
+          margin: 0 auto;
+          padding: 0 0 88px;
+          font-size: 0.75rem;
+          line-height: 1.5;
+        }
+        .attribution a {
+          display: inline-block;
+          padding: 8px 10px;
+          overflow-wrap: anywhere;
         }
         .hero {
           display: block;
@@ -494,11 +502,14 @@
           margin-top: 28px;
         }
         footer {
-          display: block;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          padding: 28px 0 20px;
+          font-size: 0.8rem;
         }
         footer span {
           display: block;
-          margin-top: 8px;
         }
       }
       @media (min-width: 761px) and (max-width: 980px) {
