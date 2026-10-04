@@ -313,6 +313,43 @@
         letter-spacing: 0.08em;
         text-transform: uppercase;
       }
+      .roles {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        border-top: 1px solid var(--line);
+      }
+      .role {
+        display: grid;
+        grid-template-columns: 8.5rem minmax(14rem, 0.8fr) 1.2fr;
+        gap: 32px;
+        align-items: baseline;
+        padding: 24px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .role-years,
+      .role-org {
+        color: var(--accent);
+        font-family: var(--mono);
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .role h3 {
+        margin: 0 0 6px;
+        font-family: var(--serif);
+        font-size: 1.35rem;
+        font-weight: 400;
+      }
+      .role p,
+      .roles-more {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+      .roles-more {
+        margin-top: 28px;
+      }
       .business {
         padding: 42px;
         border: 1px solid var(--line);
@@ -487,6 +524,10 @@
           grid-template-columns: 1fr;
           gap: 20px;
         }
+        .role {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
         .contact {
           display: block;
         }
@@ -506,6 +547,12 @@
         }
       }
       @media (min-width: 761px) and (max-width: 980px) {
+        .role {
+          grid-template-columns: 7rem 1fr;
+        }
+        .role p {
+          grid-column: 2;
+        }
         .projects {
           grid-template-columns: repeat(2, 1fr);
         }
@@ -546,6 +593,7 @@
       <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
       <nav class="site-nav" aria-label="Primary">
         <a href="#work">Work</a>
+        <a href="#experience">Experience</a>
         <a href="#cascadia">Cascadia</a>
         <a href="#contact">Say hello</a>
       </nav>
@@ -661,10 +709,89 @@
         </div>
       </section>
 
+      <section id="experience" class="section" aria-labelledby="experience-heading">
+        <div class="section-heading">
+          <h2 id="experience-heading">Experience</h2>
+          <span class="section-number">02 / the day job</span>
+        </div>
+        <ol class="roles">
+          <li class="role">
+            <span class="role-years">2024 – now</span>
+            <div>
+              <h3>Principal Software Engineer</h3>
+              <span class="role-org">Microsoft · SharePoint &amp; Microsoft 365</span>
+            </div>
+            <p>
+              Bringing Microsoft 365 Copilot search into SharePoint, and hardening the platform’s
+              security across commercial, government, and sovereign clouds.
+            </p>
+          </li>
+          <li class="role">
+            <span class="role-years">2022 – 2024</span>
+            <div>
+              <h3>Principal Software Engineer</h3>
+              <span class="role-org">Microsoft · Viva &amp; SharePoint</span>
+            </div>
+            <p>
+              Tech lead for Viva Home, taking it from timeouts to fast loads, and for moving
+              SharePoint and OneDrive’s web telemetry onto a new SDK at Microsoft 365 scale.
+            </p>
+          </li>
+          <li class="role">
+            <span class="role-years">2019 – 2022</span>
+            <div>
+              <h3>Senior Software Engineer</h3>
+              <span class="role-org">Microsoft · SharePoint Framework</span>
+            </div>
+            <p>
+              Rebuilt the SharePoint Framework release pipeline, shipped the most releases in its
+              history — including the Adaptive Card Extensions behind Viva Connections — and cut
+              JavaScript from SharePoint’s busiest pages.
+            </p>
+          </li>
+          <li class="role">
+            <span class="role-years">2015 – 2019</span>
+            <div>
+              <h3>Software Engineer</h3>
+              <span class="role-org">Microsoft · Office UI Fabric &amp; Aria</span>
+            </div>
+            <p>
+              Open-sourced the OneDrive File Picker under MIT (shown at Ignite 2018), led the Fabric
+              7 migration, and built the Aria telemetry portal.
+            </p>
+          </li>
+          <li class="role">
+            <span class="role-years">2014 – 2015</span>
+            <div>
+              <h3>Product Engineer</h3>
+              <span class="role-org">Tumblr · New York</span>
+            </div>
+            <p>Dashboard, search, explore, and onboarding on the web and Android.</p>
+          </li>
+          <li class="role">
+            <span class="role-years">2013 – 2014</span>
+            <div>
+              <h3>JavaScript Developer</h3>
+              <span class="role-org">Bank of America · New Jersey</span>
+            </div>
+            <p>A cross-platform JavaScript SDK and internal mobile apps.</p>
+          </li>
+        </ol>
+        <p class="roles-more">
+          B.S. in Computer Science &amp; Economics, The College of New Jersey. Full history on
+          <a
+            class="text-link"
+            href="https://www.linkedin.com/in/kevintcoughlin"
+            rel="noopener noreferrer"
+            >LinkedIn →</a
+          >
+        </p>
+      </section>
+
       <section id="cascadia" class="section" aria-labelledby="cascadia-heading">
         <div class="section-heading">
           <h2 id="cascadia-heading">Cascadia<br />Collections</h2>
-          <span class="section-number">02 / the company</span>
+          <span class="section-number">03 / the company</span>
         </div>
         <div class="business">
           <div class="business-mark">Small by design.<br /><em>Open by default.</em></div>
@@ -703,7 +830,7 @@
 
       <section id="contact" class="section contact" aria-labelledby="contact-heading">
         <div>
-          <div class="eyebrow">03 / keep in touch</div>
+          <div class="eyebrow">04 / keep in touch</div>
           <h2 id="contact-heading">Say hello.</h2>
           <p>
             Open-source collaboration, thoughtful software, and good questions are always welcome.
