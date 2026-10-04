@@ -9,13 +9,23 @@
 - [GitHub profile](https://github.com/KevinTCoughlin): open-source contributions, public repos.
 - [Source code](https://github.com/KevinTCoughlin/kevintcoughlin.github.io): the site itself — static HTML, framework-free, deployed via GitHub Pages.
 
+## Projects
+
+- [sir-android](https://cascadiacollections.github.io/sir-android/): open-source internet radio for Android, Wear OS, Android Auto and Android TV (Kotlin).
+- [ShoutKit](https://cascadiacollections.github.io/shoutkit/): MIT-licensed internet radio SDK, and Holmdel, the app built on it for iPhone, iPad, Mac, Apple Watch and Apple TV (Swift).
+- [lazydeck](https://lazydeck.dev/): lazydocker-style terminal UI for managing Steam Deck and Steam Machine devkits (Go).
+- [mc-dad-server](https://kevintcoughlin.com/mc-dad-server/): a Minecraft server in 60 seconds (Go).
+- [bauhaus](https://github.com/cascadiacollections/bauhaus): daily style-transferred art from CC0 museum collections on Cloudflare Workers, with Android and Apple TV clients.
+- [godot-xdg-portals](https://kevintcoughlin.com/godot-xdg-portals/): desktop portals for Godot games on Linux (GDScript).
+- [Cascadia Collections](https://www.cascadiacollections.com/): the company Kevin founded.
+
 ## Verifying identity
 
 - [Keyoxide](https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4): PGP-backed identity proofs.
 
 ## Optional
 
-- [Bauhaus background project](https://github.com/cascadiacollections/bauhaus): the Cloudflare Worker that supplies the daily rotating hero image.
+- The daily hero background comes from the bauhaus Worker listed above.
 - [security.txt](https://kevintcoughlin.com/.well-known/security.txt): vulnerability-disclosure contacts.
 - [Sitemap](https://kevintcoughlin.com/sitemap.xml).
 
