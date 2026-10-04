@@ -16,7 +16,7 @@
 - [lazydeck](https://lazydeck.dev/): lazydocker-style terminal UI for managing Steam Deck and Steam Machine devkits (Go).
 - [mc-dad-server](https://kevintcoughlin.com/mc-dad-server/): a Minecraft server in 60 seconds (Go).
 - [bauhaus](https://github.com/cascadiacollections/bauhaus): daily style-transferred art from CC0 museum collections on Cloudflare Workers, with Android and Apple TV clients.
-- [godot-xdg-portals](https://kevintcoughlin.com/godot-xdg-portals/): desktop portals for Godot games on Linux (GDScript).
+- [godot-xdg-portals](https://kevintcoughlin.com/godot-xdg-portals/): desktop portals for Godot games on Linux (C++ GDExtension + GDScript). v0.2.0 ships prebuilt for Linux x86_64 and arm64: https://github.com/KevinTCoughlin/godot-xdg-portals/releases/latest
 - [Cascadia Collections](https://www.cascadiacollections.com/): the company Kevin founded.
 
 ## Verifying identity
