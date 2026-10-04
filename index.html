@@ -737,29 +737,51 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "Person",
-        "name": "Kevin T. Coughlin",
-        "jobTitle": "Software Engineer",
-        "description": "Programmer, open-source contributor, and founder of Cascadia Collections.",
-        "address": {
-          "@type": "PostalAddress",
-          "addressLocality": "Redmond",
-          "addressRegion": "WA",
-          "addressCountry": "US"
-        },
-        "worksFor": {
-          "@type": "Organization",
-          "name": "Microsoft",
-          "url": "https://www.microsoft.com/"
-        },
-        "url": "https://kevintcoughlin.com",
-        "image": "https://kevintcoughlin.com/og-image.png",
-        "sameAs": [
-          "https://github.com/KevinTCoughlin",
-          "https://www.linkedin.com/in/kevintcoughlin",
-          "https://twitter.com/kevintcoughlin",
-          "https://www.cascadiacollections.com/",
-          "https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4"
+        "@graph": [
+          {
+            "@type": "Person",
+            "@id": "https://kevintcoughlin.com/#person",
+            "name": "Kevin T. Coughlin",
+            "jobTitle": "Software Engineer",
+            "description": "Programmer, open-source contributor, and founder of Cascadia Collections.",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Redmond",
+              "addressRegion": "WA",
+              "addressCountry": "US"
+            },
+            "worksFor": {
+              "@type": "Organization",
+              "name": "Microsoft",
+              "url": "https://www.microsoft.com/"
+            },
+            "email": "mailto:kevintcoughlin@fastmail.com",
+            "url": "https://kevintcoughlin.com",
+            "image": "https://kevintcoughlin.com/og-image.png",
+            "knowsAbout": [
+              "Android",
+              "Kotlin",
+              "Swift",
+              "Go",
+              "Rust",
+              "Linux",
+              "Cloudflare Workers"
+            ],
+            "sameAs": [
+              "https://github.com/KevinTCoughlin",
+              "https://www.linkedin.com/in/kevintcoughlin",
+              "https://twitter.com/kevintcoughlin",
+              "https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4"
+            ]
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://www.cascadiacollections.com/#organization",
+            "name": "Cascadia Collections",
+            "url": "https://www.cascadiacollections.com/",
+            "sameAs": ["https://github.com/cascadiacollections"],
+            "founder": { "@id": "https://kevintcoughlin.com/#person" }
+          }
         ]
       }
     </script>
