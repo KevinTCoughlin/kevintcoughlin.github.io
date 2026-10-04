@@ -257,9 +257,11 @@
         gap: 1px;
         background: var(--line);
         border: 1px solid var(--line);
+        counter-reset: project;
       }
       .project {
         position: relative;
+        counter-increment: project;
         min-height: 220px;
         padding: 26px;
         background: var(--panel);
@@ -282,22 +284,7 @@
         color: rgba(215, 239, 114, 0.5);
         font-family: var(--mono);
         font-size: 0.63rem;
-        content: '01';
-      }
-      .project:nth-child(2)::before {
-        content: '02';
-      }
-      .project:nth-child(3)::before {
-        content: '03';
-      }
-      .project:nth-child(4)::before {
-        content: '04';
-      }
-      .project:nth-child(5)::before {
-        content: '05';
-      }
-      .project:nth-child(6)::before {
-        content: '06';
+        content: counter(project, decimal-leading-zero);
       }
       .project h3 {
         margin: 0 0 12px;
@@ -569,6 +556,10 @@
         </div>
         <aside class="hero-aside">
           <p>Currently building at Microsoft and shipping independent projects in the open.</p>
+          <p>
+            <time datetime="2026-10">Now, October 2026:</time> bringing SIR to Android TV and Wear
+            OS, and Holmdel to every Apple screen.
+          </p>
           <a href="https://github.com/KevinTCoughlin" rel="noopener noreferrer"
             >Follow the trail on GitHub →</a
           >
@@ -583,9 +574,33 @@
         <div class="projects">
           <a
             class="project"
-            href="https://github.com/KevinTCoughlin/lazydeck"
+            href="https://cascadiacollections.github.io/sir-android/"
             rel="noopener noreferrer"
           >
+            <div>
+              <h3>sir-android</h3>
+              <p>
+                Open-source internet radio for Android — phone, Wear OS, Android Auto, and Android
+                TV. No accounts, no tracking.
+              </p>
+            </div>
+            <div class="project-meta"><span>Kotlin · Android</span><span>↗</span></div>
+          </a>
+          <a
+            class="project"
+            href="https://cascadiacollections.github.io/shoutkit/"
+            rel="noopener noreferrer"
+          >
+            <div>
+              <h3>ShoutKit</h3>
+              <p>
+                An MIT-licensed radio SDK, and Holmdel, the app built on it for iPhone, iPad, Mac,
+                Apple Watch, and Apple TV.
+              </p>
+            </div>
+            <div class="project-meta"><span>Swift · Apple</span><span>↗</span></div>
+          </a>
+          <a class="project" href="https://lazydeck.dev/" rel="noopener noreferrer">
             <div>
               <h3>lazydeck</h3>
               <p>
@@ -593,63 +608,21 @@
                 devkits.
               </p>
             </div>
-            <div class="project-meta"><span>Rust · TUI</span><span>↗</span></div>
+            <div class="project-meta"><span>Go · TUI</span><span>↗</span></div>
           </a>
           <a
             class="project"
-            href="https://github.com/KevinTCoughlin/radio-slate"
+            href="https://kevintcoughlin.com/mc-dad-server/"
             rel="noopener noreferrer"
           >
             <div>
-              <h3>radio-slate</h3>
+              <h3>mc-dad-server</h3>
               <p>
-                A focused, native radio player with a deliberately quiet interface and practical
-                Linux support.
+                A Minecraft server in 60 seconds, for busy dads who would rather play than
+                administer.
               </p>
             </div>
-            <div class="project-meta"><span>Rust · desktop</span><span>↗</span></div>
-          </a>
-          <a
-            class="project"
-            href="https://github.com/KevinTCoughlin/godot-xdg-portals"
-            rel="noopener noreferrer"
-          >
-            <div>
-              <h3>godot-xdg-portals</h3>
-              <p>
-                Desktop portals for Godot games: GameMode, idle inhibition, power saving, and
-                notifications.
-              </p>
-            </div>
-            <div class="project-meta"><span>Godot · Linux</span><span>↗</span></div>
-          </a>
-          <a
-            class="project"
-            href="https://github.com/KevinTCoughlin/bazzite-custom"
-            rel="noopener noreferrer"
-          >
-            <div>
-              <h3>bazzite-custom</h3>
-              <p>
-                A custom Bazzite DX image with the packages and defaults that make a great dev
-                machine.
-              </p>
-            </div>
-            <div class="project-meta"><span>Linux · image</span><span>↗</span></div>
-          </a>
-          <a
-            class="project"
-            href="https://github.com/KevinTCoughlin/deathban-pro"
-            rel="noopener noreferrer"
-          >
-            <div>
-              <h3>deathban-pro</h3>
-              <p>
-                A configurable hardcore gameplay mod for Minecraft servers, built for communities
-                that want stakes.
-              </p>
-            </div>
-            <div class="project-meta"><span>Kotlin · Minecraft</span><span>↗</span></div>
+            <div class="project-meta"><span>Go · Minecraft</span><span>↗</span></div>
           </a>
           <a
             class="project"
@@ -659,10 +632,25 @@
             <div>
               <h3>bauhaus</h3>
               <p>
-                Daily stylized artwork as a service — the visual engine behind this site and more.
+                Daily style-transferred art from CC0 museum collections — behind this site's
+                background, plus Android and Apple TV clients.
               </p>
             </div>
             <div class="project-meta"><span>Cloudflare · art</span><span>↗</span></div>
+          </a>
+          <a
+            class="project"
+            href="https://kevintcoughlin.com/godot-xdg-portals/"
+            rel="noopener noreferrer"
+          >
+            <div>
+              <h3>godot-xdg-portals</h3>
+              <p>
+                Desktop portals for Godot games on Linux: GameMode, idle inhibition, power saving,
+                and notifications.
+              </p>
+            </div>
+            <div class="project-meta"><span>Godot · Linux</span><span>↗</span></div>
           </a>
         </div>
       </section>
@@ -716,6 +704,7 @@
           </p>
         </div>
         <nav class="contact-links" aria-label="Social links">
+          <a href="mailto:kevintcoughlin@fastmail.com">Email</a>
           <a href="https://github.com/KevinTCoughlin" rel="noopener noreferrer">GitHub ↗</a>
           <a href="https://www.linkedin.com/in/kevintcoughlin" rel="noopener noreferrer"
             >LinkedIn ↗</a
@@ -730,7 +719,7 @@
       </section>
     </main>
     <footer class="shell">
-      <span>© 2026 Kevin T. Coughlin</span><span>Made with plain HTML, CSS, and care.</span>
+      <span>© Kevin T. Coughlin</span><span>Made with plain HTML, CSS, and care.</span>
     </footer>
     <div id="attribution" class="attribution"></div>
     <script type="module" src="/telemetry.js"></script>
