@@ -27,6 +27,7 @@ This file is the canonical entry point for AI coding agents working in this repo
 | `sitemap.xml`, `robots.txt`, `humans.txt` | SEO / crawler hints                                                                                       |
 | `.well-known/security.txt`                | Disclosure contact                                                                                        |
 | `scripts/stage-site.sh`                   | **Source of truth** for "what files ship to prod"                                                         |
+| `scripts/og-image.sh`                     | Regenerates `og-image.png` from `scripts/og-image.html` (Chromium + oxipng; not shipped)                  |
 | `Dockerfile` + `docker-compose.yml`       | Production-parity local preview via nginx                                                                 |
 | `.github/workflows/deploy.yml`            | Validate → stage → Pages deploy                                                                           |
 | `.github/workflows/quality.yml`           | Lighthouse CI + lychee link check (PRs); devcontainer smoke test (weekly cron)                            |
