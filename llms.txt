@@ -11,7 +11,7 @@
 
 ## Projects
 
-- [sir-android](https://cascadiacollections.github.io/sir-android/): open-source internet radio for Android, Wear OS, Android Auto and Android TV (Kotlin).
+- [sir-android](https://cascadiacollections.github.io/shoutkit-android/): open-source internet radio for Android, Wear OS, Android Auto and Android TV (Kotlin).
 - [ShoutKit](https://cascadiacollections.github.io/shoutkit/): MIT-licensed internet radio SDK, and Holmdel, the app built on it for iPhone, iPad, Mac, Apple Watch and Apple TV (Swift).
 - [lazydeck](https://lazydeck.dev/): lazydocker-style terminal UI for managing Steam Deck and Steam Machine devkits (Go).
 - [mc-dad-server](https://kevintcoughlin.com/mc-dad-server/): a Minecraft server in 60 seconds (Go).
