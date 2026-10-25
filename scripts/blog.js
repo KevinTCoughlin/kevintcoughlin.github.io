@@ -50,9 +50,10 @@ function parsePost(file) {
     slug,
     url: `${BLOG_URL}${slug}/`,
     title: heading[1].trim(),
-    summary: Bun.markdown
-      .html(firstParagraph)
-      .replace(/<[^>]+>/g, '')
+    // Plain text: keep link text, drop inline Markdown markers. Escaped on output.
+    summary: firstParagraph
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/[*`]/g, '')
       .trim(),
     published,
     updated,
@@ -83,7 +84,7 @@ function page({ title, description, canonical, main }) {
     <link rel="alternate" type="application/atom+xml" title="${escape(FEED_TITLE)}" href="${FEED_URL}" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <title>${escape(title)}</title>
