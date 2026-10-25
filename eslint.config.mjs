@@ -67,6 +67,15 @@ export default [
     },
   },
   {
+    files: ['scripts/blog.js'],
+    languageOptions: {
+      globals: {
+        Bun: 'readonly',
+        process: 'readonly',
+      },
+    },
+  },
+  {
     ignores: ['node_modules/**', '_site/**', 'dist/**', '.git/**', 'web-vitals.js'],
   },
 ];

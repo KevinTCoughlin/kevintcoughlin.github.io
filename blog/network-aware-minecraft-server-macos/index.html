@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="I wanted my Minecraft server to automatically start when I connect to my home WiFi, gracefully shut down when I leave, and perform daily maintenance restarts like production game servers. Here's how I set it up on macOS." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/network-aware-minecraft-server-macos/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Network-Aware Minecraft Server on macOS — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>Network-Aware Minecraft Server on macOS</h1>
+        <time datetime="2026-01-18T18:15:54Z">January 18, 2026</time>
+<p>I wanted my Minecraft server to automatically start when I connect to my home WiFi, gracefully shut down when I leave, and perform daily maintenance restarts like production game servers. Here's how I set it up on macOS.</p>
+<h2>The Problem</h2>
+<p>Running a Minecraft server 24/7 on a laptop isn't practical. I wanted it to:</p>
+<ul>
+<li>Auto-start when connected to my home network (&quot;HomeWiFi&quot;)</li>
+<li>Gracefully save and stop when disconnecting</li>
+<li>Restart daily with player warnings (like real game servers)</li>
+<li>Clean up old logs and crash reports automatically</li>
+<li>Work without manual intervention</li>
+</ul>
+<h2>The Solution</h2>
+<p>A shell script (<code>mc-server-manager</code>) with LaunchAgents for network monitoring and scheduled restarts.</p>
+<h2>WiFi Detection Gotcha</h2>
+<p>The commonly recommended approach:</p>
+<pre><code class="language-bash">networksetup -getairportnetwork en0
+</code></pre>
+<p><strong>Returns &quot;not associated&quot; on 6GHz WiFi networks</strong>, even when connected. This is a known bug on newer macOS versions with WiFi 6E.</p>
+<p>The fix is to use <code>system_profiler</code> instead:</p>
+<pre><code class="language-bash">system_profiler SPAirPortDataType | \
+    awk '/Current Network Information:/{getline; gsub(/^[[:space:]]+|:$/,&quot;&quot;); print; exit}'
+</code></pre>
+<p>This correctly returns the SSID regardless of which band you're connected to.</p>
+<h2>Configuration</h2>
+<p>All settings live in <code>~/.config/mc-server/config</code>:</p>
+<pre><code class="language-bash"># Network
+TARGET_SSID=&quot;HomeWiFi&quot;
+
+# Server
+SERVER_DIR=&quot;$HOME/Development/minecraft/minecraft-server/server&quot;
+SESSION_NAME=&quot;minecraft-server&quot;
+
+# JVM Memory
+MIN_RAM=&quot;4G&quot;
+MAX_RAM=&quot;4G&quot;
+
+# Scheduled restart (24h format, local time)
+RESTART_ENABLED=&quot;true&quot;
+RESTART_HOUR=&quot;00&quot;
+RESTART_MINUTE=&quot;00&quot;
+RESTART_TIMEZONE=&quot;America/Los_Angeles&quot;
+
+# Warning intervals before restart (seconds)
+RESTART_WARNINGS=&quot;300 60 30 10 5&quot;
+</code></pre>
+<h2>JVM Optimization</h2>
+<p>The script uses modern Aikar's flags optimized for Paper 1.20+ on Java 21:</p>
+<pre><code class="language-bash">build_jvm_flags() {
+    local flags=(
+        &quot;-Xms${MIN_RAM}&quot; &quot;-Xmx${MAX_RAM}&quot;
+
+        # G1GC optimized for Minecraft's allocation patterns
+        &quot;-XX:+UseG1GC&quot;
+        &quot;-XX:+ParallelRefProcEnabled&quot;
+        &quot;-XX:MaxGCPauseMillis=200&quot;
+        &quot;-XX:+UnlockExperimentalVMOptions&quot;
+        &quot;-XX:+DisableExplicitGC&quot;
+        &quot;-XX:+AlwaysPreTouch&quot;
+
+        # G1GC region sizing
+        &quot;-XX:G1NewSizePercent=30&quot;
+        &quot;-XX:G1MaxNewSizePercent=40&quot;
+        &quot;-XX:G1HeapRegionSize=8M&quot;
+        &quot;-XX:G1ReservePercent=20&quot;
+        &quot;-XX:G1HeapWastePercent=5&quot;
+        &quot;-XX:G1MixedGCCountTarget=4&quot;
+
+        # G1GC tuning
+        &quot;-XX:InitiatingHeapOccupancyPercent=15&quot;
+        &quot;-XX:G1MixedGCLiveThresholdPercent=90&quot;
+        &quot;-XX:G1RSetUpdatingPauseTimePercent=5&quot;
+        &quot;-XX:SurvivorRatio=32&quot;
+        &quot;-XX:MaxTenuringThreshold=1&quot;
+        &quot;-XX:+PerfDisableSharedMem&quot;
+
+        # Debug helpers (no perf impact)
+        &quot;-XX:+HeapDumpOnOutOfMemoryError&quot;
+        &quot;-XX:HeapDumpPath=$DATA_DIR/heapdump.hprof&quot;
+    )
+    echo &quot;${flags[*]}&quot;
+}
+</code></pre>
+<p>Key points:</p>
+<ul>
+<li><strong>G1GC</strong> is ideal for Minecraft's bursty allocation patterns</li>
+<li><strong>AlwaysPreTouch</strong> pre-allocates memory for consistent latency</li>
+<li><strong>HeapDumpOnOutOfMemoryError</strong> saves a dump for debugging if OOM occurs</li>
+<li>Match min/max RAM to avoid heap resizing during gameplay</li>
+</ul>
+<h2>Scheduled Restarts</h2>
+<p>Like production game servers, the script supports scheduled restarts with player warnings:</p>
+<pre><code class="language-bash">restart_server() {
+    local reason=&quot;${1:-Scheduled maintenance}&quot;
+
+    # Warnings at 5m, 1m, 30s, 10s, 5s
+    for secs in 300 60 30 10 5; do
+        server_say &quot;[RESTART] Server restarting in $(format_duration $secs) - $reason&quot;
+        sleep_until_next_warning
+    done
+
+    server_cmd &quot;save-all&quot;
+    server_say &quot;[RESTART] Restarting NOW!&quot;
+    server_cmd &quot;stop&quot;
+
+    # Wait for graceful shutdown, then cleanup and restart
+    cleanup_server
+    start_server
+}
+</code></pre>
+<p>The <code>cleanup_server</code> function handles maintenance:</p>
+<ul>
+<li>Removes logs older than 7 days</li>
+<li>Removes crash reports older than 30 days</li>
+<li>Clears stale session locks</li>
+</ul>
+<h2>LaunchAgents</h2>
+<p>Two LaunchAgents handle automation:</p>
+<h3>Network Monitor</h3>
+<p><code>com.user.minecraft-server-network</code> - Triggers on WiFi changes:</p>
+<pre><code class="language-xml">&lt;key&gt;WatchPaths&lt;/key&gt;
+&lt;array&gt;
+    &lt;string&gt;/Library/Preferences/SystemConfiguration/com.apple.airport.preferences.plist&lt;/string&gt;
+    &lt;string&gt;/Library/Preferences/SystemConfiguration/NetworkInterfaces.plist&lt;/string&gt;
+&lt;/array&gt;
+&lt;key&gt;StartInterval&lt;/key&gt;
+&lt;integer&gt;60&lt;/integer&gt;
+</code></pre>
+<h3>Scheduled Restart</h3>
+<p><code>com.user.minecraft-server-restart</code> - Daily at midnight:</p>
+<pre><code class="language-xml">&lt;key&gt;StartCalendarInterval&lt;/key&gt;
+&lt;dict&gt;
+    &lt;key&gt;Hour&lt;/key&gt;
+    &lt;integer&gt;0&lt;/integer&gt;
+    &lt;key&gt;Minute&lt;/key&gt;
+    &lt;integer&gt;0&lt;/integer&gt;
+&lt;/dict&gt;
+</code></pre>
+<h2>Usage</h2>
+<pre><code class="language-bash">mc-server-manager status    # Show server state, network, config
+mc-server-manager start     # Start server
+mc-server-manager stop      # Graceful stop with save
+mc-server-manager restart   # Full restart with 5m/1m/30s/10s/5s warnings
+mc-server-manager quick     # Quick restart (10s warning)
+mc-server-manager attach    # Attach to console (Ctrl+B,D to detach)
+mc-server-manager config    # Print current config
+mc-server-manager cleanup   # Run maintenance manually
+mc-server-manager logs      # Tail manager log
+</code></pre>
+<p>Example output from <code>status</code>:</p>
+<pre><code>=== Minecraft Server ===
+Server running: yes
+Network: HomeWiFi (target: HomeWiFi)
+Session: minecraft-server
+Attach: tmux attach -t minecraft-server
+
+=== Scheduled Restart ===
+Enabled: true
+Time: 00:00 (America/Los_Angeles)
+Warnings: 300 60 30 10 5
+
+=== Config ===
+File: ~/.config/mc-server/config
+JVM: 4G - 4G
+</code></pre>
+<h2>Why tmux over screen?</h2>
+<p>macOS ships with screen 4.00.03 from 2006. It lacks features like <code>-Logfile</code> and has quirks with detached sessions. tmux is actively maintained, has better scripting support, and integrates well with the rest of my workflow.</p>
+<h2>Files</h2>
+<table>
+<thead>
+<tr><th>File</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>~/.local/bin/mc-server-manager</code></td><td>Management script (v1.1.0)</td></tr>
+<tr><td><code>~/.config/mc-server/config</code></td><td>Configuration</td></tr>
+<tr><td><code>~/Library/LaunchAgents/com.user.minecraft-server-network.plist</code></td><td>Network monitor</td></tr>
+<tr><td><code>~/Library/LaunchAgents/com.user.minecraft-server-restart.plist</code></td><td>Scheduled restart</td></tr>
+<tr><td><code>~/.local/share/minecraft-server/manager.log</code></td><td>Manager logs</td></tr>
+<tr><td><code>~/.local/share/minecraft-server/heapdump.hprof</code></td><td>OOM heap dump (if triggered)</td></tr>
+</tbody>
+</table>
+<h2>Setup</h2>
+<pre><code class="language-bash"># Load the agents
+launchctl load ~/Library/LaunchAgents/com.user.minecraft-server-network.plist
+launchctl load ~/Library/LaunchAgents/com.user.minecraft-server-restart.plist
+
+# Generate a config file
+mc-server-manager config &gt; ~/.config/mc-server/config
+
+# Edit to taste
+vim ~/.config/mc-server/config
+</code></pre>
+<p>Now the server manages itself: starts on home WiFi, stops when leaving, restarts nightly with cleanup, and warns players before any restart.</p>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>
