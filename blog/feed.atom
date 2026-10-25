@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+  <title>Kevin Coughlin's Blog</title>
+  <id>https://kevintcoughlin.com/blog/</id>
+  <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
+  <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
+  <updated>2026-01-18T19:22:33Z</updated>
+  <author>
+    <name>Kevin T. Coughlin</name>
+    <uri>https://kevintcoughlin.com/</uri>
+  </author>
+  <entry>
+    <title>5x Faster Shell Startup: A macOS Developer Environment Audit</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/5x-faster-shell-startup/"/>
+    <id>https://kevintcoughlin.com/blog/5x-faster-shell-startup/</id>
+    <published>2026-01-18T19:22:33Z</published>
+    <updated>2026-01-18T19:22:33Z</updated>
+    <summary>My shell took 2.5 seconds to start. Now it takes 0.47 seconds. Here's what I learned.</summary>
+    <content type="html">&lt;p&gt;My shell took 2.5 seconds to start. Now it takes 0.47 seconds. Here's what I learned.&lt;/p&gt;
+&lt;h2&gt;The Problem&lt;/h2&gt;
+&lt;p&gt;Every new terminal tab felt sluggish. I'd open a tab, wait, then forget what I was about to do. Death by a thousand cuts.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ time zsh -i -c exit
+zsh -i -c exit  0.31s user 0.53s system 33% cpu 2.509 total
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;2.5 seconds. For a shell prompt.&lt;/p&gt;
+&lt;h2&gt;Finding the Culprits&lt;/h2&gt;
+&lt;p&gt;The usual suspects in a developer's &lt;code&gt;.zshrc&lt;/code&gt;:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;Tool&lt;/th&gt;&lt;th&gt;What it does&lt;/th&gt;&lt;th&gt;Startup cost&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;pyenv&lt;/td&gt;&lt;td&gt;Python version manager&lt;/td&gt;&lt;td&gt;~300ms&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;nvs&lt;/td&gt;&lt;td&gt;Node version manager&lt;/td&gt;&lt;td&gt;~200ms&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;SDKMAN&lt;/td&gt;&lt;td&gt;Java/Kotlin version manager&lt;/td&gt;&lt;td&gt;~400ms&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Google Cloud SDK&lt;/td&gt;&lt;td&gt;gcloud CLI&lt;/td&gt;&lt;td&gt;~200ms&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Oh My Zsh&lt;/td&gt;&lt;td&gt;Shell framework&lt;/td&gt;&lt;td&gt;~100ms&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Greeting script&lt;/td&gt;&lt;td&gt;Inspirational quotes&lt;/td&gt;&lt;td&gt;~500ms&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;That's 1.7 seconds just from version managers I use maybe once a week.&lt;/p&gt;
+&lt;h2&gt;The Fix: Lazy Loading&lt;/h2&gt;
+&lt;p&gt;The insight: I don't need pyenv initialized until I actually run &lt;code&gt;python&lt;/code&gt;. Same for Java, Node, and gcloud.&lt;/p&gt;
+&lt;h3&gt;Before (eager loading)&lt;/h3&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# Every shell startup pays this cost
+eval &amp;quot;$(pyenv init --path)&amp;quot;
+eval &amp;quot;$(pyenv init -)&amp;quot;
+
+[[ -s &amp;quot;$HOME/.sdkman/bin/sdkman-init.sh&amp;quot; ]] &amp;amp;&amp;amp; source &amp;quot;$HOME/.sdkman/bin/sdkman-init.sh&amp;quot;
+
+[ -s &amp;quot;$NVS_HOME/nvs.sh&amp;quot; ] &amp;amp;&amp;amp; . &amp;quot;$NVS_HOME/nvs.sh&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;After (lazy loading)&lt;/h3&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# pyenv - only initialize on first use
+export PYENV_ROOT=&amp;quot;$HOME/.pyenv&amp;quot;
+export PATH=&amp;quot;$PYENV_ROOT/bin:$PATH&amp;quot;
+
+_pyenv_init() {
+  unfunction pyenv python python3 pip pip3 2&amp;gt;/dev/null
+  eval &amp;quot;$(command pyenv init --path)&amp;quot;
+  eval &amp;quot;$(command pyenv init -)&amp;quot;
+}
+
+pyenv() { _pyenv_init; pyenv &amp;quot;$@&amp;quot; }
+python() { _pyenv_init; python &amp;quot;$@&amp;quot; }
+python3() { _pyenv_init; python3 &amp;quot;$@&amp;quot; }
+pip() { _pyenv_init; pip &amp;quot;$@&amp;quot; }
+pip3() { _pyenv_init; pip3 &amp;quot;$@&amp;quot; }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The trick: create shell functions that shadow the real commands. On first invocation, they:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Remove themselves (&lt;code&gt;unfunction&lt;/code&gt;)&lt;/li&gt;
+&lt;li&gt;Initialize the real tool&lt;/li&gt;
+&lt;li&gt;Forward the call&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;For nvs and SDKMAN, same pattern:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# Lazy nvs
+export NVS_HOME=&amp;quot;$HOME/.nvs&amp;quot;
+export PATH=&amp;quot;$NVS_HOME/default/bin:$PATH&amp;quot;  # Default node available immediately
+
+nvs() {
+  unfunction nvs 2&amp;gt;/dev/null
+  [ -s &amp;quot;$NVS_HOME/nvs.sh&amp;quot; ] &amp;amp;&amp;amp; . &amp;quot;$NVS_HOME/nvs.sh&amp;quot;
+  nvs &amp;quot;$@&amp;quot;
+}
+
+# Lazy SDKMAN
+export SDKMAN_DIR=&amp;quot;$HOME/.sdkman&amp;quot;
+
+_sdk_init() {
+  unfunction sdk java javac gradle kotlin kotlinc 2&amp;gt;/dev/null
+  [[ -s &amp;quot;$HOME/.sdkman/bin/sdkman-init.sh&amp;quot; ]] &amp;amp;&amp;amp; source &amp;quot;$HOME/.sdkman/bin/sdkman-init.sh&amp;quot;
+}
+
+sdk() { _sdk_init; sdk &amp;quot;$@&amp;quot; }
+java() { _sdk_init; java &amp;quot;$@&amp;quot; }
+javac() { _sdk_init; javac &amp;quot;$@&amp;quot; }
+gradle() { _sdk_init; gradle &amp;quot;$@&amp;quot; }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;Key insight for nvs&lt;/strong&gt;: Add the default node to PATH directly (&lt;code&gt;$NVS_HOME/default/bin&lt;/code&gt;). This way &lt;code&gt;node&lt;/code&gt; and &lt;code&gt;npm&lt;/code&gt; work instantly without loading nvs. Only &lt;code&gt;nvs use&lt;/code&gt; triggers full initialization.&lt;/p&gt;
+&lt;h3&gt;Background the greeting&lt;/h3&gt;
+&lt;p&gt;My shell displayed an inspirational quote on startup. Nice, but blocking.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# Before - blocking
+[[ -o interactive ]] &amp;amp;&amp;amp; ~/.local/bin/greet
+
+# After - non-blocking
+[[ -o interactive ]] &amp;amp;&amp;amp; { ~/.local/bin/greet &amp;amp; }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The &lt;code&gt;&amp;amp;&lt;/code&gt; backgrounds the process. The quote appears after the prompt is ready.&lt;/p&gt;
+&lt;h2&gt;Consolidating Redundant Tools&lt;/h2&gt;
+&lt;p&gt;While auditing, I found duplicate tools:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;Installed&lt;/th&gt;&lt;th&gt;Also installed&lt;/th&gt;&lt;th&gt;Resolution&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;tmux&lt;/td&gt;&lt;td&gt;Wezterm (has multiplexer)&lt;/td&gt;&lt;td&gt;Removed tmux&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;htop&lt;/td&gt;&lt;td&gt;btop&lt;/td&gt;&lt;td&gt;Removed htop&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;tree&lt;/td&gt;&lt;td&gt;eza --tree&lt;/td&gt;&lt;td&gt;Removed tree&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;jenv&lt;/td&gt;&lt;td&gt;SDKMAN&lt;/td&gt;&lt;td&gt;Removed jenv&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;brew node&lt;/td&gt;&lt;td&gt;nvs&lt;/td&gt;&lt;td&gt;Removed brew node&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;iTerm2&lt;/td&gt;&lt;td&gt;Wezterm&lt;/td&gt;&lt;td&gt;Removed iTerm2&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Bartender&lt;/td&gt;&lt;td&gt;Ice (OSS)&lt;/td&gt;&lt;td&gt;Removed Bartender&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;This freed ~440MB and simplified the mental model.&lt;/p&gt;
+&lt;h3&gt;Wezterm vs tmux&lt;/h3&gt;
+&lt;p&gt;Both provide:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Split panes&lt;/li&gt;
+&lt;li&gt;Multiple tabs/windows&lt;/li&gt;
+&lt;li&gt;Session persistence&lt;/li&gt;
+&lt;li&gt;Vim-style navigation&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Wezterm advantages:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;GPU-accelerated rendering&lt;/li&gt;
+&lt;li&gt;Lua config (same language as Neovim)&lt;/li&gt;
+&lt;li&gt;Native macOS integration&lt;/li&gt;
+&lt;li&gt;Built-in smart-splits with Neovim&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I kept &lt;code&gt;.tmux.conf&lt;/code&gt; for SSH into Linux servers, but local development uses Wezterm exclusively.&lt;/p&gt;
+&lt;h2&gt;The Result&lt;/h2&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ time zsh -i -c exit
+zsh -i -c exit  0.14s user 0.19s system 68% cpu 0.470 total
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;2.5s → 0.47s (5.3x faster)&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;First &lt;code&gt;python&lt;/code&gt; call adds ~300ms one time. Worth it.&lt;/p&gt;
+&lt;h2&gt;Full .zshrc Structure&lt;/h2&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# 1. Oh My Zsh (minimal plugins)
+plugins=(git)
+source $ZSH/oh-my-zsh.sh
+
+# 2. Environment variables (no subshells)
+export EDITOR='nvim'
+export PATH=&amp;quot;$HOME/.local/bin:$PATH&amp;quot;
+# ... other exports
+
+# 3. Lazy-loaded version managers
+# pyenv, nvs, sdkman, gcloud (see above)
+
+# 4. Fast tool initialization
+eval &amp;quot;$(zoxide init zsh)&amp;quot;    # ~10ms
+eval &amp;quot;$(direnv hook zsh)&amp;quot;    # ~10ms
+eval &amp;quot;$(starship init zsh)&amp;quot;  # ~20ms
+
+# 5. Aliases and functions
+alias ls=&amp;quot;eza --icons&amp;quot;
+alias cat=&amp;quot;bat&amp;quot;
+# ...
+
+# 6. Interactive-only (backgrounded)
+[[ -o interactive ]] &amp;amp;&amp;amp; { ~/.local/bin/greet &amp;amp; }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Takeaways&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Measure first&lt;/strong&gt;: &lt;code&gt;time zsh -i -c exit&lt;/code&gt; before optimizing&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Lazy load&lt;/strong&gt;: If you don't use it every session, defer it&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Audit dependencies&lt;/strong&gt;: Version managers accumulate&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Consolidate tools&lt;/strong&gt;: One multiplexer, one file manager, one top replacement&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Background nice-to-haves&lt;/strong&gt;: Quotes, weather, etc.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The best shell is one you don't notice.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;&lt;em&gt;Tools mentioned: &lt;a href=&quot;https://wezfurlong.org/wezterm/&quot;&gt;Wezterm&lt;/a&gt;, &lt;a href=&quot;https://starship.rs/&quot;&gt;Starship&lt;/a&gt;, &lt;a href=&quot;https://github.com/eza-community/eza&quot;&gt;eza&lt;/a&gt;, &lt;a href=&quot;https://github.com/sharkdp/bat&quot;&gt;bat&lt;/a&gt;, &lt;a href=&quot;https://github.com/ajeetdsouza/zoxide&quot;&gt;zoxide&lt;/a&gt;, &lt;a href=&quot;https://github.com/jordanbaird/Ice&quot;&gt;Ice&lt;/a&gt;&lt;/em&gt;&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>Network-Aware Minecraft Server on macOS</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/network-aware-minecraft-server-macos/"/>
+    <id>https://kevintcoughlin.com/blog/network-aware-minecraft-server-macos/</id>
+    <published>2026-01-18T18:15:54Z</published>
+    <updated>2026-01-18T18:15:54Z</updated>
+    <summary>I wanted my Minecraft server to automatically start when I connect to my home WiFi, gracefully shut down when I leave, and perform daily maintenance restarts like production game servers. Here's how I set it up on macOS.</summary>
+    <content type="html">&lt;p&gt;I wanted my Minecraft server to automatically start when I connect to my home WiFi, gracefully shut down when I leave, and perform daily maintenance restarts like production game servers. Here's how I set it up on macOS.&lt;/p&gt;
+&lt;h2&gt;The Problem&lt;/h2&gt;
+&lt;p&gt;Running a Minecraft server 24/7 on a laptop isn't practical. I wanted it to:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Auto-start when connected to my home network (&amp;quot;HomeWiFi&amp;quot;)&lt;/li&gt;
+&lt;li&gt;Gracefully save and stop when disconnecting&lt;/li&gt;
+&lt;li&gt;Restart daily with player warnings (like real game servers)&lt;/li&gt;
+&lt;li&gt;Clean up old logs and crash reports automatically&lt;/li&gt;
+&lt;li&gt;Work without manual intervention&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;The Solution&lt;/h2&gt;
+&lt;p&gt;A shell script (&lt;code&gt;mc-server-manager&lt;/code&gt;) with LaunchAgents for network monitoring and scheduled restarts.&lt;/p&gt;
+&lt;h2&gt;WiFi Detection Gotcha&lt;/h2&gt;
+&lt;p&gt;The commonly recommended approach:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;networksetup -getairportnetwork en0
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;Returns &amp;quot;not associated&amp;quot; on 6GHz WiFi networks&lt;/strong&gt;, even when connected. This is a known bug on newer macOS versions with WiFi 6E.&lt;/p&gt;
+&lt;p&gt;The fix is to use &lt;code&gt;system_profiler&lt;/code&gt; instead:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;system_profiler SPAirPortDataType | \
+    awk '/Current Network Information:/{getline; gsub(/^[[:space:]]+|:$/,&amp;quot;&amp;quot;); print; exit}'
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This correctly returns the SSID regardless of which band you're connected to.&lt;/p&gt;
+&lt;h2&gt;Configuration&lt;/h2&gt;
+&lt;p&gt;All settings live in &lt;code&gt;~/.config/mc-server/config&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# Network
+TARGET_SSID=&amp;quot;HomeWiFi&amp;quot;
+
+# Server
+SERVER_DIR=&amp;quot;$HOME/Development/minecraft/minecraft-server/server&amp;quot;
+SESSION_NAME=&amp;quot;minecraft-server&amp;quot;
+
+# JVM Memory
+MIN_RAM=&amp;quot;4G&amp;quot;
+MAX_RAM=&amp;quot;4G&amp;quot;
+
+# Scheduled restart (24h format, local time)
+RESTART_ENABLED=&amp;quot;true&amp;quot;
+RESTART_HOUR=&amp;quot;00&amp;quot;
+RESTART_MINUTE=&amp;quot;00&amp;quot;
+RESTART_TIMEZONE=&amp;quot;America/Los_Angeles&amp;quot;
+
+# Warning intervals before restart (seconds)
+RESTART_WARNINGS=&amp;quot;300 60 30 10 5&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;JVM Optimization&lt;/h2&gt;
+&lt;p&gt;The script uses modern Aikar's flags optimized for Paper 1.20+ on Java 21:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;build_jvm_flags() {
+    local flags=(
+        &amp;quot;-Xms${MIN_RAM}&amp;quot; &amp;quot;-Xmx${MAX_RAM}&amp;quot;
+
+        # G1GC optimized for Minecraft's allocation patterns
+        &amp;quot;-XX:+UseG1GC&amp;quot;
+        &amp;quot;-XX:+ParallelRefProcEnabled&amp;quot;
+        &amp;quot;-XX:MaxGCPauseMillis=200&amp;quot;
+        &amp;quot;-XX:+UnlockExperimentalVMOptions&amp;quot;
+        &amp;quot;-XX:+DisableExplicitGC&amp;quot;
+        &amp;quot;-XX:+AlwaysPreTouch&amp;quot;
+
+        # G1GC region sizing
+        &amp;quot;-XX:G1NewSizePercent=30&amp;quot;
+        &amp;quot;-XX:G1MaxNewSizePercent=40&amp;quot;
+        &amp;quot;-XX:G1HeapRegionSize=8M&amp;quot;
+        &amp;quot;-XX:G1ReservePercent=20&amp;quot;
+        &amp;quot;-XX:G1HeapWastePercent=5&amp;quot;
+        &amp;quot;-XX:G1MixedGCCountTarget=4&amp;quot;
+
+        # G1GC tuning
+        &amp;quot;-XX:InitiatingHeapOccupancyPercent=15&amp;quot;
+        &amp;quot;-XX:G1MixedGCLiveThresholdPercent=90&amp;quot;
+        &amp;quot;-XX:G1RSetUpdatingPauseTimePercent=5&amp;quot;
+        &amp;quot;-XX:SurvivorRatio=32&amp;quot;
+        &amp;quot;-XX:MaxTenuringThreshold=1&amp;quot;
+        &amp;quot;-XX:+PerfDisableSharedMem&amp;quot;
+
+        # Debug helpers (no perf impact)
+        &amp;quot;-XX:+HeapDumpOnOutOfMemoryError&amp;quot;
+        &amp;quot;-XX:HeapDumpPath=$DATA_DIR/heapdump.hprof&amp;quot;
+    )
+    echo &amp;quot;${flags[*]}&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Key points:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;G1GC&lt;/strong&gt; is ideal for Minecraft's bursty allocation patterns&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;AlwaysPreTouch&lt;/strong&gt; pre-allocates memory for consistent latency&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;HeapDumpOnOutOfMemoryError&lt;/strong&gt; saves a dump for debugging if OOM occurs&lt;/li&gt;
+&lt;li&gt;Match min/max RAM to avoid heap resizing during gameplay&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Scheduled Restarts&lt;/h2&gt;
+&lt;p&gt;Like production game servers, the script supports scheduled restarts with player warnings:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;restart_server() {
+    local reason=&amp;quot;${1:-Scheduled maintenance}&amp;quot;
+
+    # Warnings at 5m, 1m, 30s, 10s, 5s
+    for secs in 300 60 30 10 5; do
+        server_say &amp;quot;[RESTART] Server restarting in $(format_duration $secs) - $reason&amp;quot;
+        sleep_until_next_warning
+    done
+
+    server_cmd &amp;quot;save-all&amp;quot;
+    server_say &amp;quot;[RESTART] Restarting NOW!&amp;quot;
+    server_cmd &amp;quot;stop&amp;quot;
+
+    # Wait for graceful shutdown, then cleanup and restart
+    cleanup_server
+    start_server
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The &lt;code&gt;cleanup_server&lt;/code&gt; function handles maintenance:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Removes logs older than 7 days&lt;/li&gt;
+&lt;li&gt;Removes crash reports older than 30 days&lt;/li&gt;
+&lt;li&gt;Clears stale session locks&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;LaunchAgents&lt;/h2&gt;
+&lt;p&gt;Two LaunchAgents handle automation:&lt;/p&gt;
+&lt;h3&gt;Network Monitor&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;com.user.minecraft-server-network&lt;/code&gt; - Triggers on WiFi changes:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;key&amp;gt;WatchPaths&amp;lt;/key&amp;gt;
+&amp;lt;array&amp;gt;
+    &amp;lt;string&amp;gt;/Library/Preferences/SystemConfiguration/com.apple.airport.preferences.plist&amp;lt;/string&amp;gt;
+    &amp;lt;string&amp;gt;/Library/Preferences/SystemConfiguration/NetworkInterfaces.plist&amp;lt;/string&amp;gt;
+&amp;lt;/array&amp;gt;
+&amp;lt;key&amp;gt;StartInterval&amp;lt;/key&amp;gt;
+&amp;lt;integer&amp;gt;60&amp;lt;/integer&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Scheduled Restart&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;com.user.minecraft-server-restart&lt;/code&gt; - Daily at midnight:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;key&amp;gt;StartCalendarInterval&amp;lt;/key&amp;gt;
+&amp;lt;dict&amp;gt;
+    &amp;lt;key&amp;gt;Hour&amp;lt;/key&amp;gt;
+    &amp;lt;integer&amp;gt;0&amp;lt;/integer&amp;gt;
+    &amp;lt;key&amp;gt;Minute&amp;lt;/key&amp;gt;
+    &amp;lt;integer&amp;gt;0&amp;lt;/integer&amp;gt;
+&amp;lt;/dict&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Usage&lt;/h2&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;mc-server-manager status    # Show server state, network, config
+mc-server-manager start     # Start server
+mc-server-manager stop      # Graceful stop with save
+mc-server-manager restart   # Full restart with 5m/1m/30s/10s/5s warnings
+mc-server-manager quick     # Quick restart (10s warning)
+mc-server-manager attach    # Attach to console (Ctrl+B,D to detach)
+mc-server-manager config    # Print current config
+mc-server-manager cleanup   # Run maintenance manually
+mc-server-manager logs      # Tail manager log
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Example output from &lt;code&gt;status&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;=== Minecraft Server ===
+Server running: yes
+Network: HomeWiFi (target: HomeWiFi)
+Session: minecraft-server
+Attach: tmux attach -t minecraft-server
+
+=== Scheduled Restart ===
+Enabled: true
+Time: 00:00 (America/Los_Angeles)
+Warnings: 300 60 30 10 5
+
+=== Config ===
+File: ~/.config/mc-server/config
+JVM: 4G - 4G
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Why tmux over screen?&lt;/h2&gt;
+&lt;p&gt;macOS ships with screen 4.00.03 from 2006. It lacks features like &lt;code&gt;-Logfile&lt;/code&gt; and has quirks with detached sessions. tmux is actively maintained, has better scripting support, and integrates well with the rest of my workflow.&lt;/p&gt;
+&lt;h2&gt;Files&lt;/h2&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;File&lt;/th&gt;&lt;th&gt;Purpose&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;~/.local/bin/mc-server-manager&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Management script (v1.1.0)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;~/.config/mc-server/config&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Configuration&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;~/Library/LaunchAgents/com.user.minecraft-server-network.plist&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Network monitor&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;~/Library/LaunchAgents/com.user.minecraft-server-restart.plist&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Scheduled restart&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;~/.local/share/minecraft-server/manager.log&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Manager logs&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;~/.local/share/minecraft-server/heapdump.hprof&lt;/code&gt;&lt;/td&gt;&lt;td&gt;OOM heap dump (if triggered)&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h2&gt;Setup&lt;/h2&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# Load the agents
+launchctl load ~/Library/LaunchAgents/com.user.minecraft-server-network.plist
+launchctl load ~/Library/LaunchAgents/com.user.minecraft-server-restart.plist
+
+# Generate a config file
+mc-server-manager config &amp;gt; ~/.config/mc-server/config
+
+# Edit to taste
+vim ~/.config/mc-server/config
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now the server manages itself: starts on home WiFi, stops when leaving, restarts nightly with cleanup, and warns players before any restart.&lt;/p&gt;
+</content>
+  </entry>
+</feed>

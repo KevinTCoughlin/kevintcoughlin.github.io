@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="My shell took 2.5 seconds to start. Now it takes 0.47 seconds. Here's what I learned." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/5x-faster-shell-startup/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>5x Faster Shell Startup: A macOS Developer Environment Audit — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>5x Faster Shell Startup: A macOS Developer Environment Audit</h1>
+        <time datetime="2026-01-18T19:22:33Z">January 18, 2026</time>
+<p>My shell took 2.5 seconds to start. Now it takes 0.47 seconds. Here's what I learned.</p>
+<h2>The Problem</h2>
+<p>Every new terminal tab felt sluggish. I'd open a tab, wait, then forget what I was about to do. Death by a thousand cuts.</p>
+<pre><code class="language-bash">$ time zsh -i -c exit
+zsh -i -c exit  0.31s user 0.53s system 33% cpu 2.509 total
+</code></pre>
+<p>2.5 seconds. For a shell prompt.</p>
+<h2>Finding the Culprits</h2>
+<p>The usual suspects in a developer's <code>.zshrc</code>:</p>
+<table>
+<thead>
+<tr><th>Tool</th><th>What it does</th><th>Startup cost</th></tr>
+</thead>
+<tbody>
+<tr><td>pyenv</td><td>Python version manager</td><td>~300ms</td></tr>
+<tr><td>nvs</td><td>Node version manager</td><td>~200ms</td></tr>
+<tr><td>SDKMAN</td><td>Java/Kotlin version manager</td><td>~400ms</td></tr>
+<tr><td>Google Cloud SDK</td><td>gcloud CLI</td><td>~200ms</td></tr>
+<tr><td>Oh My Zsh</td><td>Shell framework</td><td>~100ms</td></tr>
+<tr><td>Greeting script</td><td>Inspirational quotes</td><td>~500ms</td></tr>
+</tbody>
+</table>
+<p>That's 1.7 seconds just from version managers I use maybe once a week.</p>
+<h2>The Fix: Lazy Loading</h2>
+<p>The insight: I don't need pyenv initialized until I actually run <code>python</code>. Same for Java, Node, and gcloud.</p>
+<h3>Before (eager loading)</h3>
+<pre><code class="language-bash"># Every shell startup pays this cost
+eval &quot;$(pyenv init --path)&quot;
+eval &quot;$(pyenv init -)&quot;
+
+[[ -s &quot;$HOME/.sdkman/bin/sdkman-init.sh&quot; ]] &amp;&amp; source &quot;$HOME/.sdkman/bin/sdkman-init.sh&quot;
+
+[ -s &quot;$NVS_HOME/nvs.sh&quot; ] &amp;&amp; . &quot;$NVS_HOME/nvs.sh&quot;
+</code></pre>
+<h3>After (lazy loading)</h3>
+<pre><code class="language-bash"># pyenv - only initialize on first use
+export PYENV_ROOT=&quot;$HOME/.pyenv&quot;
+export PATH=&quot;$PYENV_ROOT/bin:$PATH&quot;
+
+_pyenv_init() {
+  unfunction pyenv python python3 pip pip3 2&gt;/dev/null
+  eval &quot;$(command pyenv init --path)&quot;
+  eval &quot;$(command pyenv init -)&quot;
+}
+
+pyenv() { _pyenv_init; pyenv &quot;$@&quot; }
+python() { _pyenv_init; python &quot;$@&quot; }
+python3() { _pyenv_init; python3 &quot;$@&quot; }
+pip() { _pyenv_init; pip &quot;$@&quot; }
+pip3() { _pyenv_init; pip3 &quot;$@&quot; }
+</code></pre>
+<p>The trick: create shell functions that shadow the real commands. On first invocation, they:</p>
+<ol>
+<li>Remove themselves (<code>unfunction</code>)</li>
+<li>Initialize the real tool</li>
+<li>Forward the call</li>
+</ol>
+<p>For nvs and SDKMAN, same pattern:</p>
+<pre><code class="language-bash"># Lazy nvs
+export NVS_HOME=&quot;$HOME/.nvs&quot;
+export PATH=&quot;$NVS_HOME/default/bin:$PATH&quot;  # Default node available immediately
+
+nvs() {
+  unfunction nvs 2&gt;/dev/null
+  [ -s &quot;$NVS_HOME/nvs.sh&quot; ] &amp;&amp; . &quot;$NVS_HOME/nvs.sh&quot;
+  nvs &quot;$@&quot;
+}
+
+# Lazy SDKMAN
+export SDKMAN_DIR=&quot;$HOME/.sdkman&quot;
+
+_sdk_init() {
+  unfunction sdk java javac gradle kotlin kotlinc 2&gt;/dev/null
+  [[ -s &quot;$HOME/.sdkman/bin/sdkman-init.sh&quot; ]] &amp;&amp; source &quot;$HOME/.sdkman/bin/sdkman-init.sh&quot;
+}
+
+sdk() { _sdk_init; sdk &quot;$@&quot; }
+java() { _sdk_init; java &quot;$@&quot; }
+javac() { _sdk_init; javac &quot;$@&quot; }
+gradle() { _sdk_init; gradle &quot;$@&quot; }
+</code></pre>
+<p><strong>Key insight for nvs</strong>: Add the default node to PATH directly (<code>$NVS_HOME/default/bin</code>). This way <code>node</code> and <code>npm</code> work instantly without loading nvs. Only <code>nvs use</code> triggers full initialization.</p>
+<h3>Background the greeting</h3>
+<p>My shell displayed an inspirational quote on startup. Nice, but blocking.</p>
+<pre><code class="language-bash"># Before - blocking
+[[ -o interactive ]] &amp;&amp; ~/.local/bin/greet
+
+# After - non-blocking
+[[ -o interactive ]] &amp;&amp; { ~/.local/bin/greet &amp; }
+</code></pre>
+<p>The <code>&amp;</code> backgrounds the process. The quote appears after the prompt is ready.</p>
+<h2>Consolidating Redundant Tools</h2>
+<p>While auditing, I found duplicate tools:</p>
+<table>
+<thead>
+<tr><th>Installed</th><th>Also installed</th><th>Resolution</th></tr>
+</thead>
+<tbody>
+<tr><td>tmux</td><td>Wezterm (has multiplexer)</td><td>Removed tmux</td></tr>
+<tr><td>htop</td><td>btop</td><td>Removed htop</td></tr>
+<tr><td>tree</td><td>eza --tree</td><td>Removed tree</td></tr>
+<tr><td>jenv</td><td>SDKMAN</td><td>Removed jenv</td></tr>
+<tr><td>brew node</td><td>nvs</td><td>Removed brew node</td></tr>
+<tr><td>iTerm2</td><td>Wezterm</td><td>Removed iTerm2</td></tr>
+<tr><td>Bartender</td><td>Ice (OSS)</td><td>Removed Bartender</td></tr>
+</tbody>
+</table>
+<p>This freed ~440MB and simplified the mental model.</p>
+<h3>Wezterm vs tmux</h3>
+<p>Both provide:</p>
+<ul>
+<li>Split panes</li>
+<li>Multiple tabs/windows</li>
+<li>Session persistence</li>
+<li>Vim-style navigation</li>
+</ul>
+<p>Wezterm advantages:</p>
+<ul>
+<li>GPU-accelerated rendering</li>
+<li>Lua config (same language as Neovim)</li>
+<li>Native macOS integration</li>
+<li>Built-in smart-splits with Neovim</li>
+</ul>
+<p>I kept <code>.tmux.conf</code> for SSH into Linux servers, but local development uses Wezterm exclusively.</p>
+<h2>The Result</h2>
+<pre><code class="language-bash">$ time zsh -i -c exit
+zsh -i -c exit  0.14s user 0.19s system 68% cpu 0.470 total
+</code></pre>
+<p><strong>2.5s → 0.47s (5.3x faster)</strong></p>
+<p>First <code>python</code> call adds ~300ms one time. Worth it.</p>
+<h2>Full .zshrc Structure</h2>
+<pre><code class="language-bash"># 1. Oh My Zsh (minimal plugins)
+plugins=(git)
+source $ZSH/oh-my-zsh.sh
+
+# 2. Environment variables (no subshells)
+export EDITOR='nvim'
+export PATH=&quot;$HOME/.local/bin:$PATH&quot;
+# ... other exports
+
+# 3. Lazy-loaded version managers
+# pyenv, nvs, sdkman, gcloud (see above)
+
+# 4. Fast tool initialization
+eval &quot;$(zoxide init zsh)&quot;    # ~10ms
+eval &quot;$(direnv hook zsh)&quot;    # ~10ms
+eval &quot;$(starship init zsh)&quot;  # ~20ms
+
+# 5. Aliases and functions
+alias ls=&quot;eza --icons&quot;
+alias cat=&quot;bat&quot;
+# ...
+
+# 6. Interactive-only (backgrounded)
+[[ -o interactive ]] &amp;&amp; { ~/.local/bin/greet &amp; }
+</code></pre>
+<h2>Takeaways</h2>
+<ol>
+<li><strong>Measure first</strong>: <code>time zsh -i -c exit</code> before optimizing</li>
+<li><strong>Lazy load</strong>: If you don't use it every session, defer it</li>
+<li><strong>Audit dependencies</strong>: Version managers accumulate</li>
+<li><strong>Consolidate tools</strong>: One multiplexer, one file manager, one top replacement</li>
+<li><strong>Background nice-to-haves</strong>: Quotes, weather, etc.</li>
+</ol>
+<p>The best shell is one you don't notice.</p>
+<hr />
+<p><em>Tools mentioned: <a href="https://wezfurlong.org/wezterm/">Wezterm</a>, <a href="https://starship.rs/">Starship</a>, <a href="https://github.com/eza-community/eza">eza</a>, <a href="https://github.com/sharkdp/bat">bat</a>, <a href="https://github.com/ajeetdsouza/zoxide">zoxide</a>, <a href="https://github.com/jordanbaird/Ice">Ice</a></em></p>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>

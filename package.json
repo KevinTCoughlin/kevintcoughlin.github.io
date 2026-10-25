@@ -5,13 +5,15 @@
   "scripts": {
     "start": "http-server -o",
     "stage": "bash scripts/stage-site.sh _site",
+    "blog": "bun scripts/blog.js",
+    "blog:check": "bun scripts/blog.js --check",
     "preview": "bun run stage && http-server _site -o -p 8080",
     "preview:docker": "docker compose up --build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
-    "validate": "bun run lint && bun run format"
+    "validate": "bun run lint && bun run format && bun run blog:check"
   },
   "repository": {
     "type": "git",

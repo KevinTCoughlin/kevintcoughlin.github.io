@@ -33,4 +33,8 @@ cp \
 
 cp .well-known/security.txt "$OUT/.well-known/"
 
+# Blog pages and feed are pre-rendered by scripts/blog.js; ship them, not the Markdown.
+cp -R blog "$OUT/"
+rm -rf "$OUT/blog/posts"
+
 echo "Staged $(find "$OUT" -type f | wc -l | tr -d ' ') files into $OUT"

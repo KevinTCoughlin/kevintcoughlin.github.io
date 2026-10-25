@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Notes on developer tooling, games and servers by Kevin Coughlin." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Kevin Coughlin's Blog</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <h1>Blog</h1>
+      <ul class="posts">
+        <li>
+          <time datetime="2026-01-18T19:22:33Z">January 18, 2026</time>
+          <h2><a href="/blog/5x-faster-shell-startup/">5x Faster Shell Startup: A macOS Developer Environment Audit</a></h2>
+          <p>My shell took 2.5 seconds to start. Now it takes 0.47 seconds. Here's what I learned.</p>
+        </li>
+        <li>
+          <time datetime="2026-01-18T18:15:54Z">January 18, 2026</time>
+          <h2><a href="/blog/network-aware-minecraft-server-macos/">Network-Aware Minecraft Server on macOS</a></h2>
+          <p>I wanted my Minecraft server to automatically start when I connect to my home WiFi, gracefully shut down when I leave, and perform daily maintenance restarts like production game servers. Here's how I set it up on macOS.</p>
+        </li>
+      </ul>
+    </main>
+    <footer class="shell">
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>

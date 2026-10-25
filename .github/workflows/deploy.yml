@@ -35,6 +35,9 @@ jobs:
       - name: Run format check
         run: bun run format
 
+      - name: Check blog output is up to date
+        run: bun run blog:check
+
   deploy:
     if: github.event_name != 'pull_request'
     needs: validate
