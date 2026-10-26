@@ -6,4 +6,16 @@
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
+  <url>
+    <loc>https://kevintcoughlin.com/blog/</loc>
+    <lastmod>2026-01-18</lastmod>
+  </url>
+  <url>
+    <loc>https://kevintcoughlin.com/blog/5x-faster-shell-startup/</loc>
+    <lastmod>2026-01-18</lastmod>
+  </url>
+  <url>
+    <loc>https://kevintcoughlin.com/blog/network-aware-minecraft-server-macos/</loc>
+    <lastmod>2026-01-18</lastmod>
+  </url>
 </urlset>
