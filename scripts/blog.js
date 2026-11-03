@@ -68,8 +68,13 @@ function parsePost(file) {
 function addHeadingIds(html) {
   const seen = new Map();
   return html.replace(/<h([2-6])>([\s\S]*?)<\/h\1>/g, (_, level, inner) => {
-    const base = inner
-      .replace(/<[^>]+>/g, '')
+    // Strip tags until none are left; the id keeps only letters, digits and hyphens.
+    let text = inner;
+    for (let prev = ''; prev !== text; ) {
+      prev = text;
+      text = text.replace(/<[^>]*>/g, '');
+    }
+    const base = text
       .replace(/&[a-z0-9#]+;/gi, '')
       .toLowerCase()
       .trim()
