@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="I customized my downstairs LG C2 with CleanYourTV. The next morning, my Apple TV would turn on, but selecting its HDMI input left me staring at a black screen." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/lg-c2-black-hdmi-after-cleanyourtv/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Fixing a Black HDMI Picture on My LG C2 After Installing CleanYourTV — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>Fixing a Black HDMI Picture on My LG C2 After Installing CleanYourTV</h1>
+        <time datetime="2026-10-26T14:17:02Z">October 26, 2026</time>
+<p>I customized my downstairs LG C2 with CleanYourTV. The next morning, my Apple TV would turn on, but selecting its HDMI input left me staring at a black screen.</p>
+<p>The TV could see the Apple TV. It could see a video signal. It still wasn't putting that video on the screen.</p>
+<p>Here's what I checked over SSH, what restored the picture, and the boot workaround I installed afterward.</p>
+<p><strong>Update:</strong> The boot workaround has held through a cold boot. I also went back and traced the stale subscription live, and tried to bring back the black screen without the workaround. See <a href="#tracing-the-stale-subscription">Tracing the stale subscription</a> for what that did and didn't prove.</p>
+<h2>The Setup</h2>
+<ul>
+<li>LG C2, model OLED77C2AUA</li>
+<li>Firmware 33.31.68</li>
+<li>webOS SDK 10.3.1</li>
+<li>CleanYourTV replacing LG's Home launcher</li>
+<li>Apple TV connected to HDMI 1</li>
+<li>Existing root SSH access to the TV</li>
+</ul>
+<p>These details matter. This is a report from one TV and one firmware combination, not a fix for every LG black screen.</p>
+<p><a href="https://github.com/lasharor/cleanyourtv-WebOS">CleanYourTV</a> customizes a rooted webOS TV. Its Home takeover uses writable files and temporary mounts, and on the configuration installed on my TV, it restarts LG's system app manager, SAM. The project's <a href="https://github.com/lasharor/cleanyourtv-WebOS/blob/main/docs/tv-changes.md">TV changes documentation</a> explains the boot setup. Check your installed scripts too; upstream code can change.</p>
+<h2>First, Wake the Apple TV</h2>
+<p>The first SSH check said the Apple TV was connected, but its CEC power state was <code>Off</code> and there was no HDMI signal.</p>
+<p>Pressing Home on the Apple TV remote changed that:</p>
+<pre><code class="language-json">{
+  &quot;hdmiPlugIn&quot;: true,
+  &quot;hdmiSignalExist&quot;: true,
+  &quot;cecPower&quot;: &quot;On&quot;
+}
+</code></pre>
+<p>So a sleeping Apple TV wasn't the problem, or at least not all of it. The screen was still black.</p>
+<h2>Check More Than the Selected Input</h2>
+<p>The following commands run <strong>on the TV</strong>, after logging in through your existing root SSH connection. The <code>&lt;/dev/null</code> redirect keeps <code>luna-send</code> from waiting on SSH's standard input.</p>
+<pre><code class="language-sh"># Connected devices and HDMI signal state
+luna-send -n 1 -w 5000 \
+  luna://com.webos.service.eim/getAllInputStatus '{}' &lt;/dev/null
+
+# Which app LG considers foreground
+luna-send -n 1 -w 5000 \
+  luna://com.webos.applicationManager/getForegroundAppInfo '{}' &lt;/dev/null
+
+# Media pipelines and their foreground state
+luna-send -n 1 -w 5000 \
+  luna://com.webos.media/getActivePipelines '{}' &lt;/dev/null
+
+# What is actually connected to the display's video output
+luna-send -n 1 -w 5000 \
+  luna://com.webos.service.videooutput/getStatus '{}' &lt;/dev/null
+
+# Mute state for each media context
+luna-send -n 1 -w 5000 \
+  luna://com.webos.service.avmutemanager/getMuteInfo '{}' &lt;/dev/null
+</code></pre>
+<p>The results disagreed with each other:</p>
+<table>
+<thead>
+<tr><th>Check</th><th>Before recovery</th><th>After recovery</th></tr>
+</thead>
+<tbody>
+<tr><td>Apple TV power</td><td>On</td><td>On</td></tr>
+<tr><td>HDMI 1 signal</td><td>Present</td><td>Present</td></tr>
+<tr><td>Foreground app</td><td><code>com.webos.app.hdmi1</code></td><td><code>com.webos.app.hdmi1</code></td></tr>
+<tr><td>HDMI media pipelines</td><td>Not foreground</td><td>Foreground</td></tr>
+<tr><td>Main video output</td><td>Disconnected, no source assigned</td><td>HDMI 1, 3840 × 2160, 60 Hz, Dolby Vision</td></tr>
+<tr><td>HDMI picture mute</td><td>Active</td><td>Unmuted (current context)</td></tr>
+</tbody>
+</table>
+<p>The selected input wasn't the whole story. LG's app manager considered HDMI 1 foreground, but the media service still treated its pipelines as background sessions, and the video output had nothing routed to its main display sink.</p>
+<h2>The Recovery That Worked</h2>
+<p>I restarted the media service and reopened HDMI 1. Substitute the correct HDMI app if your source uses another port.</p>
+<pre><code class="language-sh">systemctl restart umediaserver
+sleep 3
+
+luna-send -n 1 -w 5000 \
+  luna://com.webos.applicationManager/closeByAppId \
+  '{&quot;id&quot;:&quot;com.webos.app.hdmi1&quot;}' &lt;/dev/null
+
+sleep 2
+
+luna-send -n 1 -w 5000 \
+  luna://com.webos.applicationManager/launch \
+  '{&quot;id&quot;:&quot;com.webos.app.hdmi1&quot;}' &lt;/dev/null
+</code></pre>
+<p>This interrupts media playback. It doesn't reset the TV or erase its settings.</p>
+<p>Afterward, the main output was connected to HDMI 1 at <strong>3840 × 2160, 60 Hz, Dolby Vision</strong>. The media pipelines became foreground sessions, and the mute manager reported the current session's picture and audio unmuted.</p>
+<p>I checked the screen. Apple TV was back.</p>
+<p>One diagnostic gotcha: <code>videooutput/getStatus</code> still showed its own <code>muted</code> flag as true. Older media contexts also remained in the mute manager's list. Match mute information to the <strong>current output context</strong>, and confirm the picture on the TV. One boolean isn't enough.</p>
+<h2>What Happened</h2>
+<p>The CleanYourTV boot log (<code>/tmp/cleanyourtv-boot.log</code>, timestamps in seconds since boot) showed:</p>
+<pre><code class="language-text">24.37 home: mounting the launcher over LG's Home, restarting sam
+24.67 home: sam restarted
+25.68 after-sam: webOS SDK 10.3.1, Home 'com.webos.app.home flutter', services: none
+</code></pre>
+<p>Each process's start time is field 22 of <code>/proc/&lt;pid&gt;/stat</code>, in clock ticks since boot (100 per second here):</p>
+<pre><code class="language-sh">cut -d ' ' -f 1,2,22 /proc/$(pidof umediaserver)/stat /proc/$(pidof sam)/stat
+</code></pre>
+<pre><code class="language-text">2551 (umediaserver) 1022
+3940 (sam) 2466
+</code></pre>
+<p>The media service started about 10.2 seconds after boot. SAM's current instance started at 24.66 seconds, matching the restart in the boot log. So the media service was the original process from before the SAM restart, still running more than an hour and a half later when I investigated. Restarting that service and reopening the input repaired the disagreement between app foreground state and media routing.</p>
+<p>That matches what I saw: the media service never heard about the SAM restart, and it kept treating HDMI as background even after SAM brought HDMI 1 to the foreground.</p>
+<h3>Tracing the stale subscription</h3>
+<p>A week later I went back to find the specific subscription. <code>ls-monitor -s</code> lists every subscription on webOS's Luna bus, and <code>ls-monitor -l</code> maps bus names to processes. Inside <code>umediaserver</code>, a client called <code>com.webos.media.appobserver</code> subscribes to two SAM methods:</p>
+<pre><code class="language-text">com.webos.applicationManager foregroundAppsEx  &lt;- com.webos.media.appobserver  {&quot;extraInfo&quot;:true, &quot;subscribe&quot;:true}
+com.webos.applicationManager getAppLifeStatus  &lt;- com.webos.media.appobserver  {&quot;subscribe&quot;:true}
+</code></pre>
+<p><code>foregroundAppsEx</code> is how the media service learns which app is in the foreground. I briefly turned the workaround off, restarted only SAM, and listed subscriptions again:</p>
+<pre><code class="language-text">com.webos.applicationManager getAppLifeStatus  &lt;- com.webos.media.appobserver  {&quot;subscribe&quot;:true}
+</code></pre>
+<p>The app observer re-subscribed to <code>getAppLifeStatus</code> but never to <code>foregroundAppsEx</code>. A minute later it still hadn't. Restarting <code>umediaserver</code> brought both subscriptions back.</p>
+<p>That is the stale subscription: after a SAM restart, the media service stops receiving foreground-app updates until it is restarted itself.</p>
+<h3>Trying to bring the black screen back</h3>
+<p>Next I tried to recreate the original failure with the workaround off. For each test I checked the media pipelines and the main video output over SSH, and looked at the screen:</p>
+<table>
+<thead>
+<tr><th>Test</th><th><code>foregroundAppsEx</code></th><th>HDMI 1 picture</th></tr>
+</thead>
+<tbody>
+<tr><td>Restart only SAM, reopen HDMI 1</td><td>Missing</td><td>Fine</td></tr>
+<tr><td>Reboot (same boot order as the incident: media service at 10.3 s, SAM restarted at 33.9 s), switch to HDMI 1</td><td>Missing</td><td>Fine</td></tr>
+<tr><td>From that boot: TV off with the LG remote, wake with the Apple TV remote over CEC</td><td>Missing</td><td>Fine</td></tr>
+</tbody>
+</table>
+<p>The stale subscription showed up every time, including on a real boot. The black screen never did. The last test is the closest match to the original morning: the TV sat in standby with a stale media service, and the Apple TV woke it. Standby doesn't restart webOS, so the same <code>umediaserver</code> process carried through.</p>
+<p>So here's where it stands:</p>
+<ul>
+<li><strong>Proven:</strong> a SAM restart leaves <code>umediaserver</code> without its <code>foregroundAppsEx</code> subscription, and only restarting <code>umediaserver</code> restores it. Every CleanYourTV boot on this TV restarts SAM.</li>
+<li><strong>Proven:</strong> on the morning of the incident, restarting <code>umediaserver</code> and reopening HDMI 1 fixed a disconnected main output.</li>
+<li><strong>Not proven:</strong> that the missing subscription caused the black screen by itself. In my tests the TV handled HDMI without it, so something else was also involved that morning. A long standby, a particular CEC handshake, or a timing race are all possible, but I couldn't reproduce it on demand.</li>
+</ul>
+<p>That also changes how to read the cold-boot result. HDMI came up fine with the workaround, but it came up fine without it too. I'm keeping the workaround anyway. It's cheap, it makes the stale subscription impossible, and it's the same restart that fixed the real failure. I've only seen this on SDK 10.3.1, and it doesn't mean every CleanYourTV installation is affected.</p>
+<h2>Preparing for the Next Boot</h2>
+<p>The installed CleanYourTV version already had an <code>after-sam.sh</code> hook. It asks <code>tvprofile.js</code> which running services need restarting after SAM.</p>
+<p>On this TV, that decision returned an empty string. I changed the <code>afterSam</code> rule in <code>/media/developer/cleanyourtv/tvprofile.js</code> to return <code>umediaserver</code> for <strong>SDK 10.3.1 only</strong>:</p>
+<pre><code class="language-js">// before
+afterSam: (major &gt; 0 &amp;&amp; major &lt; 7) || /\snative$/.test(homeKind) ? 'eim webapp-mgr preload-manager memorymanager' : '',
+
+// after
+afterSam: f.sdk === '10.3.1' ? 'umediaserver' : (major &gt; 0 &amp;&amp; major &lt; 7) || /\snative$/.test(homeKind) ? 'eim webapp-mgr preload-manager memorymanager' : '',
+</code></pre>
+<p>Other SDK decisions and the existing legacy service rule stay intact. The existing boot hook then restarts the media service before opening Home. This changes a file under <code>/media/developer/cleanyourtv</code>, not the read-only firmware.</p>
+<p>I saved the original profile first. Rolling back means restoring that copy; the rollback takes effect on the next boot.</p>
+<p>The updated JavaScript passed a syntax check using the TV's own runtime, and the TV returned the expected boot decision.</p>
+<p>Since then, the TV has cold-booted with the workaround in place and HDMI came up normally (though, as the tests above show, that alone doesn't prove the workaround is what prevents the failure). Restarting a shared media service can affect other boot media clients, so I kept the workaround specific to the SDK I observed.</p>
+<p>A CleanYourTV update can replace the modified profile. After updating, check whether the upstream version addresses the issue before reapplying a local change.</p>
+<h2>What I'd Check Next Time</h2>
+<ol>
+<li>Wake the source and verify there is an HDMI signal.</li>
+<li>Check the foreground app.</li>
+<li>Compare that with the media pipelines and main video output.</li>
+<li>If the signal is present but routing is disconnected, restart <code>umediaserver</code> and reopen the input (see above).</li>
+<li>Confirm the picture physically before calling it fixed.</li>
+</ol>
+<p>I used Codex to collect the SSH diagnostics, work through the recovery, and prepare the local boot workaround. What cracked it was comparing what each service believed: the input was selected; the video just wasn't being routed to the screen.</p>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>
