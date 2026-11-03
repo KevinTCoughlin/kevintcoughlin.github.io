@@ -128,7 +128,7 @@
         <h1>Network-Aware Minecraft Server on macOS</h1>
         <time datetime="2026-01-18T18:15:54Z">January 18, 2026</time>
 <p>I wanted my Minecraft server to automatically start when I connect to my home WiFi, gracefully shut down when I leave, and perform daily maintenance restarts like production game servers. Here's how I set it up on macOS.</p>
-<h2>The Problem</h2>
+<h2 id="the-problem">The Problem</h2>
 <p>Running a Minecraft server 24/7 on a laptop isn't practical. I wanted it to:</p>
 <ul>
 <li>Auto-start when connected to my home network (&quot;HomeWiFi&quot;)</li>
@@ -137,9 +137,9 @@
 <li>Clean up old logs and crash reports automatically</li>
 <li>Work without manual intervention</li>
 </ul>
-<h2>The Solution</h2>
+<h2 id="the-solution">The Solution</h2>
 <p>A shell script (<code>mc-server-manager</code>) with LaunchAgents for network monitoring and scheduled restarts.</p>
-<h2>WiFi Detection Gotcha</h2>
+<h2 id="wifi-detection-gotcha">WiFi Detection Gotcha</h2>
 <p>The commonly recommended approach:</p>
 <pre><code class="language-bash">networksetup -getairportnetwork en0
 </code></pre>
@@ -149,7 +149,7 @@
     awk '/Current Network Information:/{getline; gsub(/^[[:space:]]+|:$/,&quot;&quot;); print; exit}'
 </code></pre>
 <p>This correctly returns the SSID regardless of which band you're connected to.</p>
-<h2>Configuration</h2>
+<h2 id="configuration">Configuration</h2>
 <p>All settings live in <code>~/.config/mc-server/config</code>:</p>
 <pre><code class="language-bash"># Network
 TARGET_SSID=&quot;HomeWiFi&quot;
@@ -171,7 +171,7 @@ RESTART_TIMEZONE=&quot;America/Los_Angeles&quot;
 # Warning intervals before restart (seconds)
 RESTART_WARNINGS=&quot;300 60 30 10 5&quot;
 </code></pre>
-<h2>JVM Optimization</h2>
+<h2 id="jvm-optimization">JVM Optimization</h2>
 <p>The script uses modern Aikar's flags optimized for Paper 1.20+ on Java 21:</p>
 <pre><code class="language-bash">build_jvm_flags() {
     local flags=(
@@ -215,7 +215,7 @@ RESTART_WARNINGS=&quot;300 60 30 10 5&quot;
 <li><strong>HeapDumpOnOutOfMemoryError</strong> saves a dump for debugging if OOM occurs</li>
 <li>Match min/max RAM to avoid heap resizing during gameplay</li>
 </ul>
-<h2>Scheduled Restarts</h2>
+<h2 id="scheduled-restarts">Scheduled Restarts</h2>
 <p>Like production game servers, the script supports scheduled restarts with player warnings:</p>
 <pre><code class="language-bash">restart_server() {
     local reason=&quot;${1:-Scheduled maintenance}&quot;
@@ -241,9 +241,9 @@ RESTART_WARNINGS=&quot;300 60 30 10 5&quot;
 <li>Removes crash reports older than 30 days</li>
 <li>Clears stale session locks</li>
 </ul>
-<h2>LaunchAgents</h2>
+<h2 id="launchagents">LaunchAgents</h2>
 <p>Two LaunchAgents handle automation:</p>
-<h3>Network Monitor</h3>
+<h3 id="network-monitor">Network Monitor</h3>
 <p><code>com.user.minecraft-server-network</code> - Triggers on WiFi changes:</p>
 <pre><code class="language-xml">&lt;key&gt;WatchPaths&lt;/key&gt;
 &lt;array&gt;
@@ -253,7 +253,7 @@ RESTART_WARNINGS=&quot;300 60 30 10 5&quot;
 &lt;key&gt;StartInterval&lt;/key&gt;
 &lt;integer&gt;60&lt;/integer&gt;
 </code></pre>
-<h3>Scheduled Restart</h3>
+<h3 id="scheduled-restart">Scheduled Restart</h3>
 <p><code>com.user.minecraft-server-restart</code> - Daily at midnight:</p>
 <pre><code class="language-xml">&lt;key&gt;StartCalendarInterval&lt;/key&gt;
 &lt;dict&gt;
@@ -263,7 +263,7 @@ RESTART_WARNINGS=&quot;300 60 30 10 5&quot;
     &lt;integer&gt;0&lt;/integer&gt;
 &lt;/dict&gt;
 </code></pre>
-<h2>Usage</h2>
+<h2 id="usage">Usage</h2>
 <pre><code class="language-bash">mc-server-manager status    # Show server state, network, config
 mc-server-manager start     # Start server
 mc-server-manager stop      # Graceful stop with save
@@ -290,9 +290,9 @@ Warnings: 300 60 30 10 5
 File: ~/.config/mc-server/config
 JVM: 4G - 4G
 </code></pre>
-<h2>Why tmux over screen?</h2>
+<h2 id="why-tmux-over-screen">Why tmux over screen?</h2>
 <p>macOS ships with screen 4.00.03 from 2006. It lacks features like <code>-Logfile</code> and has quirks with detached sessions. tmux is actively maintained, has better scripting support, and integrates well with the rest of my workflow.</p>
-<h2>Files</h2>
+<h2 id="files">Files</h2>
 <table>
 <thead>
 <tr><th>File</th><th>Purpose</th></tr>
@@ -306,7 +306,7 @@ JVM: 4G - 4G
 <tr><td><code>~/.local/share/minecraft-server/heapdump.hprof</code></td><td>OOM heap dump (if triggered)</td></tr>
 </tbody>
 </table>
-<h2>Setup</h2>
+<h2 id="setup">Setup</h2>
 <pre><code class="language-bash"># Load the agents
 launchctl load ~/Library/LaunchAgents/com.user.minecraft-server-network.plist
 launchctl load ~/Library/LaunchAgents/com.user.minecraft-server-restart.plist

@@ -45,7 +45,9 @@ function parsePost(file) {
 
   const slug = file.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace(/\.md$/, '');
   // Root-relative links would break in feed readers; make every URL absolute.
-  const html = Bun.markdown.html(markdown).replace(/(href|src)="\//g, `$1="${SITE}/`);
+  const html = addHeadingIds(
+    Bun.markdown.html(markdown).replace(/(href|src)="\//g, `$1="${SITE}/`)
+  );
   return {
     slug,
     url: `${BLOG_URL}${slug}/`,
@@ -60,6 +62,29 @@ function parsePost(file) {
     html,
   };
 }
+
+// GitHub-style heading anchors, so in-post links like [x](#some-heading) work.
+// Duplicate headings get -1, -2, ... suffixes.
+function addHeadingIds(html) {
+  const seen = new Map();
+  return html.replace(/<h([2-6])>([\s\S]*?)<\/h\1>/g, (_, level, inner) => {
+    const base = inner
+      .replace(/<[^>]+>/g, '')
+      .replace(/&[a-z0-9#]+;/gi, '')
+      .toLowerCase()
+      .trim()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '')
+      .replace(/\s/g, '-');
+    const count = seen.get(base) ?? 0;
+    seen.set(base, count + 1);
+    const id = count ? `${base}-${count}` : base;
+    return `<h${level} id="${id}">${inner}</h${level}>`;
+  });
+}
+
+// Feed readers resolve fragment-only links against the feed URL, so point
+// them at the post's permalink.
+const absoluteFragments = (html, url) => html.replace(/href="#/g, `href="${url}#`);
 
 const isoDate = (d) => d.toISOString().replace(/\.\d{3}Z$/, 'Z');
 const humanDate = (d) =>
@@ -252,7 +277,7 @@ function feed(posts) {
     <published>${isoDate(p.published)}</published>
     <updated>${isoDate(p.updated)}</updated>
     <summary>${escape(p.summary)}</summary>
-    <content type="html">${escape(p.html)}</content>
+    <content type="html">${escape(absoluteFragments(p.html, p.url))}</content>
   </entry>`
     )
     .join('\n');

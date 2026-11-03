@@ -131,7 +131,7 @@
 <p>The TV could see the Apple TV. It could see a video signal. It still wasn't putting that video on the screen.</p>
 <p>Here's what I checked over SSH, what restored the picture, and the boot workaround I installed afterward.</p>
 <p><strong>Update:</strong> The boot workaround has held through a cold boot. I also went back and traced the stale subscription live, and tried to bring back the black screen without the workaround. See <a href="#tracing-the-stale-subscription">Tracing the stale subscription</a> for what that did and didn't prove.</p>
-<h2>The Setup</h2>
+<h2 id="the-setup">The Setup</h2>
 <ul>
 <li>LG C2, model OLED77C2AUA</li>
 <li>Firmware 33.31.68</li>
@@ -142,7 +142,7 @@
 </ul>
 <p>These details matter. This is a report from one TV and one firmware combination, not a fix for every LG black screen.</p>
 <p><a href="https://github.com/lasharor/cleanyourtv-WebOS">CleanYourTV</a> customizes a rooted webOS TV. Its Home takeover uses writable files and temporary mounts, and on the configuration installed on my TV, it restarts LG's system app manager, SAM. The project's <a href="https://github.com/lasharor/cleanyourtv-WebOS/blob/main/docs/tv-changes.md">TV changes documentation</a> explains the boot setup. Check your installed scripts too; upstream code can change.</p>
-<h2>First, Wake the Apple TV</h2>
+<h2 id="first-wake-the-apple-tv">First, Wake the Apple TV</h2>
 <p>The first SSH check said the Apple TV was connected, but its CEC power state was <code>Off</code> and there was no HDMI signal.</p>
 <p>Pressing Home on the Apple TV remote changed that:</p>
 <pre><code class="language-json">{
@@ -152,7 +152,7 @@
 }
 </code></pre>
 <p>So a sleeping Apple TV wasn't the problem, or at least not all of it. The screen was still black.</p>
-<h2>Check More Than the Selected Input</h2>
+<h2 id="check-more-than-the-selected-input">Check More Than the Selected Input</h2>
 <p>The following commands run <strong>on the TV</strong>, after logging in through your existing root SSH connection. The <code>&lt;/dev/null</code> redirect keeps <code>luna-send</code> from waiting on SSH's standard input.</p>
 <pre><code class="language-sh"># Connected devices and HDMI signal state
 luna-send -n 1 -w 5000 \
@@ -189,7 +189,7 @@ luna-send -n 1 -w 5000 \
 </tbody>
 </table>
 <p>The selected input wasn't the whole story. LG's app manager considered HDMI 1 foreground, but the media service still treated its pipelines as background sessions, and the video output had nothing routed to its main display sink.</p>
-<h2>The Recovery That Worked</h2>
+<h2 id="the-recovery-that-worked">The Recovery That Worked</h2>
 <p>I restarted the media service and reopened HDMI 1. Substitute the correct HDMI app if your source uses another port.</p>
 <pre><code class="language-sh">systemctl restart umediaserver
 sleep 3
@@ -208,7 +208,7 @@ luna-send -n 1 -w 5000 \
 <p>Afterward, the main output was connected to HDMI 1 at <strong>3840 × 2160, 60 Hz, Dolby Vision</strong>. The media pipelines became foreground sessions, and the mute manager reported the current session's picture and audio unmuted.</p>
 <p>I checked the screen. Apple TV was back.</p>
 <p>One diagnostic gotcha: <code>videooutput/getStatus</code> still showed its own <code>muted</code> flag as true. Older media contexts also remained in the mute manager's list. Match mute information to the <strong>current output context</strong>, and confirm the picture on the TV. One boolean isn't enough.</p>
-<h2>What Happened</h2>
+<h2 id="what-happened">What Happened</h2>
 <p>The CleanYourTV boot log (<code>/tmp/cleanyourtv-boot.log</code>, timestamps in seconds since boot) showed:</p>
 <pre><code class="language-text">24.37 home: mounting the launcher over LG's Home, restarting sam
 24.67 home: sam restarted
@@ -222,7 +222,7 @@ luna-send -n 1 -w 5000 \
 </code></pre>
 <p>The media service started about 10.2 seconds after boot. SAM's current instance started at 24.66 seconds, matching the restart in the boot log. So the media service was the original process from before the SAM restart, still running more than an hour and a half later when I investigated. Restarting that service and reopening the input repaired the disagreement between app foreground state and media routing.</p>
 <p>That matches what I saw: the media service never heard about the SAM restart, and it kept treating HDMI as background even after SAM brought HDMI 1 to the foreground.</p>
-<h3>Tracing the stale subscription</h3>
+<h3 id="tracing-the-stale-subscription">Tracing the stale subscription</h3>
 <p>A week later I went back to find the specific subscription. <code>ls-monitor -s</code> lists every subscription on webOS's Luna bus, and <code>ls-monitor -l</code> maps bus names to processes. Inside <code>umediaserver</code>, a client called <code>com.webos.media.appobserver</code> subscribes to two SAM methods:</p>
 <pre><code class="language-text">com.webos.applicationManager foregroundAppsEx  &lt;- com.webos.media.appobserver  {&quot;extraInfo&quot;:true, &quot;subscribe&quot;:true}
 com.webos.applicationManager getAppLifeStatus  &lt;- com.webos.media.appobserver  {&quot;subscribe&quot;:true}
@@ -232,7 +232,7 @@ com.webos.applicationManager getAppLifeStatus  &lt;- com.webos.media.appobserver
 </code></pre>
 <p>The app observer re-subscribed to <code>getAppLifeStatus</code> but never to <code>foregroundAppsEx</code>. A minute later it still hadn't. Restarting <code>umediaserver</code> brought both subscriptions back.</p>
 <p>That is the stale subscription: after a SAM restart, the media service stops receiving foreground-app updates until it is restarted itself.</p>
-<h3>Trying to bring the black screen back</h3>
+<h3 id="trying-to-bring-the-black-screen-back">Trying to bring the black screen back</h3>
 <p>Next I tried to recreate the original failure with the workaround off. For each test I checked the media pipelines and the main video output over SSH, and looked at the screen:</p>
 <table>
 <thead>
@@ -252,7 +252,7 @@ com.webos.applicationManager getAppLifeStatus  &lt;- com.webos.media.appobserver
 <li><strong>Not proven:</strong> that the missing subscription caused the black screen by itself. In my tests the TV handled HDMI without it, so something else was also involved that morning. A long standby, a particular CEC handshake, or a timing race are all possible, but I couldn't reproduce it on demand.</li>
 </ul>
 <p>That also changes how to read the cold-boot result. HDMI came up fine with the workaround, but it came up fine without it too. I'm keeping the workaround anyway. It's cheap, it makes the stale subscription impossible, and it's the same restart that fixed the real failure. I've only seen this on SDK 10.3.1, and it doesn't mean every CleanYourTV installation is affected.</p>
-<h2>Preparing for the Next Boot</h2>
+<h2 id="preparing-for-the-next-boot">Preparing for the Next Boot</h2>
 <p>The installed CleanYourTV version already had an <code>after-sam.sh</code> hook. It asks <code>tvprofile.js</code> which running services need restarting after SAM.</p>
 <p>On this TV, that decision returned an empty string. I changed the <code>afterSam</code> rule in <code>/media/developer/cleanyourtv/tvprofile.js</code> to return <code>umediaserver</code> for <strong>SDK 10.3.1 only</strong>:</p>
 <pre><code class="language-js">// before
@@ -266,7 +266,7 @@ afterSam: f.sdk === '10.3.1' ? 'umediaserver' : (major &gt; 0 &amp;&amp; major &
 <p>The updated JavaScript passed a syntax check using the TV's own runtime, and the TV returned the expected boot decision.</p>
 <p>Since then, the TV has cold-booted with the workaround in place and HDMI came up normally (though, as the tests above show, that alone doesn't prove the workaround is what prevents the failure). Restarting a shared media service can affect other boot media clients, so I kept the workaround specific to the SDK I observed.</p>
 <p>A CleanYourTV update can replace the modified profile. After updating, check whether the upstream version addresses the issue before reapplying a local change.</p>
-<h2>What I'd Check Next Time</h2>
+<h2 id="what-id-check-next-time">What I'd Check Next Time</h2>
 <ol>
 <li>Wake the source and verify there is an HDMI signal.</li>
 <li>Check the foreground app.</li>

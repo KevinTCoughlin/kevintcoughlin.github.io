@@ -128,7 +128,7 @@
         <h1>Small Findings</h1>
         <time datetime="2026-11-03T03:20:00Z">November 3, 2026</time>
 <p>Short notes from side projects. Each one is something I measured or hit, not a general claim.</p>
-<h2>Godot 4.8 beta 2 makes my Android APK about 6 MB smaller</h2>
+<h2 id="godot-48-beta-2-makes-my-android-apk-about-6-mb-smaller">Godot 4.8 beta 2 makes my Android APK about 6 MB smaller</h2>
 <p><em>2026-11-02</em></p>
 <p><a href="https://github.com/cascadiacollections/saltline">Salt Line</a>, my Rust + Godot artillery game, ships on Godot 4.7.2. I keep an opt-in CI job that exports the same project with both 4.7.2 and 4.8-beta2 and compares the results.</p>
 <p>Both exports below use Godot's official export templates, for arm64 Android, with release builds. My shipping 4.7.2 build uses a stripped custom engine instead, so these aren't my store sizes. They do compare like with like.</p>
@@ -145,7 +145,7 @@
 <p>Almost all of the drop is the engine library. My own native library is byte-for-byte the same size. So the savings come from Godot, not from anything I changed.</p>
 <p>Not everything got smaller. The Linux x86_64 release export grew by 3,135,744 B (78.6 MB → 81.7 MB), the same amount as the official Linux template grew. I haven't looked into what changed in the engine on either platform.</p>
 <p>The numbers come from one CI run (<a href="https://github.com/cascadiacollections/saltline/actions/runs/41565869845">41565869845</a>) against 4.8-beta2 commit <code>cafc17a19</code>. Betas change, so I'll measure again at the release candidate.</p>
-<h3>The export that didn't build at first</h3>
+<h3 id="the-export-that-didnt-build-at-first">The export that didn't build at first</h3>
 <p>The first 4.8 Android export failed in Gradle:</p>
 <pre><code>GodotApp.java:49: error: cannot find symbol
   symbol:   variable FLAVOR

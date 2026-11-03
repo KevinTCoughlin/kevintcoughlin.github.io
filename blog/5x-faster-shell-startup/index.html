@@ -128,13 +128,13 @@
         <h1>5x Faster Shell Startup: A macOS Developer Environment Audit</h1>
         <time datetime="2026-01-18T19:22:33Z">January 18, 2026</time>
 <p>My shell took 2.5 seconds to start. Now it takes 0.47 seconds. Here's what I learned.</p>
-<h2>The Problem</h2>
+<h2 id="the-problem">The Problem</h2>
 <p>Every new terminal tab felt sluggish. I'd open a tab, wait, then forget what I was about to do. Death by a thousand cuts.</p>
 <pre><code class="language-bash">$ time zsh -i -c exit
 zsh -i -c exit  0.31s user 0.53s system 33% cpu 2.509 total
 </code></pre>
 <p>2.5 seconds. For a shell prompt.</p>
-<h2>Finding the Culprits</h2>
+<h2 id="finding-the-culprits">Finding the Culprits</h2>
 <p>The usual suspects in a developer's <code>.zshrc</code>:</p>
 <table>
 <thead>
@@ -150,9 +150,9 @@ zsh -i -c exit  0.31s user 0.53s system 33% cpu 2.509 total
 </tbody>
 </table>
 <p>That's 1.7 seconds just from version managers I use maybe once a week.</p>
-<h2>The Fix: Lazy Loading</h2>
+<h2 id="the-fix-lazy-loading">The Fix: Lazy Loading</h2>
 <p>The insight: I don't need pyenv initialized until I actually run <code>python</code>. Same for Java, Node, and gcloud.</p>
-<h3>Before (eager loading)</h3>
+<h3 id="before-eager-loading">Before (eager loading)</h3>
 <pre><code class="language-bash"># Every shell startup pays this cost
 eval &quot;$(pyenv init --path)&quot;
 eval &quot;$(pyenv init -)&quot;
@@ -161,7 +161,7 @@ eval &quot;$(pyenv init -)&quot;
 
 [ -s &quot;$NVS_HOME/nvs.sh&quot; ] &amp;&amp; . &quot;$NVS_HOME/nvs.sh&quot;
 </code></pre>
-<h3>After (lazy loading)</h3>
+<h3 id="after-lazy-loading">After (lazy loading)</h3>
 <pre><code class="language-bash"># pyenv - only initialize on first use
 export PYENV_ROOT=&quot;$HOME/.pyenv&quot;
 export PATH=&quot;$PYENV_ROOT/bin:$PATH&quot;
@@ -209,7 +209,7 @@ javac() { _sdk_init; javac &quot;$@&quot; }
 gradle() { _sdk_init; gradle &quot;$@&quot; }
 </code></pre>
 <p><strong>Key insight for nvs</strong>: Add the default node to PATH directly (<code>$NVS_HOME/default/bin</code>). This way <code>node</code> and <code>npm</code> work instantly without loading nvs. Only <code>nvs use</code> triggers full initialization.</p>
-<h3>Background the greeting</h3>
+<h3 id="background-the-greeting">Background the greeting</h3>
 <p>My shell displayed an inspirational quote on startup. Nice, but blocking.</p>
 <pre><code class="language-bash"># Before - blocking
 [[ -o interactive ]] &amp;&amp; ~/.local/bin/greet
@@ -218,7 +218,7 @@ gradle() { _sdk_init; gradle &quot;$@&quot; }
 [[ -o interactive ]] &amp;&amp; { ~/.local/bin/greet &amp; }
 </code></pre>
 <p>The <code>&amp;</code> backgrounds the process. The quote appears after the prompt is ready.</p>
-<h2>Consolidating Redundant Tools</h2>
+<h2 id="consolidating-redundant-tools">Consolidating Redundant Tools</h2>
 <p>While auditing, I found duplicate tools:</p>
 <table>
 <thead>
@@ -235,7 +235,7 @@ gradle() { _sdk_init; gradle &quot;$@&quot; }
 </tbody>
 </table>
 <p>This freed ~440MB and simplified the mental model.</p>
-<h3>Wezterm vs tmux</h3>
+<h3 id="wezterm-vs-tmux">Wezterm vs tmux</h3>
 <p>Both provide:</p>
 <ul>
 <li>Split panes</li>
@@ -251,13 +251,13 @@ gradle() { _sdk_init; gradle &quot;$@&quot; }
 <li>Built-in smart-splits with Neovim</li>
 </ul>
 <p>I kept <code>.tmux.conf</code> for SSH into Linux servers, but local development uses Wezterm exclusively.</p>
-<h2>The Result</h2>
+<h2 id="the-result">The Result</h2>
 <pre><code class="language-bash">$ time zsh -i -c exit
 zsh -i -c exit  0.14s user 0.19s system 68% cpu 0.470 total
 </code></pre>
 <p><strong>2.5s → 0.47s (5.3x faster)</strong></p>
 <p>First <code>python</code> call adds ~300ms one time. Worth it.</p>
-<h2>Full .zshrc Structure</h2>
+<h2 id="full-zshrc-structure">Full .zshrc Structure</h2>
 <pre><code class="language-bash"># 1. Oh My Zsh (minimal plugins)
 plugins=(git)
 source $ZSH/oh-my-zsh.sh
@@ -283,7 +283,7 @@ alias cat=&quot;bat&quot;
 # 6. Interactive-only (backgrounded)
 [[ -o interactive ]] &amp;&amp; { ~/.local/bin/greet &amp; }
 </code></pre>
-<h2>Takeaways</h2>
+<h2 id="takeaways">Takeaways</h2>
 <ol>
 <li><strong>Measure first</strong>: <code>time zsh -i -c exit</code> before optimizing</li>
 <li><strong>Lazy load</strong>: If you don't use it every session, defer it</li>
