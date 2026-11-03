@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Short notes from side projects. Each one is something I measured or hit, not a general claim." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/small-findings/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Small Findings — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>Small Findings</h1>
+        <time datetime="2026-11-03T03:20:00Z">November 3, 2026</time>
+<p>Short notes from side projects. Each one is something I measured or hit, not a general claim.</p>
+<h2 id="godot-48-beta-2-makes-my-android-apk-about-6-mb-smaller">Godot 4.8 beta 2 makes my Android APK about 6 MB smaller</h2>
+<p><em>2026-11-02</em></p>
+<p><a href="https://github.com/cascadiacollections/saltline">Salt Line</a>, my Rust + Godot artillery game, ships on Godot 4.7.2. I keep an opt-in CI job that exports the same project with both 4.7.2 and 4.8-beta2 and compares the results.</p>
+<p>Both exports below use Godot's official export templates, for arm64 Android, with release builds. My shipping 4.7.2 build uses a stripped custom engine instead, so these aren't my store sizes. They do compare like with like.</p>
+<table>
+<thead>
+<tr><th></th><th align="right">4.7.2</th><th align="right">4.8-beta2</th><th align="right">Change</th></tr>
+</thead>
+<tbody>
+<tr><td>Salt Line APK</td><td align="right">90,869,703 B</td><td align="right">84,594,405 B</td><td align="right">−6,275,298 B (−6.9%)</td></tr>
+<tr><td><code>libgodot_android.so</code> in the APK</td><td align="right">71,114,944 B</td><td align="right">64,818,536 B</td><td align="right">−6,296,408 B (−8.9%)</td></tr>
+<tr><td><code>libsalt_line_godot.so</code> (my Rust GDExtension) in the APK</td><td align="right">6,077,720 B</td><td align="right">6,077,720 B</td><td align="right">0 B</td></tr>
+</tbody>
+</table>
+<p>Almost all of the drop is the engine library. My own native library is byte-for-byte the same size. So the savings come from Godot, not from anything I changed.</p>
+<p>Not everything got smaller. The Linux x86_64 release export grew by 3,135,744 B (78.6 MB → 81.7 MB), the same amount as the official Linux template grew. I haven't looked into what changed in the engine on either platform.</p>
+<p>The numbers come from one CI run (<a href="https://github.com/cascadiacollections/saltline/actions/runs/41565869845">41565869845</a>) against 4.8-beta2 commit <code>cafc17a19</code>. Betas change, so I'll measure again at the release candidate.</p>
+<h3 id="the-export-that-didnt-build-at-first">The export that didn't build at first</h3>
+<p>The first 4.8 Android export failed in Gradle:</p>
+<pre><code>GodotApp.java:49: error: cannot find symbol
+  symbol:   variable FLAVOR
+  location: class BuildConfig
+</code></pre>
+<p>4.8 moved <code>com/godot/game/GodotApp.java</code> to <code>com/godot/game/app/GodotApplication.java</code>. My build script unpacked the 4.8 Android build template over the 4.7.2 one that the job had just used, so the old <code>GodotApp.java</code> stayed behind and was compiled against 4.8's Gradle project.</p>
+<p>The fix was to delete <code>android/build</code> before unpacking the template (<a href="https://github.com/cascadiacollections/saltline/pull/144">saltline#144</a>). If you switch Godot versions in one checkout and see a strange Java error in the Android export, check for files left over from the old template.</p>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>

@@ -4,11 +4,203 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-01-18T19:22:33Z</updated>
+  <updated>2026-11-03T03:20:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>Small Findings</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/small-findings/"/>
+    <id>https://kevintcoughlin.com/blog/small-findings/</id>
+    <published>2026-11-03T03:20:00Z</published>
+    <updated>2026-11-03T03:20:00Z</updated>
+    <summary>Short notes from side projects. Each one is something I measured or hit, not a general claim.</summary>
+    <content type="html">&lt;p&gt;Short notes from side projects. Each one is something I measured or hit, not a general claim.&lt;/p&gt;
+&lt;h2 id=&quot;godot-48-beta-2-makes-my-android-apk-about-6-mb-smaller&quot;&gt;Godot 4.8 beta 2 makes my Android APK about 6 MB smaller&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;2026-11-02&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/cascadiacollections/saltline&quot;&gt;Salt Line&lt;/a&gt;, my Rust + Godot artillery game, ships on Godot 4.7.2. I keep an opt-in CI job that exports the same project with both 4.7.2 and 4.8-beta2 and compares the results.&lt;/p&gt;
+&lt;p&gt;Both exports below use Godot's official export templates, for arm64 Android, with release builds. My shipping 4.7.2 build uses a stripped custom engine instead, so these aren't my store sizes. They do compare like with like.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;&lt;/th&gt;&lt;th align=&quot;right&quot;&gt;4.7.2&lt;/th&gt;&lt;th align=&quot;right&quot;&gt;4.8-beta2&lt;/th&gt;&lt;th align=&quot;right&quot;&gt;Change&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Salt Line APK&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;90,869,703 B&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;84,594,405 B&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;−6,275,298 B (−6.9%)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;libgodot_android.so&lt;/code&gt; in the APK&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;71,114,944 B&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;64,818,536 B&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;−6,296,408 B (−8.9%)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;libsalt_line_godot.so&lt;/code&gt; (my Rust GDExtension) in the APK&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;6,077,720 B&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;6,077,720 B&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;0 B&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Almost all of the drop is the engine library. My own native library is byte-for-byte the same size. So the savings come from Godot, not from anything I changed.&lt;/p&gt;
+&lt;p&gt;Not everything got smaller. The Linux x86_64 release export grew by 3,135,744 B (78.6 MB → 81.7 MB), the same amount as the official Linux template grew. I haven't looked into what changed in the engine on either platform.&lt;/p&gt;
+&lt;p&gt;The numbers come from one CI run (&lt;a href=&quot;https://github.com/cascadiacollections/saltline/actions/runs/41565869845&quot;&gt;41565869845&lt;/a&gt;) against 4.8-beta2 commit &lt;code&gt;cafc17a19&lt;/code&gt;. Betas change, so I'll measure again at the release candidate.&lt;/p&gt;
+&lt;h3 id=&quot;the-export-that-didnt-build-at-first&quot;&gt;The export that didn't build at first&lt;/h3&gt;
+&lt;p&gt;The first 4.8 Android export failed in Gradle:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;GodotApp.java:49: error: cannot find symbol
+  symbol:   variable FLAVOR
+  location: class BuildConfig
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;4.8 moved &lt;code&gt;com/godot/game/GodotApp.java&lt;/code&gt; to &lt;code&gt;com/godot/game/app/GodotApplication.java&lt;/code&gt;. My build script unpacked the 4.8 Android build template over the 4.7.2 one that the job had just used, so the old &lt;code&gt;GodotApp.java&lt;/code&gt; stayed behind and was compiled against 4.8's Gradle project.&lt;/p&gt;
+&lt;p&gt;The fix was to delete &lt;code&gt;android/build&lt;/code&gt; before unpacking the template (&lt;a href=&quot;https://github.com/cascadiacollections/saltline/pull/144&quot;&gt;saltline#144&lt;/a&gt;). If you switch Godot versions in one checkout and see a strange Java error in the Android export, check for files left over from the old template.&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>Fixing a Black HDMI Picture on My LG C2 After Installing CleanYourTV</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/lg-c2-black-hdmi-after-cleanyourtv/"/>
+    <id>https://kevintcoughlin.com/blog/lg-c2-black-hdmi-after-cleanyourtv/</id>
+    <published>2026-10-26T14:17:02Z</published>
+    <updated>2026-11-01T19:03:06Z</updated>
+    <summary>I customized my downstairs LG C2 with CleanYourTV. The next morning, my Apple TV would turn on, but selecting its HDMI input left me staring at a black screen.</summary>
+    <content type="html">&lt;p&gt;I customized my downstairs LG C2 with CleanYourTV. The next morning, my Apple TV would turn on, but selecting its HDMI input left me staring at a black screen.&lt;/p&gt;
+&lt;p&gt;The TV could see the Apple TV. It could see a video signal. It still wasn't putting that video on the screen.&lt;/p&gt;
+&lt;p&gt;Here's what I checked over SSH, what restored the picture, and the boot workaround I installed afterward.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Update:&lt;/strong&gt; The boot workaround has held through a cold boot. I also went back and traced the stale subscription live, and tried to bring back the black screen without the workaround. See &lt;a href=&quot;https://kevintcoughlin.com/blog/lg-c2-black-hdmi-after-cleanyourtv/#tracing-the-stale-subscription&quot;&gt;Tracing the stale subscription&lt;/a&gt; for what that did and didn't prove.&lt;/p&gt;
+&lt;h2 id=&quot;the-setup&quot;&gt;The Setup&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;LG C2, model OLED77C2AUA&lt;/li&gt;
+&lt;li&gt;Firmware 33.31.68&lt;/li&gt;
+&lt;li&gt;webOS SDK 10.3.1&lt;/li&gt;
+&lt;li&gt;CleanYourTV replacing LG's Home launcher&lt;/li&gt;
+&lt;li&gt;Apple TV connected to HDMI 1&lt;/li&gt;
+&lt;li&gt;Existing root SSH access to the TV&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;These details matter. This is a report from one TV and one firmware combination, not a fix for every LG black screen.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/lasharor/cleanyourtv-WebOS&quot;&gt;CleanYourTV&lt;/a&gt; customizes a rooted webOS TV. Its Home takeover uses writable files and temporary mounts, and on the configuration installed on my TV, it restarts LG's system app manager, SAM. The project's &lt;a href=&quot;https://github.com/lasharor/cleanyourtv-WebOS/blob/main/docs/tv-changes.md&quot;&gt;TV changes documentation&lt;/a&gt; explains the boot setup. Check your installed scripts too; upstream code can change.&lt;/p&gt;
+&lt;h2 id=&quot;first-wake-the-apple-tv&quot;&gt;First, Wake the Apple TV&lt;/h2&gt;
+&lt;p&gt;The first SSH check said the Apple TV was connected, but its CEC power state was &lt;code&gt;Off&lt;/code&gt; and there was no HDMI signal.&lt;/p&gt;
+&lt;p&gt;Pressing Home on the Apple TV remote changed that:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-json&quot;&gt;{
+  &amp;quot;hdmiPlugIn&amp;quot;: true,
+  &amp;quot;hdmiSignalExist&amp;quot;: true,
+  &amp;quot;cecPower&amp;quot;: &amp;quot;On&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;So a sleeping Apple TV wasn't the problem, or at least not all of it. The screen was still black.&lt;/p&gt;
+&lt;h2 id=&quot;check-more-than-the-selected-input&quot;&gt;Check More Than the Selected Input&lt;/h2&gt;
+&lt;p&gt;The following commands run &lt;strong&gt;on the TV&lt;/strong&gt;, after logging in through your existing root SSH connection. The &lt;code&gt;&amp;lt;/dev/null&lt;/code&gt; redirect keeps &lt;code&gt;luna-send&lt;/code&gt; from waiting on SSH's standard input.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-sh&quot;&gt;# Connected devices and HDMI signal state
+luna-send -n 1 -w 5000 \
+  luna://com.webos.service.eim/getAllInputStatus '{}' &amp;lt;/dev/null
+
+# Which app LG considers foreground
+luna-send -n 1 -w 5000 \
+  luna://com.webos.applicationManager/getForegroundAppInfo '{}' &amp;lt;/dev/null
+
+# Media pipelines and their foreground state
+luna-send -n 1 -w 5000 \
+  luna://com.webos.media/getActivePipelines '{}' &amp;lt;/dev/null
+
+# What is actually connected to the display's video output
+luna-send -n 1 -w 5000 \
+  luna://com.webos.service.videooutput/getStatus '{}' &amp;lt;/dev/null
+
+# Mute state for each media context
+luna-send -n 1 -w 5000 \
+  luna://com.webos.service.avmutemanager/getMuteInfo '{}' &amp;lt;/dev/null
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The results disagreed with each other:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;Check&lt;/th&gt;&lt;th&gt;Before recovery&lt;/th&gt;&lt;th&gt;After recovery&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Apple TV power&lt;/td&gt;&lt;td&gt;On&lt;/td&gt;&lt;td&gt;On&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;HDMI 1 signal&lt;/td&gt;&lt;td&gt;Present&lt;/td&gt;&lt;td&gt;Present&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Foreground app&lt;/td&gt;&lt;td&gt;&lt;code&gt;com.webos.app.hdmi1&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;com.webos.app.hdmi1&lt;/code&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;HDMI media pipelines&lt;/td&gt;&lt;td&gt;Not foreground&lt;/td&gt;&lt;td&gt;Foreground&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Main video output&lt;/td&gt;&lt;td&gt;Disconnected, no source assigned&lt;/td&gt;&lt;td&gt;HDMI 1, 3840 × 2160, 60 Hz, Dolby Vision&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;HDMI picture mute&lt;/td&gt;&lt;td&gt;Active&lt;/td&gt;&lt;td&gt;Unmuted (current context)&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;The selected input wasn't the whole story. LG's app manager considered HDMI 1 foreground, but the media service still treated its pipelines as background sessions, and the video output had nothing routed to its main display sink.&lt;/p&gt;
+&lt;h2 id=&quot;the-recovery-that-worked&quot;&gt;The Recovery That Worked&lt;/h2&gt;
+&lt;p&gt;I restarted the media service and reopened HDMI 1. Substitute the correct HDMI app if your source uses another port.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-sh&quot;&gt;systemctl restart umediaserver
+sleep 3
+
+luna-send -n 1 -w 5000 \
+  luna://com.webos.applicationManager/closeByAppId \
+  '{&amp;quot;id&amp;quot;:&amp;quot;com.webos.app.hdmi1&amp;quot;}' &amp;lt;/dev/null
+
+sleep 2
+
+luna-send -n 1 -w 5000 \
+  luna://com.webos.applicationManager/launch \
+  '{&amp;quot;id&amp;quot;:&amp;quot;com.webos.app.hdmi1&amp;quot;}' &amp;lt;/dev/null
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This interrupts media playback. It doesn't reset the TV or erase its settings.&lt;/p&gt;
+&lt;p&gt;Afterward, the main output was connected to HDMI 1 at &lt;strong&gt;3840 × 2160, 60 Hz, Dolby Vision&lt;/strong&gt;. The media pipelines became foreground sessions, and the mute manager reported the current session's picture and audio unmuted.&lt;/p&gt;
+&lt;p&gt;I checked the screen. Apple TV was back.&lt;/p&gt;
+&lt;p&gt;One diagnostic gotcha: &lt;code&gt;videooutput/getStatus&lt;/code&gt; still showed its own &lt;code&gt;muted&lt;/code&gt; flag as true. Older media contexts also remained in the mute manager's list. Match mute information to the &lt;strong&gt;current output context&lt;/strong&gt;, and confirm the picture on the TV. One boolean isn't enough.&lt;/p&gt;
+&lt;h2 id=&quot;what-happened&quot;&gt;What Happened&lt;/h2&gt;
+&lt;p&gt;The CleanYourTV boot log (&lt;code&gt;/tmp/cleanyourtv-boot.log&lt;/code&gt;, timestamps in seconds since boot) showed:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot;&gt;24.37 home: mounting the launcher over LG's Home, restarting sam
+24.67 home: sam restarted
+25.68 after-sam: webOS SDK 10.3.1, Home 'com.webos.app.home flutter', services: none
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Each process's start time is field 22 of &lt;code&gt;/proc/&amp;lt;pid&amp;gt;/stat&lt;/code&gt;, in clock ticks since boot (100 per second here):&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-sh&quot;&gt;cut -d ' ' -f 1,2,22 /proc/$(pidof umediaserver)/stat /proc/$(pidof sam)/stat
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot;&gt;2551 (umediaserver) 1022
+3940 (sam) 2466
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The media service started about 10.2 seconds after boot. SAM's current instance started at 24.66 seconds, matching the restart in the boot log. So the media service was the original process from before the SAM restart, still running more than an hour and a half later when I investigated. Restarting that service and reopening the input repaired the disagreement between app foreground state and media routing.&lt;/p&gt;
+&lt;p&gt;That matches what I saw: the media service never heard about the SAM restart, and it kept treating HDMI as background even after SAM brought HDMI 1 to the foreground.&lt;/p&gt;
+&lt;h3 id=&quot;tracing-the-stale-subscription&quot;&gt;Tracing the stale subscription&lt;/h3&gt;
+&lt;p&gt;A week later I went back to find the specific subscription. &lt;code&gt;ls-monitor -s&lt;/code&gt; lists every subscription on webOS's Luna bus, and &lt;code&gt;ls-monitor -l&lt;/code&gt; maps bus names to processes. Inside &lt;code&gt;umediaserver&lt;/code&gt;, a client called &lt;code&gt;com.webos.media.appobserver&lt;/code&gt; subscribes to two SAM methods:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot;&gt;com.webos.applicationManager foregroundAppsEx  &amp;lt;- com.webos.media.appobserver  {&amp;quot;extraInfo&amp;quot;:true, &amp;quot;subscribe&amp;quot;:true}
+com.webos.applicationManager getAppLifeStatus  &amp;lt;- com.webos.media.appobserver  {&amp;quot;subscribe&amp;quot;:true}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;foregroundAppsEx&lt;/code&gt; is how the media service learns which app is in the foreground. I briefly turned the workaround off, restarted only SAM, and listed subscriptions again:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot;&gt;com.webos.applicationManager getAppLifeStatus  &amp;lt;- com.webos.media.appobserver  {&amp;quot;subscribe&amp;quot;:true}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The app observer re-subscribed to &lt;code&gt;getAppLifeStatus&lt;/code&gt; but never to &lt;code&gt;foregroundAppsEx&lt;/code&gt;. A minute later it still hadn't. Restarting &lt;code&gt;umediaserver&lt;/code&gt; brought both subscriptions back.&lt;/p&gt;
+&lt;p&gt;That is the stale subscription: after a SAM restart, the media service stops receiving foreground-app updates until it is restarted itself.&lt;/p&gt;
+&lt;h3 id=&quot;trying-to-bring-the-black-screen-back&quot;&gt;Trying to bring the black screen back&lt;/h3&gt;
+&lt;p&gt;Next I tried to recreate the original failure with the workaround off. For each test I checked the media pipelines and the main video output over SSH, and looked at the screen:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;Test&lt;/th&gt;&lt;th&gt;&lt;code&gt;foregroundAppsEx&lt;/code&gt;&lt;/th&gt;&lt;th&gt;HDMI 1 picture&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Restart only SAM, reopen HDMI 1&lt;/td&gt;&lt;td&gt;Missing&lt;/td&gt;&lt;td&gt;Fine&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Reboot (same boot order as the incident: media service at 10.3 s, SAM restarted at 33.9 s), switch to HDMI 1&lt;/td&gt;&lt;td&gt;Missing&lt;/td&gt;&lt;td&gt;Fine&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;From that boot: TV off with the LG remote, wake with the Apple TV remote over CEC&lt;/td&gt;&lt;td&gt;Missing&lt;/td&gt;&lt;td&gt;Fine&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;The stale subscription showed up every time, including on a real boot. The black screen never did. The last test is the closest match to the original morning: the TV sat in standby with a stale media service, and the Apple TV woke it. Standby doesn't restart webOS, so the same &lt;code&gt;umediaserver&lt;/code&gt; process carried through.&lt;/p&gt;
+&lt;p&gt;So here's where it stands:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Proven:&lt;/strong&gt; a SAM restart leaves &lt;code&gt;umediaserver&lt;/code&gt; without its &lt;code&gt;foregroundAppsEx&lt;/code&gt; subscription, and only restarting &lt;code&gt;umediaserver&lt;/code&gt; restores it. Every CleanYourTV boot on this TV restarts SAM.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Proven:&lt;/strong&gt; on the morning of the incident, restarting &lt;code&gt;umediaserver&lt;/code&gt; and reopening HDMI 1 fixed a disconnected main output.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Not proven:&lt;/strong&gt; that the missing subscription caused the black screen by itself. In my tests the TV handled HDMI without it, so something else was also involved that morning. A long standby, a particular CEC handshake, or a timing race are all possible, but I couldn't reproduce it on demand.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;That also changes how to read the cold-boot result. HDMI came up fine with the workaround, but it came up fine without it too. I'm keeping the workaround anyway. It's cheap, it makes the stale subscription impossible, and it's the same restart that fixed the real failure. I've only seen this on SDK 10.3.1, and it doesn't mean every CleanYourTV installation is affected.&lt;/p&gt;
+&lt;h2 id=&quot;preparing-for-the-next-boot&quot;&gt;Preparing for the Next Boot&lt;/h2&gt;
+&lt;p&gt;The installed CleanYourTV version already had an &lt;code&gt;after-sam.sh&lt;/code&gt; hook. It asks &lt;code&gt;tvprofile.js&lt;/code&gt; which running services need restarting after SAM.&lt;/p&gt;
+&lt;p&gt;On this TV, that decision returned an empty string. I changed the &lt;code&gt;afterSam&lt;/code&gt; rule in &lt;code&gt;/media/developer/cleanyourtv/tvprofile.js&lt;/code&gt; to return &lt;code&gt;umediaserver&lt;/code&gt; for &lt;strong&gt;SDK 10.3.1 only&lt;/strong&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-js&quot;&gt;// before
+afterSam: (major &amp;gt; 0 &amp;amp;&amp;amp; major &amp;lt; 7) || /\snative$/.test(homeKind) ? 'eim webapp-mgr preload-manager memorymanager' : '',
+
+// after
+afterSam: f.sdk === '10.3.1' ? 'umediaserver' : (major &amp;gt; 0 &amp;amp;&amp;amp; major &amp;lt; 7) || /\snative$/.test(homeKind) ? 'eim webapp-mgr preload-manager memorymanager' : '',
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Other SDK decisions and the existing legacy service rule stay intact. The existing boot hook then restarts the media service before opening Home. This changes a file under &lt;code&gt;/media/developer/cleanyourtv&lt;/code&gt;, not the read-only firmware.&lt;/p&gt;
+&lt;p&gt;I saved the original profile first. Rolling back means restoring that copy; the rollback takes effect on the next boot.&lt;/p&gt;
+&lt;p&gt;The updated JavaScript passed a syntax check using the TV's own runtime, and the TV returned the expected boot decision.&lt;/p&gt;
+&lt;p&gt;Since then, the TV has cold-booted with the workaround in place and HDMI came up normally (though, as the tests above show, that alone doesn't prove the workaround is what prevents the failure). Restarting a shared media service can affect other boot media clients, so I kept the workaround specific to the SDK I observed.&lt;/p&gt;
+&lt;p&gt;A CleanYourTV update can replace the modified profile. After updating, check whether the upstream version addresses the issue before reapplying a local change.&lt;/p&gt;
+&lt;h2 id=&quot;what-id-check-next-time&quot;&gt;What I'd Check Next Time&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;Wake the source and verify there is an HDMI signal.&lt;/li&gt;
+&lt;li&gt;Check the foreground app.&lt;/li&gt;
+&lt;li&gt;Compare that with the media pipelines and main video output.&lt;/li&gt;
+&lt;li&gt;If the signal is present but routing is disconnected, restart &lt;code&gt;umediaserver&lt;/code&gt; and reopen the input (see above).&lt;/li&gt;
+&lt;li&gt;Confirm the picture physically before calling it fixed.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;I used Codex to collect the SSH diagnostics, work through the recovery, and prepare the local boot workaround. What cracked it was comparing what each service believed: the input was selected; the video just wasn't being routed to the screen.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>5x Faster Shell Startup: A macOS Developer Environment Audit</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/5x-faster-shell-startup/"/>
@@ -17,13 +209,13 @@
     <updated>2026-01-18T19:22:33Z</updated>
     <summary>My shell took 2.5 seconds to start. Now it takes 0.47 seconds. Here's what I learned.</summary>
     <content type="html">&lt;p&gt;My shell took 2.5 seconds to start. Now it takes 0.47 seconds. Here's what I learned.&lt;/p&gt;
-&lt;h2&gt;The Problem&lt;/h2&gt;
+&lt;h2 id=&quot;the-problem&quot;&gt;The Problem&lt;/h2&gt;
 &lt;p&gt;Every new terminal tab felt sluggish. I'd open a tab, wait, then forget what I was about to do. Death by a thousand cuts.&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ time zsh -i -c exit
 zsh -i -c exit  0.31s user 0.53s system 33% cpu 2.509 total
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;2.5 seconds. For a shell prompt.&lt;/p&gt;
-&lt;h2&gt;Finding the Culprits&lt;/h2&gt;
+&lt;h2 id=&quot;finding-the-culprits&quot;&gt;Finding the Culprits&lt;/h2&gt;
 &lt;p&gt;The usual suspects in a developer's &lt;code&gt;.zshrc&lt;/code&gt;:&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;
@@ -39,9 +231,9 @@ zsh -i -c exit  0.31s user 0.53s system 33% cpu 2.509 total
 &lt;/tbody&gt;
 &lt;/table&gt;
 &lt;p&gt;That's 1.7 seconds just from version managers I use maybe once a week.&lt;/p&gt;
-&lt;h2&gt;The Fix: Lazy Loading&lt;/h2&gt;
+&lt;h2 id=&quot;the-fix-lazy-loading&quot;&gt;The Fix: Lazy Loading&lt;/h2&gt;
 &lt;p&gt;The insight: I don't need pyenv initialized until I actually run &lt;code&gt;python&lt;/code&gt;. Same for Java, Node, and gcloud.&lt;/p&gt;
-&lt;h3&gt;Before (eager loading)&lt;/h3&gt;
+&lt;h3 id=&quot;before-eager-loading&quot;&gt;Before (eager loading)&lt;/h3&gt;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# Every shell startup pays this cost
 eval &amp;quot;$(pyenv init --path)&amp;quot;
 eval &amp;quot;$(pyenv init -)&amp;quot;
@@ -50,7 +242,7 @@ eval &amp;quot;$(pyenv init -)&amp;quot;
 
 [ -s &amp;quot;$NVS_HOME/nvs.sh&amp;quot; ] &amp;amp;&amp;amp; . &amp;quot;$NVS_HOME/nvs.sh&amp;quot;
 &lt;/code&gt;&lt;/pre&gt;
-&lt;h3&gt;After (lazy loading)&lt;/h3&gt;
+&lt;h3 id=&quot;after-lazy-loading&quot;&gt;After (lazy loading)&lt;/h3&gt;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# pyenv - only initialize on first use
 export PYENV_ROOT=&amp;quot;$HOME/.pyenv&amp;quot;
 export PATH=&amp;quot;$PYENV_ROOT/bin:$PATH&amp;quot;
@@ -98,7 +290,7 @@ javac() { _sdk_init; javac &amp;quot;$@&amp;quot; }
 gradle() { _sdk_init; gradle &amp;quot;$@&amp;quot; }
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;&lt;strong&gt;Key insight for nvs&lt;/strong&gt;: Add the default node to PATH directly (&lt;code&gt;$NVS_HOME/default/bin&lt;/code&gt;). This way &lt;code&gt;node&lt;/code&gt; and &lt;code&gt;npm&lt;/code&gt; work instantly without loading nvs. Only &lt;code&gt;nvs use&lt;/code&gt; triggers full initialization.&lt;/p&gt;
-&lt;h3&gt;Background the greeting&lt;/h3&gt;
+&lt;h3 id=&quot;background-the-greeting&quot;&gt;Background the greeting&lt;/h3&gt;
 &lt;p&gt;My shell displayed an inspirational quote on startup. Nice, but blocking.&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# Before - blocking
 [[ -o interactive ]] &amp;amp;&amp;amp; ~/.local/bin/greet
@@ -107,7 +299,7 @@ gradle() { _sdk_init; gradle &amp;quot;$@&amp;quot; }
 [[ -o interactive ]] &amp;amp;&amp;amp; { ~/.local/bin/greet &amp;amp; }
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;The &lt;code&gt;&amp;amp;&lt;/code&gt; backgrounds the process. The quote appears after the prompt is ready.&lt;/p&gt;
-&lt;h2&gt;Consolidating Redundant Tools&lt;/h2&gt;
+&lt;h2 id=&quot;consolidating-redundant-tools&quot;&gt;Consolidating Redundant Tools&lt;/h2&gt;
 &lt;p&gt;While auditing, I found duplicate tools:&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;
@@ -124,7 +316,7 @@ gradle() { _sdk_init; gradle &amp;quot;$@&amp;quot; }
 &lt;/tbody&gt;
 &lt;/table&gt;
 &lt;p&gt;This freed ~440MB and simplified the mental model.&lt;/p&gt;
-&lt;h3&gt;Wezterm vs tmux&lt;/h3&gt;
+&lt;h3 id=&quot;wezterm-vs-tmux&quot;&gt;Wezterm vs tmux&lt;/h3&gt;
 &lt;p&gt;Both provide:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Split panes&lt;/li&gt;
@@ -140,13 +332,13 @@ gradle() { _sdk_init; gradle &amp;quot;$@&amp;quot; }
 &lt;li&gt;Built-in smart-splits with Neovim&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;I kept &lt;code&gt;.tmux.conf&lt;/code&gt; for SSH into Linux servers, but local development uses Wezterm exclusively.&lt;/p&gt;
-&lt;h2&gt;The Result&lt;/h2&gt;
+&lt;h2 id=&quot;the-result&quot;&gt;The Result&lt;/h2&gt;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ time zsh -i -c exit
 zsh -i -c exit  0.14s user 0.19s system 68% cpu 0.470 total
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;&lt;strong&gt;2.5s → 0.47s (5.3x faster)&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;First &lt;code&gt;python&lt;/code&gt; call adds ~300ms one time. Worth it.&lt;/p&gt;
-&lt;h2&gt;Full .zshrc Structure&lt;/h2&gt;
+&lt;h2 id=&quot;full-zshrc-structure&quot;&gt;Full .zshrc Structure&lt;/h2&gt;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# 1. Oh My Zsh (minimal plugins)
 plugins=(git)
 source $ZSH/oh-my-zsh.sh
@@ -172,7 +364,7 @@ alias cat=&amp;quot;bat&amp;quot;
 # 6. Interactive-only (backgrounded)
 [[ -o interactive ]] &amp;amp;&amp;amp; { ~/.local/bin/greet &amp;amp; }
 &lt;/code&gt;&lt;/pre&gt;
-&lt;h2&gt;Takeaways&lt;/h2&gt;
+&lt;h2 id=&quot;takeaways&quot;&gt;Takeaways&lt;/h2&gt;
 &lt;ol&gt;
 &lt;li&gt;&lt;strong&gt;Measure first&lt;/strong&gt;: &lt;code&gt;time zsh -i -c exit&lt;/code&gt; before optimizing&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;Lazy load&lt;/strong&gt;: If you don't use it every session, defer it&lt;/li&gt;
@@ -193,7 +385,7 @@ alias cat=&amp;quot;bat&amp;quot;
     <updated>2026-01-18T18:15:54Z</updated>
     <summary>I wanted my Minecraft server to automatically start when I connect to my home WiFi, gracefully shut down when I leave, and perform daily maintenance restarts like production game servers. Here's how I set it up on macOS.</summary>
     <content type="html">&lt;p&gt;I wanted my Minecraft server to automatically start when I connect to my home WiFi, gracefully shut down when I leave, and perform daily maintenance restarts like production game servers. Here's how I set it up on macOS.&lt;/p&gt;
-&lt;h2&gt;The Problem&lt;/h2&gt;
+&lt;h2 id=&quot;the-problem&quot;&gt;The Problem&lt;/h2&gt;
 &lt;p&gt;Running a Minecraft server 24/7 on a laptop isn't practical. I wanted it to:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Auto-start when connected to my home network (&amp;quot;HomeWiFi&amp;quot;)&lt;/li&gt;
@@ -202,9 +394,9 @@ alias cat=&amp;quot;bat&amp;quot;
 &lt;li&gt;Clean up old logs and crash reports automatically&lt;/li&gt;
 &lt;li&gt;Work without manual intervention&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h2&gt;The Solution&lt;/h2&gt;
+&lt;h2 id=&quot;the-solution&quot;&gt;The Solution&lt;/h2&gt;
 &lt;p&gt;A shell script (&lt;code&gt;mc-server-manager&lt;/code&gt;) with LaunchAgents for network monitoring and scheduled restarts.&lt;/p&gt;
-&lt;h2&gt;WiFi Detection Gotcha&lt;/h2&gt;
+&lt;h2 id=&quot;wifi-detection-gotcha&quot;&gt;WiFi Detection Gotcha&lt;/h2&gt;
 &lt;p&gt;The commonly recommended approach:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;networksetup -getairportnetwork en0
 &lt;/code&gt;&lt;/pre&gt;
@@ -214,7 +406,7 @@ alias cat=&amp;quot;bat&amp;quot;
     awk '/Current Network Information:/{getline; gsub(/^[[:space:]]+|:$/,&amp;quot;&amp;quot;); print; exit}'
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;This correctly returns the SSID regardless of which band you're connected to.&lt;/p&gt;
-&lt;h2&gt;Configuration&lt;/h2&gt;
+&lt;h2 id=&quot;configuration&quot;&gt;Configuration&lt;/h2&gt;
 &lt;p&gt;All settings live in &lt;code&gt;~/.config/mc-server/config&lt;/code&gt;:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# Network
 TARGET_SSID=&amp;quot;HomeWiFi&amp;quot;
@@ -236,7 +428,7 @@ RESTART_TIMEZONE=&amp;quot;America/Los_Angeles&amp;quot;
 # Warning intervals before restart (seconds)
 RESTART_WARNINGS=&amp;quot;300 60 30 10 5&amp;quot;
 &lt;/code&gt;&lt;/pre&gt;
-&lt;h2&gt;JVM Optimization&lt;/h2&gt;
+&lt;h2 id=&quot;jvm-optimization&quot;&gt;JVM Optimization&lt;/h2&gt;
 &lt;p&gt;The script uses modern Aikar's flags optimized for Paper 1.20+ on Java 21:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;build_jvm_flags() {
     local flags=(
@@ -280,7 +472,7 @@ RESTART_WARNINGS=&amp;quot;300 60 30 10 5&amp;quot;
 &lt;li&gt;&lt;strong&gt;HeapDumpOnOutOfMemoryError&lt;/strong&gt; saves a dump for debugging if OOM occurs&lt;/li&gt;
 &lt;li&gt;Match min/max RAM to avoid heap resizing during gameplay&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h2&gt;Scheduled Restarts&lt;/h2&gt;
+&lt;h2 id=&quot;scheduled-restarts&quot;&gt;Scheduled Restarts&lt;/h2&gt;
 &lt;p&gt;Like production game servers, the script supports scheduled restarts with player warnings:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;restart_server() {
     local reason=&amp;quot;${1:-Scheduled maintenance}&amp;quot;
@@ -306,9 +498,9 @@ RESTART_WARNINGS=&amp;quot;300 60 30 10 5&amp;quot;
 &lt;li&gt;Removes crash reports older than 30 days&lt;/li&gt;
 &lt;li&gt;Clears stale session locks&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h2&gt;LaunchAgents&lt;/h2&gt;
+&lt;h2 id=&quot;launchagents&quot;&gt;LaunchAgents&lt;/h2&gt;
 &lt;p&gt;Two LaunchAgents handle automation:&lt;/p&gt;
-&lt;h3&gt;Network Monitor&lt;/h3&gt;
+&lt;h3 id=&quot;network-monitor&quot;&gt;Network Monitor&lt;/h3&gt;
 &lt;p&gt;&lt;code&gt;com.user.minecraft-server-network&lt;/code&gt; - Triggers on WiFi changes:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;key&amp;gt;WatchPaths&amp;lt;/key&amp;gt;
 &amp;lt;array&amp;gt;
@@ -318,7 +510,7 @@ RESTART_WARNINGS=&amp;quot;300 60 30 10 5&amp;quot;
 &amp;lt;key&amp;gt;StartInterval&amp;lt;/key&amp;gt;
 &amp;lt;integer&amp;gt;60&amp;lt;/integer&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;
-&lt;h3&gt;Scheduled Restart&lt;/h3&gt;
+&lt;h3 id=&quot;scheduled-restart&quot;&gt;Scheduled Restart&lt;/h3&gt;
 &lt;p&gt;&lt;code&gt;com.user.minecraft-server-restart&lt;/code&gt; - Daily at midnight:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;key&amp;gt;StartCalendarInterval&amp;lt;/key&amp;gt;
 &amp;lt;dict&amp;gt;
@@ -328,7 +520,7 @@ RESTART_WARNINGS=&amp;quot;300 60 30 10 5&amp;quot;
     &amp;lt;integer&amp;gt;0&amp;lt;/integer&amp;gt;
 &amp;lt;/dict&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;
-&lt;h2&gt;Usage&lt;/h2&gt;
+&lt;h2 id=&quot;usage&quot;&gt;Usage&lt;/h2&gt;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;mc-server-manager status    # Show server state, network, config
 mc-server-manager start     # Start server
 mc-server-manager stop      # Graceful stop with save
@@ -355,9 +547,9 @@ Warnings: 300 60 30 10 5
 File: ~/.config/mc-server/config
 JVM: 4G - 4G
 &lt;/code&gt;&lt;/pre&gt;
-&lt;h2&gt;Why tmux over screen?&lt;/h2&gt;
+&lt;h2 id=&quot;why-tmux-over-screen&quot;&gt;Why tmux over screen?&lt;/h2&gt;
 &lt;p&gt;macOS ships with screen 4.00.03 from 2006. It lacks features like &lt;code&gt;-Logfile&lt;/code&gt; and has quirks with detached sessions. tmux is actively maintained, has better scripting support, and integrates well with the rest of my workflow.&lt;/p&gt;
-&lt;h2&gt;Files&lt;/h2&gt;
+&lt;h2 id=&quot;files&quot;&gt;Files&lt;/h2&gt;
 &lt;table&gt;
 &lt;thead&gt;
 &lt;tr&gt;&lt;th&gt;File&lt;/th&gt;&lt;th&gt;Purpose&lt;/th&gt;&lt;/tr&gt;
@@ -371,7 +563,7 @@ JVM: 4G - 4G
 &lt;tr&gt;&lt;td&gt;&lt;code&gt;~/.local/share/minecraft-server/heapdump.hprof&lt;/code&gt;&lt;/td&gt;&lt;td&gt;OOM heap dump (if triggered)&lt;/td&gt;&lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
-&lt;h2&gt;Setup&lt;/h2&gt;
+&lt;h2 id=&quot;setup&quot;&gt;Setup&lt;/h2&gt;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# Load the agents
 launchctl load ~/Library/LaunchAgents/com.user.minecraft-server-network.plist
 launchctl load ~/Library/LaunchAgents/com.user.minecraft-server-restart.plist
