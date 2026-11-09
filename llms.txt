@@ -1,23 +1,26 @@
 # Kevin Coughlin
 
-> Personal site of Kevin Coughlin — programmer and software engineer based in
-> Redmond, Washington. Static single-page site at <https://kevintcoughlin.com>.
+> Personal site of Kevin Coughlin, a programmer in Redmond, Washington who makes
+> games, apps and open-source tools. Static single-page site at <https://kevintcoughlin.com>.
 
 ## About
 
-- [Homepage](https://kevintcoughlin.com/): identity, role, links to projects and contact.
+- [Homepage](https://kevintcoughlin.com/): short bio, things I make, writing and links.
+- [Blog](https://kevintcoughlin.com/blog/): notes from side projects ([Atom feed](https://kevintcoughlin.com/blog/feed.atom)).
 - [GitHub profile](https://github.com/KevinTCoughlin): open-source contributions, public repos.
 - [Source code](https://github.com/KevinTCoughlin/kevintcoughlin.github.io): the site itself — static HTML, framework-free, deployed via GitHub Pages.
 
-## Projects
+## Things I make
 
-- [sir-android](https://cascadiacollections.github.io/shoutkit-android/): open-source internet radio for Android, Wear OS, Android Auto and Android TV (Kotlin).
-- [ShoutKit](https://cascadiacollections.github.io/shoutkit/): MIT-licensed internet radio SDK, and Holmdel, the app built on it for iPhone, iPad, Mac, Apple Watch and Apple TV (Swift).
+- [Salt Line](https://cascadiacollections.github.io/saltline/): single-player artillery roguelike (deterministic Rust simulation + Godot). Endless procedural horizon, persistent terrain damage, shells as the run resource, a modifier draft every four screens, local versus and a map editor. Coming to Steam, with a free shareware demo.
+- Shoutkit: one free, open-source, private internet radio app for iPhone and Android, with no ads and no tracking. [iPhone](https://cascadiacollections.github.io/shoutkit/), [Android](https://cascadiacollections.github.io/shoutkit-android/).
+- [godot-device-power](https://github.com/KevinTCoughlin/godot-device-power): Godot 4 addon that picks a frame cap and refresh rate from power source, battery saver, thermal state and Android game mode.
+- [godot-xdg-portals](https://kevintcoughlin.com/godot-xdg-portals/): desktop portals for Godot games on Linux and in Flatpak (C++ GDExtension + GDScript).
 - [lazydeck](https://lazydeck.dev/): lazydocker-style terminal UI for managing Steam Deck and Steam Machine devkits (Go).
+- [An untitled racer](https://cascadiacollections.github.io/racer/): early prototype of a retro pseudo-3D roguelike racer where every track is proven drivable by a bot.
+- [bauhaus](https://github.com/cascadiacollections/bauhaus): daily style-transferred art from CC0 museum collections on Cloudflare Workers.
 - [mc-dad-server](https://kevintcoughlin.com/mc-dad-server/): a Minecraft server in 60 seconds (Go).
-- [bauhaus](https://github.com/cascadiacollections/bauhaus): daily style-transferred art from CC0 museum collections on Cloudflare Workers, with Android and Apple TV clients.
-- [godot-xdg-portals](https://kevintcoughlin.com/godot-xdg-portals/): desktop portals for Godot games on Linux (C++ GDExtension + GDScript). v0.2.0 ships prebuilt for Linux x86_64 and arm64: https://github.com/KevinTCoughlin/godot-xdg-portals/releases/latest
-- [Cascadia Collections](https://www.cascadiacollections.com/): the company Kevin founded.
+- [Cascadia Collections](https://www.cascadiacollections.com/): the independent studio Kevin founded, which publishes these.
 
 ## Verifying identity
 
