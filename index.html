@@ -6,10 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Kevin Coughlin is a programmer, open-source contributor, and founder of Cascadia Collections."
+      content="Kevin T. Coughlin makes Salt Line, an artillery roguelike coming to Steam, Shoutkit, free and private internet radio for iPhone and Android, and open-source tools."
     />
     <meta name="author" content="Kevin T. Coughlin" />
-    <meta name="theme-color" content="#14211d" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#14211d" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f3f1ea" media="(prefers-color-scheme: light)" />
     <link rel="canonical" href="https://kevintcoughlin.com/" />
     <meta name="robots" content="index,follow" />
     <link rel="icon" type="image/png" href="/favicon.png" />
@@ -36,10 +38,10 @@
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Kevin Coughlin — Programmer & Builder" />
+    <meta property="og:title" content="Kevin Coughlin — I make games, apps and tools" />
     <meta
       property="og:description"
-      content="Programmer, open-source contributor, and founder of Cascadia Collections."
+      content="Maker of Salt Line, an artillery roguelike coming to Steam, and Shoutkit, free and private internet radio for iPhone and Android."
     />
     <meta property="og:url" content="https://kevintcoughlin.com/" />
     <meta property="og:image" content="https://kevintcoughlin.com/og-image.png" />
@@ -54,17 +56,17 @@
     <meta property="og:locale" content="en_US" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:creator" content="@kevintcoughlin" />
-    <meta name="twitter:title" content="Kevin Coughlin — Programmer & Builder" />
+    <meta name="twitter:title" content="Kevin Coughlin — I make games, apps and tools" />
     <meta
       name="twitter:description"
-      content="Programmer, open-source contributor, and founder of Cascadia Collections."
+      content="Maker of Salt Line, an artillery roguelike coming to Steam, and Shoutkit, free and private internet radio for iPhone and Android."
     />
     <meta name="twitter:image" content="https://kevintcoughlin.com/og-image.png" />
     <meta
       name="twitter:image:alt"
       content="Kevin Coughlin — Making useful things for curious people."
     />
-    <title>Kevin Coughlin — Programmer & Builder</title>
+    <title>Kevin Coughlin — I make games, apps and tools</title>
     <style>
       *,
       *::before,
@@ -73,30 +75,67 @@
       }
       :root {
         color-scheme: dark;
+        --bg: #14211d;
         --ink: #edf0e9;
         --muted: #a8b4aa;
         --line: rgba(237, 240, 233, 0.18);
-        --panel: rgba(15, 28, 24, 0.78);
+        --panel: rgba(15, 28, 24, 0.82);
+        --panel-hover: rgba(31, 53, 44, 0.92);
+        --header: rgba(20, 33, 29, 0.88);
+        --veil: linear-gradient(
+          115deg,
+          rgba(12, 26, 21, 0.95) 0%,
+          rgba(12, 26, 21, 0.82) 50%,
+          rgba(12, 26, 21, 0.66) 100%
+        );
+        --bg-opacity: 0.8;
         --accent: #d7ef72;
         --accent-2: #f4a261;
+        --accent-ink: #14211d;
         --serif: Georgia, 'Times New Roman', serif;
         --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
         --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
       }
+      @media (prefers-color-scheme: light) {
+        :root {
+          color-scheme: light;
+          --bg: #f3f1ea;
+          --ink: #14211d;
+          --muted: #45554d;
+          --line: rgba(20, 33, 29, 0.16);
+          --panel: rgba(255, 255, 255, 0.86);
+          --panel-hover: rgba(255, 255, 255, 0.97);
+          --header: rgba(243, 241, 234, 0.9);
+          --veil: linear-gradient(
+            115deg,
+            rgba(243, 241, 234, 0.97) 0%,
+            rgba(243, 241, 234, 0.9) 50%,
+            rgba(243, 241, 234, 0.8) 100%
+          );
+          --bg-opacity: 0.55;
+          --accent: #3d5a12;
+          --accent-2: #a24a12;
+          --accent-ink: #ffffff;
+        }
+      }
       html {
         scroll-behavior: smooth;
+        scroll-padding-top: 80px;
       }
       body {
         margin: 0;
         position: relative;
         z-index: 0;
         color: var(--ink);
-        background:
-          radial-gradient(circle at 78% 8%, rgba(215, 239, 114, 0.08), transparent 28rem), #14211d;
+        background: var(--bg);
         font-family: var(--sans);
         line-height: 1.55;
+        overflow-wrap: break-word;
         -webkit-font-smoothing: antialiased;
-        text-rendering: optimizeLegibility;
+      }
+      img {
+        max-width: 100%;
+        height: auto;
       }
       a {
         color: inherit;
@@ -104,7 +143,24 @@
       }
       a:focus-visible {
         outline: 2px solid var(--accent);
-        outline-offset: 5px;
+        outline-offset: 4px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      .skip-link {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        z-index: 10;
+        padding: 10px 14px;
+        color: var(--accent-ink);
+        background: var(--accent);
+        font-weight: 700;
+        transform: translateY(-200%);
+      }
+      .skip-link:focus {
+        transform: none;
       }
       #bg {
         position: fixed;
@@ -118,42 +174,41 @@
         transition: opacity 1s ease-in-out;
       }
       #bg.loaded {
-        opacity: 0.8;
+        opacity: var(--bg-opacity);
+      }
+      @media (prefers-color-scheme: light) {
+        #bg {
+          filter: saturate(0.6);
+        }
       }
       .veil {
         position: fixed;
         inset: 0;
         z-index: -1;
-        background: linear-gradient(
-          115deg,
-          rgba(12, 26, 21, 0.95) 0%,
-          rgba(12, 26, 21, 0.8) 50%,
-          rgba(12, 26, 21, 0.62) 100%
-        );
+        background: var(--veil);
       }
       .shell {
-        width: min(1240px, calc(100% - 64px));
+        width: min(1120px, calc(100% - 32px));
         margin: 0 auto;
       }
       .site-header {
         position: sticky;
         top: 0;
         z-index: 3;
-        width: 100%;
-        margin-right: 0;
-        margin-left: 0;
         display: flex;
+        flex-wrap: wrap;
         justify-content: space-between;
         align-items: center;
-        padding: 18px max(32px, calc((100% - 1240px) / 2));
+        gap: 10px 20px;
+        padding: 12px max(16px, calc((100% - 1120px) / 2));
         border-bottom: 1px solid var(--line);
-        background: rgba(20, 33, 29, 0.86);
+        background: var(--header);
         backdrop-filter: blur(18px);
         -webkit-backdrop-filter: blur(18px);
       }
       .wordmark {
         font-family: var(--serif);
-        font-size: 1.05rem;
+        font-size: 1.15rem;
         font-weight: 600;
         letter-spacing: -0.03em;
       }
@@ -162,436 +217,348 @@
       }
       .site-nav {
         display: flex;
+        flex-wrap: wrap;
         gap: 2px;
-        padding: 3px;
-        border: 1px solid var(--line);
-        border-radius: 999px;
         color: var(--muted);
-        font-size: 0.68rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
+        font-size: 0.8rem;
       }
       .site-nav a {
-        padding: 7px 12px;
+        padding: 10px 10px;
         border-radius: 999px;
-        transition:
-          color 0.2s,
-          background 0.2s;
       }
       .site-nav a:hover,
       .site-nav a:focus-visible {
         color: var(--ink);
-        background: rgba(215, 239, 114, 0.12);
-      }
-      .site-nav a::after {
-        display: none;
-      }
-      .hero {
-        display: grid;
-        grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.6fr);
-        gap: 70px;
-        align-items: end;
-        padding: clamp(88px, 14vw, 180px) 0 116px;
+        background: var(--line);
       }
       .eyebrow {
+        margin: 0;
         color: var(--accent);
         font-family: var(--mono);
-        font-size: 0.7rem;
-        letter-spacing: 0.17em;
+        font-size: 0.72rem;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
       }
       h1 {
-        max-width: 800px;
-        margin: 18px 0 24px;
+        max-width: 760px;
+        margin: 16px 0 22px;
         font-family: var(--serif);
-        font-size: clamp(4rem, 10vw, 8.6rem);
+        font-size: clamp(2.6rem, 9vw, 6.4rem);
         font-weight: 400;
-        line-height: 0.88;
-        letter-spacing: -0.075em;
-      }
-      .hero-copy {
-        max-width: 560px;
-        color: var(--muted);
-        font-size: clamp(1.05rem, 1.6vw, 1.35rem);
-      }
-      .hero-copy strong {
-        color: var(--ink);
-        font-weight: 500;
-      }
-      .hero-aside {
-        padding-left: 22px;
-        border-left: 1px solid var(--accent-2);
-        color: var(--muted);
-        font-size: 0.88rem;
-      }
-      .hero-aside p {
-        margin: 0 0 18px;
-      }
-      .hero-aside a,
-      .text-link {
-        color: var(--accent);
-        border-bottom: 1px solid currentColor;
-      }
-      .hero::after {
-        grid-column: 1 / -1;
-        width: 100%;
-        margin-top: 18px;
-        padding-top: 15px;
-        border-top: 1px solid var(--line);
-        color: var(--muted);
-        content: 'Scroll to explore  ↓';
-        font-family: var(--mono);
-        font-size: 0.63rem;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-      .section {
-        padding: 90px 0;
-        border-top: 1px solid var(--line);
-      }
-      .section-heading {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        gap: 20px;
-        margin-bottom: 38px;
+        line-height: 0.95;
+        letter-spacing: -0.05em;
       }
       h2 {
         margin: 0;
         font-family: var(--serif);
-        font-size: clamp(2.5rem, 5vw, 4.5rem);
+        font-size: clamp(2rem, 6vw, 3.6rem);
         font-weight: 400;
-        line-height: 0.95;
-        letter-spacing: -0.06em;
+        line-height: 1;
+        letter-spacing: -0.04em;
       }
-      .section-number {
+      h3 {
+        margin: 0;
+        font-family: var(--serif);
+        font-weight: 400;
+      }
+      .hero {
+        padding: clamp(48px, 10vw, 128px) 0 clamp(48px, 8vw, 96px);
+      }
+      .hero-copy {
+        max-width: 620px;
+        margin: 0;
+        color: var(--muted);
+        font-size: clamp(1.05rem, 2vw, 1.3rem);
+      }
+      .hero-copy strong {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .text-link {
+        color: var(--accent);
+        border-bottom: 1px solid currentColor;
+      }
+      .section {
+        padding: clamp(56px, 9vw, 96px) 0;
+        border-top: 1px solid var(--line);
+      }
+      .section-heading {
+        margin-bottom: 28px;
+      }
+      .section-heading p {
+        max-width: 560px;
+        margin: 12px 0 0;
+        color: var(--muted);
+      }
+      /* Things I make */
+      .feature {
+        display: grid;
+        gap: 0;
+        margin-bottom: 16px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+      .feature-media {
+        margin: 0;
+        background: #1d2b52;
+      }
+      .feature-media img {
+        display: block;
+        width: 100%;
+        image-rendering: pixelated;
+      }
+      .feature-body {
+        padding: clamp(20px, 4vw, 36px);
+      }
+      .feature h3 {
+        margin: 8px 0 10px;
+        font-size: clamp(1.8rem, 4vw, 2.6rem);
+        line-height: 1.05;
+      }
+      .feature-body > p {
+        margin: 0 0 16px;
+        color: var(--muted);
+      }
+      .facts {
+        margin: 0 0 20px;
+        padding: 0;
+        list-style: none;
+        color: var(--muted);
+        font-size: 0.93rem;
+      }
+      .facts li {
+        position: relative;
+        padding: 6px 0 6px 18px;
+        border-top: 1px solid var(--line);
+      }
+      .facts li::before {
+        position: absolute;
+        left: 0;
         color: var(--accent-2);
+        content: '•';
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .button {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 10px 16px;
+        border: 1px solid var(--accent);
+        font-size: 0.92rem;
+        font-weight: 600;
+      }
+      .button-primary {
+        color: var(--accent-ink);
+        background: var(--accent);
+      }
+      .button-primary:hover {
+        color: var(--accent);
+        background: transparent;
+      }
+      .button-secondary {
+        color: var(--accent);
+      }
+      .button-secondary:hover {
+        color: var(--accent-ink);
+        background: var(--accent);
+      }
+      .button-pending {
+        border-style: dashed;
+        border-color: var(--muted);
+        color: var(--muted);
+      }
+      .tools-heading {
+        margin: 40px 0 14px;
+        color: var(--muted);
         font-family: var(--mono);
-        font-size: 0.7rem;
+        font-size: 0.75rem;
+        font-weight: 400;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
       }
       .projects {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
         gap: 1px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
         background: var(--line);
         border: 1px solid var(--line);
-        counter-reset: project;
       }
       .project {
-        position: relative;
-        counter-increment: project;
-        min-height: 220px;
-        padding: 26px;
-        background: var(--panel);
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        transition:
-          background 0.25s,
-          transform 0.25s,
-          color 0.25s;
+        gap: 14px;
+        height: 100%;
+        padding: 20px;
+        background: var(--panel);
+        transition: background 0.2s;
       }
       .project:hover {
-        background: rgba(31, 53, 44, 0.9);
-        transform: translateY(-4px);
+        background: var(--panel-hover);
       }
-      .project::before {
-        position: absolute;
-        top: 25px;
-        right: 26px;
-        color: rgba(215, 239, 114, 0.5);
-        font-family: var(--mono);
-        font-size: 0.63rem;
-        content: counter(project, decimal-leading-zero);
-      }
-      .project h3 {
-        margin: 0 0 12px;
+      .project h4 {
+        margin: 0 0 6px;
         font-family: var(--serif);
-        font-size: 1.55rem;
+        font-size: 1.3rem;
         font-weight: 400;
       }
       .project p {
         margin: 0;
         color: var(--muted);
-        font-size: 0.88rem;
+        font-size: 0.9rem;
       }
       .project-meta {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
         color: var(--accent);
         font-family: var(--mono);
-        font-size: 0.65rem;
-        letter-spacing: 0.08em;
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
       }
-      .roles {
-        margin: 0;
+      /* Writing */
+      .posts {
+        margin: 0 0 20px;
         padding: 0;
         list-style: none;
         border-top: 1px solid var(--line);
       }
-      .role {
-        display: grid;
-        grid-template-columns: 8.5rem minmax(14rem, 0.8fr) 1.2fr;
-        gap: 32px;
-        align-items: baseline;
-        padding: 24px 0;
+      .posts li {
         border-bottom: 1px solid var(--line);
       }
-      .role-years,
-      .role-org {
+      .posts a {
+        display: grid;
+        gap: 2px;
+        padding: 14px 0;
+      }
+      .posts a:hover span:last-child {
+        text-decoration: underline;
+      }
+      .posts time {
         color: var(--accent);
         font-family: var(--mono);
-        font-size: 0.65rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
+        font-size: 0.72rem;
       }
-      .role h3 {
-        margin: 0 0 6px;
+      .posts span:last-child {
         font-family: var(--serif);
-        font-size: 1.35rem;
-        font-weight: 400;
+        font-size: 1.2rem;
       }
-      .role p,
-      .roles-more {
-        margin: 0;
+      /* About, support, elsewhere */
+      .about-copy {
+        max-width: 640px;
         color: var(--muted);
-        font-size: 0.88rem;
+        font-size: 1.05rem;
       }
-      .roles-more {
-        margin-top: 28px;
+      .about-copy p {
+        margin: 0 0 14px;
       }
-      .business {
-        padding: 42px;
-        border: 1px solid var(--line);
-        background: linear-gradient(120deg, rgba(31, 53, 44, 0.72), rgba(15, 28, 24, 0.72));
+      .support {
         display: grid;
-        grid-template-columns: 0.8fr 1.2fr;
-        gap: 90px;
-        align-items: center;
+        gap: 18px;
+        justify-items: start;
       }
-      .business-mark {
-        color: var(--accent);
-        font-family: var(--serif);
-        font-size: clamp(2rem, 4vw, 4rem);
-        line-height: 0.95;
-        letter-spacing: -0.06em;
-      }
-      .business-copy {
-        color: var(--muted);
-        font-size: 1.12rem;
-      }
-      .business-copy p {
-        margin: 0 0 22px;
-      }
-      .principles {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 24px;
-        margin-top: 38px;
-      }
-      .principle {
-        padding-top: 16px;
-        border-top: 1px solid var(--accent-2);
-      }
-      .principle b {
-        display: block;
-        margin-bottom: 8px;
-        color: var(--ink);
-        font-size: 0.78rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-      }
-      .principle span {
-        color: var(--muted);
-        font-size: 0.85rem;
-      }
-      .contact {
-        display: flex;
-        justify-content: space-between;
-        align-items: end;
-        gap: 30px;
-      }
-      .contact p {
-        max-width: 480px;
-        margin: 16px 0 0;
+      .support p {
+        max-width: 560px;
+        margin: 12px 0 0;
         color: var(--muted);
       }
-      .contact-links {
+      .elsewhere-links {
         display: flex;
         flex-wrap: wrap;
-        justify-content: end;
-        gap: 12px 22px;
-        color: var(--accent);
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
         font-family: var(--mono);
-        font-size: 0.75rem;
+        font-size: 0.8rem;
       }
-      .contact-links a {
+      .elsewhere-links a {
+        display: inline-block;
         padding: 11px 14px;
         border: 1px solid var(--line);
-        transition:
-          border-color 0.2s,
-          color 0.2s,
-          background 0.2s;
-      }
-      .contact-links a:hover,
-      .contact-links a:focus-visible {
-        border-color: var(--accent);
         color: var(--accent);
-        background: rgba(215, 239, 114, 0.08);
+        background: var(--panel);
+      }
+      .elsewhere-links a:hover {
+        border-color: var(--accent);
       }
       footer {
         display: flex;
+        flex-wrap: wrap;
         justify-content: space-between;
-        gap: 20px;
-        padding: 28px 0 36px;
+        gap: 6px 20px;
+        padding: 28px 0 24px;
+        border-top: 1px solid var(--line);
         color: var(--muted);
         font-family: var(--mono);
-        font-size: 0.65rem;
+        font-size: 0.72rem;
       }
       .attribution {
-        position: fixed;
-        right: 16px;
-        bottom: 12px;
-        z-index: 2;
-        font-size: 0.65rem;
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 0 0 32px;
+        font-size: 0.72rem;
       }
       .attribution a {
-        padding: 0.2rem 0.4rem;
+        display: inline-block;
+        padding: 6px 8px;
         color: #fff;
         background: rgba(0, 0, 0, 0.65);
         border-radius: 3px;
+        overflow-wrap: anywhere;
       }
-      @media (max-width: 760px) {
-        html {
-          scroll-padding-top: 110px;
-        }
-        .shell {
-          width: min(100% - 32px, 580px);
-        }
-        .site-header {
-          width: 100%;
-          flex-wrap: wrap;
-          row-gap: 14px;
-          padding: 16px;
-        }
-        .wordmark {
-          font-size: 1.15rem;
-        }
-        .site-nav {
-          width: 100%;
-          justify-content: space-between;
-          font-size: 0.7rem;
-        }
-        .site-nav a {
-          padding: 14px 12px;
-          white-space: nowrap;
-        }
-        .attribution {
-          position: static;
-          width: min(100% - 32px, 580px);
-          margin: 0 auto;
-          padding: 0 0 88px;
-          font-size: 0.75rem;
-          line-height: 1.5;
-        }
-        .attribution a {
-          display: inline-block;
-          padding: 8px 10px;
-          overflow-wrap: anywhere;
-        }
-        .hero {
-          display: block;
-          padding: 64px 0 72px;
-        }
-        .hero::after {
-          margin-top: 42px;
-        }
-        h1 {
-          font-size: clamp(3rem, 13vw, 5rem);
-          line-height: 0.96;
-        }
-        .hero-copy {
-          font-size: 1.05rem;
-        }
-        .hero-aside {
-          margin-top: 36px;
-        }
-        .section {
-          padding: 64px 0;
-        }
-        .projects,
-        .business {
-          grid-template-columns: 1fr;
-        }
-        .project {
-          min-height: 190px;
-        }
-        .business {
-          padding: 28px;
-          gap: 35px;
-        }
-        .principles {
-          grid-template-columns: 1fr;
-          gap: 20px;
-        }
-        .role {
-          grid-template-columns: 1fr;
-          gap: 8px;
-        }
-        .contact {
-          display: block;
-        }
-        .contact-links {
-          justify-content: start;
-          margin-top: 28px;
-        }
-        footer {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          padding: 28px 0 20px;
-          font-size: 0.8rem;
-        }
-        footer span {
-          display: block;
-        }
-      }
-      @media (min-width: 761px) and (max-width: 980px) {
-        .role {
-          grid-template-columns: 7rem 1fr;
-        }
-        .role p {
-          grid-column: 2;
-        }
+      @media (min-width: 640px) {
         .projects {
           grid-template-columns: repeat(2, 1fr);
         }
-      }
-      @media (max-width: 360px) {
-        .site-nav {
-          font-size: 0.64rem;
-          letter-spacing: 0.06em;
+        .support {
+          grid-template-columns: 1fr auto;
+          align-items: center;
         }
-        .site-nav a {
-          padding-inline: 8px;
+      }
+      @media (min-width: 900px) {
+        .feature {
+          grid-template-columns: 1.1fr 1fr;
+          align-items: stretch;
+        }
+        .feature-media {
+          display: flex;
+          align-items: center;
+        }
+        .feature-text-only {
+          grid-template-columns: 1fr;
+        }
+        .projects {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .attribution {
+          position: fixed;
+          right: 16px;
+          bottom: 12px;
+          z-index: 2;
+          width: auto;
+          margin: 0;
+          padding: 0;
         }
       }
       @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
         *,
         *::before,
         *::after {
-          scroll-behavior: auto !important;
           transition-duration: 0.01ms !important;
           animation-duration: 0.01ms !important;
-        }
-        .project:hover {
-          transform: none;
         }
       }
     </style>
     <script src="/bauhaus.js" defer></script>
+    <script type="module" src="/site-config.js"></script>
     <script
       defer
       src="https://static.cloudflareinsights.com/beacon.min.js"
@@ -599,269 +566,250 @@
     ></script>
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to content</a>
     <img id="bg" alt="" aria-hidden="true" fetchpriority="high" />
     <div class="veil" aria-hidden="true"></div>
-    <header class="site-header shell">
+    <header class="site-header">
       <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
       <nav class="site-nav" aria-label="Primary">
-        <a href="#work">Work</a>
-        <a href="#experience">Experience</a>
-        <a href="#cascadia">Cascadia</a>
-        <a href="/blog/">Blog</a>
-        <a href="#contact">Say hello</a>
+        <a href="#make">Things I make</a>
+        <a href="#writing">Writing</a>
+        <a href="#about">About</a>
+        <a href="#elsewhere">Elsewhere</a>
       </nav>
     </header>
-    <main class="shell">
+    <main id="main" class="shell">
       <section class="hero" aria-labelledby="intro-heading">
-        <div>
-          <div class="eyebrow">Programmer · builder · Redmond, WA</div>
-          <h1 id="intro-heading">Making useful things for curious people.</h1>
-          <p class="hero-copy">
-            I’m <strong>Kevin Coughlin</strong> — a software engineer and open-source contributor
-            who likes small tools, clear interfaces, and work that holds up in the real world.
-          </p>
-        </div>
-        <aside class="hero-aside">
-          <p>Currently building at Microsoft and shipping independent projects in the open.</p>
-          <p>
-            <time datetime="2026-10">Now, October 2026:</time> bringing SIR to Android TV and Wear
-            OS, and Holmdel to every Apple screen.
-          </p>
-          <a href="https://github.com/KevinTCoughlin" rel="noopener noreferrer"
-            >Follow the trail on GitHub →</a
-          >
-        </aside>
-      </section>
-
-      <section id="work" class="section" aria-labelledby="work-heading">
-        <div class="section-heading">
-          <h2 id="work-heading">Selected work</h2>
-          <span class="section-number">01 / open source</span>
-        </div>
-        <div class="projects">
-          <a
-            class="project"
-            href="https://cascadiacollections.github.io/shoutkit-android/"
-            rel="noopener noreferrer"
-          >
-            <div>
-              <h3>sir-android</h3>
-              <p>
-                Open-source internet radio for Android — phone, Wear OS, Android Auto, and Android
-                TV. No accounts, no tracking.
-              </p>
-            </div>
-            <div class="project-meta"><span>Kotlin · Android</span><span>↗</span></div>
-          </a>
-          <a
-            class="project"
-            href="https://cascadiacollections.github.io/shoutkit/"
-            rel="noopener noreferrer"
-          >
-            <div>
-              <h3>ShoutKit</h3>
-              <p>
-                An MIT-licensed radio SDK, and Holmdel, the app built on it for iPhone, iPad, Mac,
-                Apple Watch, and Apple TV.
-              </p>
-            </div>
-            <div class="project-meta"><span>Swift · Apple</span><span>↗</span></div>
-          </a>
-          <a class="project" href="https://lazydeck.dev/" rel="noopener noreferrer">
-            <div>
-              <h3>lazydeck</h3>
-              <p>
-                A lazydocker-style terminal UI for managing a fleet of Steam Deck and Steam Machine
-                devkits.
-              </p>
-            </div>
-            <div class="project-meta"><span>Go · TUI</span><span>↗</span></div>
-          </a>
-          <a
-            class="project"
-            href="https://kevintcoughlin.com/mc-dad-server/"
-            rel="noopener noreferrer"
-          >
-            <div>
-              <h3>mc-dad-server</h3>
-              <p>
-                A Minecraft server in 60 seconds, for busy dads who would rather play than
-                administer.
-              </p>
-            </div>
-            <div class="project-meta"><span>Go · Minecraft</span><span>↗</span></div>
-          </a>
-          <a
-            class="project"
-            href="https://github.com/cascadiacollections/bauhaus"
-            rel="noopener noreferrer"
-          >
-            <div>
-              <h3>bauhaus</h3>
-              <p>
-                Daily style-transferred art from CC0 museum collections — behind this site's
-                background, plus Android and Apple TV clients.
-              </p>
-            </div>
-            <div class="project-meta"><span>Cloudflare · art</span><span>↗</span></div>
-          </a>
-          <a
-            class="project"
-            href="https://kevintcoughlin.com/godot-xdg-portals/"
-            rel="noopener noreferrer"
-          >
-            <div>
-              <h3>godot-xdg-portals</h3>
-              <p>
-                Desktop portals for Godot games on Linux: GameMode, idle inhibition, power saving,
-                and notifications.
-              </p>
-            </div>
-            <div class="project-meta"><span>Godot · Linux · v0.2.0</span><span>↗</span></div>
-          </a>
-        </div>
-      </section>
-
-      <section id="experience" class="section" aria-labelledby="experience-heading">
-        <div class="section-heading">
-          <h2 id="experience-heading">Experience</h2>
-          <span class="section-number">02 / the day job</span>
-        </div>
-        <ol class="roles">
-          <li class="role">
-            <span class="role-years">2024 – now</span>
-            <div>
-              <h3>Principal Software Engineer</h3>
-              <span class="role-org">Microsoft · SharePoint &amp; Microsoft 365</span>
-            </div>
-            <p>
-              Bringing Microsoft 365 Copilot search into SharePoint, and hardening the platform’s
-              security across commercial, government, and sovereign clouds.
-            </p>
-          </li>
-          <li class="role">
-            <span class="role-years">2022 – 2024</span>
-            <div>
-              <h3>Principal Software Engineer</h3>
-              <span class="role-org">Microsoft · Viva &amp; SharePoint</span>
-            </div>
-            <p>
-              Tech lead for Viva Home, taking it from timeouts to fast loads, and for moving
-              SharePoint and OneDrive’s web telemetry onto a new SDK at Microsoft 365 scale.
-            </p>
-          </li>
-          <li class="role">
-            <span class="role-years">2019 – 2022</span>
-            <div>
-              <h3>Senior Software Engineer</h3>
-              <span class="role-org">Microsoft · SharePoint Framework</span>
-            </div>
-            <p>
-              Rebuilt the SharePoint Framework release pipeline, shipped the most releases in its
-              history — including the Adaptive Card Extensions behind Viva Connections — and cut
-              JavaScript from SharePoint’s busiest pages.
-            </p>
-          </li>
-          <li class="role">
-            <span class="role-years">2015 – 2019</span>
-            <div>
-              <h3>Software Engineer</h3>
-              <span class="role-org">Microsoft · Office UI Fabric &amp; Aria</span>
-            </div>
-            <p>
-              Open-sourced the OneDrive File Picker under MIT (shown at Ignite 2018), led the Fabric
-              7 migration, and built the Aria telemetry portal.
-            </p>
-          </li>
-          <li class="role">
-            <span class="role-years">2014 – 2015</span>
-            <div>
-              <h3>Product Engineer</h3>
-              <span class="role-org">Tumblr · New York</span>
-            </div>
-            <p>Dashboard, search, explore, and onboarding on the web and Android.</p>
-          </li>
-          <li class="role">
-            <span class="role-years">2013 – 2014</span>
-            <div>
-              <h3>JavaScript Developer</h3>
-              <span class="role-org">Bank of America · New Jersey</span>
-            </div>
-            <p>A cross-platform JavaScript SDK and internal mobile apps.</p>
-          </li>
-        </ol>
-        <p class="roles-more">
-          B.S. in Computer Science &amp; Economics, The College of New Jersey. Full history on
-          <a
-            class="text-link"
-            href="https://www.linkedin.com/in/kevintcoughlin"
-            rel="noopener noreferrer"
-            >LinkedIn →</a
-          >
+        <p class="eyebrow">Games · apps · tools · Pacific Northwest</p>
+        <h1 id="intro-heading">Making useful things for curious people.</h1>
+        <p class="hero-copy">
+          I’m <strong>Kevin Coughlin</strong>, a programmer who makes games, apps and open-source
+          tools. Right now that means <strong>Salt Line</strong>, an artillery roguelike heading to
+          Steam, and <strong>Shoutkit</strong>, an internet radio app for iPhone and Android, both
+          published through my small studio,
+          <a class="text-link" href="https://www.cascadiacollections.com/">Cascadia Collections</a>.
         </p>
       </section>
 
-      <section id="cascadia" class="section" aria-labelledby="cascadia-heading">
+      <section id="make" class="section" aria-labelledby="make-heading">
         <div class="section-heading">
-          <h2 id="cascadia-heading">Cascadia<br />Collections</h2>
-          <span class="section-number">03 / the company</span>
+          <h2 id="make-heading">Things I make</h2>
         </div>
-        <div class="business">
-          <div class="business-mark">Small by design.<br /><em>Open by default.</em></div>
-          <div class="business-copy">
+
+        <article class="feature" aria-labelledby="saltline-heading">
+          <figure class="feature-media">
+            <img
+              src="/saltline-scene.png"
+              width="1280"
+              height="720"
+              loading="lazy"
+              alt="Salt Line gameplay: an artillery emplacement on a pale dune lobs a shell in a dotted arc toward rusted towers under a dark blue night sky."
+            />
+          </figure>
+          <div class="feature-body">
+            <p class="eyebrow">Game · in development</p>
+            <h3 id="saltline-heading">Salt Line</h3>
             <p>
-              I founded
-              <a
-                class="text-link"
-                href="https://www.cascadiacollections.com/"
-                rel="noopener noreferrer"
-                >Cascadia Collections</a
-              >
-              to make useful things easier to discover, understand, and keep. We move between
-              software and commerce with a Pacific Northwest point of view.
+              A single-player artillery roguelike. Aim through the wind across an endless procedural
+              horizon, where terrain damage persists, shells are the run’s resource, and you draft a
+              modifier every four screens. Local versus and a map editor too.
             </p>
-            <a
-              class="text-link"
-              href="https://www.cascadiacollections.com/"
-              rel="noopener noreferrer"
-              >Visit Cascadia Collections →</a
-            >
+            <ul class="facts">
+              <li>A deterministic Rust simulation under Godot, with every level proven solvable</li>
+              <li>Coming to Steam, with a free shareware demo (runs capped at 12 screens)</li>
+            </ul>
+            <div class="actions">
+              <a
+                class="button button-primary"
+                href="https://cascadiacollections.github.io/saltline/"
+                >Visit the Salt Line site ↗</a
+              >
+              <span class="button button-pending" data-steam>Coming to Steam</span>
+            </div>
           </div>
+        </article>
+
+        <article class="feature feature-text-only" aria-labelledby="shoutkit-heading">
+          <div class="feature-body">
+            <p class="eyebrow">App · iPhone and Android</p>
+            <h3 id="shoutkit-heading">Shoutkit</h3>
+            <p>
+              One internet radio app for iPhone and Android. Free, open source and private, with no
+              ads and no tracking.
+            </p>
+            <ul class="facts">
+              <li>Working toward reproducible F-Droid builds for Android</li>
+            </ul>
+            <div class="actions">
+              <a
+                class="button button-secondary"
+                href="https://cascadiacollections.github.io/shoutkit/"
+                >Shoutkit for iPhone ↗</a
+              >
+              <a
+                class="button button-secondary"
+                href="https://cascadiacollections.github.io/shoutkit-android/"
+                >Shoutkit for Android ↗</a
+              >
+            </div>
+          </div>
+        </article>
+
+        <h3 class="tools-heading">Tools and smaller projects</h3>
+        <ul class="projects">
+          <li>
+            <a class="project" href="https://github.com/KevinTCoughlin/godot-device-power">
+              <div>
+                <h4>godot-device-power</h4>
+                <p>
+                  Godot 4 addon: picks a frame cap and refresh rate from the power source, battery
+                  saver, thermal state and Android game mode.
+                </p>
+              </div>
+              <span class="project-meta">Open-source Godot plugin ↗</span>
+            </a>
+          </li>
+          <li>
+            <a class="project" href="https://kevintcoughlin.com/godot-xdg-portals/">
+              <div>
+                <h4>godot-xdg-portals</h4>
+                <p>
+                  Sandbox-safe desktop portals for Godot games on Linux and in Flatpak: GameMode,
+                  idle inhibition, power saver and notifications.
+                </p>
+              </div>
+              <span class="project-meta">Open-source Godot plugin ↗</span>
+            </a>
+          </li>
+          <li>
+            <a class="project" href="https://lazydeck.dev/">
+              <div>
+                <h4>lazydeck</h4>
+                <p>
+                  A lazydocker-style terminal UI for managing a fleet of Steam Deck and Steam
+                  Machine devkits.
+                </p>
+              </div>
+              <span class="project-meta">Go · TUI ↗</span>
+            </a>
+          </li>
+          <li>
+            <a class="project" href="https://cascadiacollections.github.io/racer/">
+              <div>
+                <h4>An untitled racer, in development</h4>
+                <p>
+                  An early prototype of a retro pseudo-3D roguelike racer, where every track is
+                  proven drivable by a bot before you see it.
+                </p>
+              </div>
+              <span class="project-meta">Game · prototype ↗</span>
+            </a>
+          </li>
+          <li>
+            <a class="project" href="https://github.com/cascadiacollections/bauhaus">
+              <div>
+                <h4>bauhaus</h4>
+                <p>
+                  Daily generated art from public-domain museum landscapes, restyled with neural
+                  style transfer. It paints this page’s background.
+                </p>
+              </div>
+              <span class="project-meta">Cloudflare · art ↗</span>
+            </a>
+          </li>
+          <li>
+            <a class="project" href="https://kevintcoughlin.com/mc-dad-server/">
+              <div>
+                <h4>mc-dad-server</h4>
+                <p>
+                  A Minecraft server in 60 seconds, for busy dads who would rather play than
+                  administer.
+                </p>
+              </div>
+              <span class="project-meta">Go · Minecraft ↗</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+
+      <section id="writing" class="section" aria-labelledby="writing-heading">
+        <div class="section-heading">
+          <h2 id="writing-heading">Writing</h2>
+          <p>Notes from side projects: things I measured, fixed or got wrong.</p>
         </div>
-        <div class="principles">
-          <div class="principle">
-            <b>Built in the open</b><span>Transparent work creates better tools.</span>
-          </div>
-          <div class="principle">
-            <b>Chosen with intention</b><span>Fewer, better, more interesting things.</span>
-          </div>
-          <div class="principle">
-            <b>Rooted in place</b><span>Independent spirit, Pacific Northwest perspective.</span>
-          </div>
+        <ul class="posts">
+          <li>
+            <a href="/blog/small-findings/"
+              ><time datetime="2026-11-03">2026-11-03</time><span>Small Findings</span></a
+            >
+          </li>
+          <li>
+            <a href="/blog/lg-c2-black-hdmi-after-cleanyourtv/"
+              ><time datetime="2026-10-26">2026-10-26</time
+              ><span>Fixing a Black HDMI Picture on My LG C2 After Installing CleanYourTV</span></a
+            >
+          </li>
+          <li>
+            <a href="/blog/5x-faster-shell-startup/"
+              ><time datetime="2026-01-18">2026-01-18</time
+              ><span>5x Faster Shell Startup: A macOS Developer Environment Audit</span></a
+            >
+          </li>
+        </ul>
+        <a class="text-link" href="/blog/">All posts →</a>
+        ·
+        <a class="text-link" href="/blog/feed.atom">Atom feed</a>
+      </section>
+
+      <section id="about" class="section" aria-labelledby="about-heading">
+        <div class="section-heading">
+          <h2 id="about-heading">About</h2>
+        </div>
+        <div class="about-copy">
+          <p>
+            I’m a programmer based in Redmond, Washington. I like small tools, clear interfaces and
+            software that holds up in the real world, and I build most of it in the open.
+          </p>
+          <p>
+            I founded
+            <a class="text-link" href="https://www.cascadiacollections.com/">Cascadia Collections</a
+            >, the independent studio that publishes my games and apps. I studied Computer Science
+            and Economics at The College of New Jersey.
+          </p>
         </div>
       </section>
 
-      <section id="contact" class="section contact" aria-labelledby="contact-heading">
+      <section class="section support" aria-labelledby="support-heading" data-sponsors hidden>
         <div>
-          <div class="eyebrow">04 / keep in touch</div>
-          <h2 id="contact-heading">Say hello.</h2>
+          <h2 id="support-heading">Support the work</h2>
           <p>
-            Open-source collaboration, thoughtful software, and good questions are always welcome.
+            Everything here is made independently, and most of it is free. If something is useful to
+            you, sponsoring on GitHub helps keep it going.
           </p>
         </div>
-        <nav class="contact-links" aria-label="Social links">
-          <a href="mailto:kevintcoughlin@fastmail.com">Email</a>
-          <a href="https://github.com/KevinTCoughlin" rel="noopener noreferrer">GitHub ↗</a>
-          <a href="https://www.linkedin.com/in/kevintcoughlin" rel="noopener noreferrer"
-            >LinkedIn ↗</a
-          >
-          <a href="https://twitter.com/kevintcoughlin" rel="noopener noreferrer">X ↗</a>
-          <a
-            href="https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4"
-            rel="noopener noreferrer me"
-            >PGP ↗</a
-          >
-        </nav>
+        <a
+          class="button button-primary"
+          href="https://github.com/sponsors/KevinTCoughlin"
+          data-sponsors-link
+          >Sponsor on GitHub ↗</a
+        >
+      </section>
+
+      <section id="elsewhere" class="section" aria-labelledby="elsewhere-heading">
+        <div class="section-heading">
+          <h2 id="elsewhere-heading">Elsewhere</h2>
+        </div>
+        <ul class="elsewhere-links">
+          <li><a href="mailto:kevintcoughlin@fastmail.com">Email</a></li>
+          <li><a href="https://github.com/KevinTCoughlin" rel="me">GitHub ↗</a></li>
+          <li>
+            <a href="https://keyoxide.org/5261704E7C5C2D39F49786C1F94A3D5EBF8567C4" rel="me"
+              >Keyoxide (PGP) ↗</a
+            >
+          </li>
+          <li><a href="https://twitter.com/kevintcoughlin" rel="me">X ↗</a></li>
+          <li><a href="https://www.linkedin.com/in/kevintcoughlin" rel="me">LinkedIn ↗</a></li>
+        </ul>
       </section>
     </main>
     <footer class="shell">
@@ -877,28 +825,27 @@
             "@type": "Person",
             "@id": "https://kevintcoughlin.com/#person",
             "name": "Kevin T. Coughlin",
-            "jobTitle": "Software Engineer",
-            "description": "Programmer, open-source contributor, and founder of Cascadia Collections.",
+            "description": "Maker of Salt Line, Shoutkit and open-source tools; founder of Cascadia Collections.",
             "address": {
               "@type": "PostalAddress",
               "addressLocality": "Redmond",
               "addressRegion": "WA",
               "addressCountry": "US"
             },
-            "worksFor": {
-              "@type": "Organization",
-              "name": "Microsoft",
-              "url": "https://www.microsoft.com/"
+            "alumniOf": {
+              "@type": "CollegeOrUniversity",
+              "name": "The College of New Jersey"
             },
             "email": "mailto:kevintcoughlin@fastmail.com",
             "url": "https://kevintcoughlin.com",
             "image": "https://kevintcoughlin.com/og-image.png",
             "knowsAbout": [
+              "Rust",
+              "Godot",
               "Android",
               "Kotlin",
               "Swift",
               "Go",
-              "Rust",
               "Linux",
               "Cloudflare Workers"
             ],

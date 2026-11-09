@@ -18,6 +18,7 @@ cp \
   CNAME \
   humans.txt \
   bauhaus.js \
+  site-config.js \
   sw.js \
   telemetry.js \
   web-vitals.js \
@@ -28,6 +29,7 @@ cp \
   icon-192.png \
   icon-512.png \
   og-image.png \
+  saltline-scene.png \
   apple-touch-icon-180.png \
   "$OUT/"
 
