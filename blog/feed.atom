@@ -4,7 +4,7 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-03T03:20:00Z</updated>
+  <updated>2026-11-12T16:50:44Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
@@ -14,7 +14,7 @@
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/small-findings/"/>
     <id>https://kevintcoughlin.com/blog/small-findings/</id>
     <published>2026-11-03T03:20:00Z</published>
-    <updated>2026-11-03T03:20:00Z</updated>
+    <updated>2026-11-12T16:50:44Z</updated>
     <summary>Short notes from side projects. Each one is something I measured or hit, not a general claim.</summary>
     <content type="html">&lt;p&gt;Short notes from side projects. Each one is something I measured or hit, not a general claim.&lt;/p&gt;
 &lt;h2 id=&quot;godot-48-beta-2-makes-my-android-apk-about-6-mb-smaller&quot;&gt;Godot 4.8 beta 2 makes my Android APK about 6 MB smaller&lt;/h2&gt;
@@ -42,6 +42,19 @@
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;4.8 moved &lt;code&gt;com/godot/game/GodotApp.java&lt;/code&gt; to &lt;code&gt;com/godot/game/app/GodotApplication.java&lt;/code&gt;. My build script unpacked the 4.8 Android build template over the 4.7.2 one that the job had just used, so the old &lt;code&gt;GodotApp.java&lt;/code&gt; stayed behind and was compiled against 4.8's Gradle project.&lt;/p&gt;
 &lt;p&gt;The fix was to delete &lt;code&gt;android/build&lt;/code&gt; before unpacking the template (&lt;a href=&quot;https://github.com/cascadiacollections/saltline/pull/144&quot;&gt;saltline#144&lt;/a&gt;). If you switch Godot versions in one checkout and see a strange Java error in the Android export, check for files left over from the old template.&lt;/p&gt;
+&lt;h2 id=&quot;godot-48-vulkanfalse-is-no-longer-enough-for-a-vulkan-less-build&quot;&gt;Godot 4.8: &lt;code&gt;vulkan=false&lt;/code&gt; is no longer enough for a Vulkan-less build&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;2026-11-12&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;I ship Salt Line with a stripped Godot engine, compiled from a &lt;a href=&quot;https://docs.godotengine.org/en/stable/engine_details/development/compiling/optimizing_for_size.html&quot;&gt;build profile&lt;/a&gt; that turns off what the game doesn't use, Vulkan included. On Godot 4.7.2 that profile sets &lt;code&gt;&amp;quot;vulkan&amp;quot;: false&lt;/code&gt;. When I built the same profile against 4.8-beta3, the Android template stopped compiling:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;platform/android/display_server_android.cpp:883:2: error: use of undeclared identifier 'free_vulkan_global_context'
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The cause is a new option in 4.8. &lt;code&gt;SConstruct&lt;/code&gt; now has a &lt;code&gt;rendering_device&lt;/code&gt; option, on by default, and defines &lt;code&gt;RD_ENABLED&lt;/code&gt; from it. In 4.7.2, only the Vulkan driver turned on &lt;code&gt;RD_ENABLED&lt;/code&gt; on Android. So &lt;code&gt;vulkan=false&lt;/code&gt; now leaves &lt;code&gt;RD_ENABLED&lt;/code&gt; defined without &lt;code&gt;VULKAN_ENABLED&lt;/code&gt;. The Android display server's destructor calls &lt;code&gt;free_vulkan_global_context()&lt;/code&gt; under &lt;code&gt;#if defined(RD_ENABLED)&lt;/code&gt;, but the header only declares that function under &lt;code&gt;#ifdef VULKAN_ENABLED&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The fix is to turn off the new option as well:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-json&quot;&gt;&amp;quot;vulkan&amp;quot;: false,
+&amp;quot;rendering_device&amp;quot;: false
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;That's also the setting you want: with no Vulkan driver there's nothing for RenderingDevice to drive. You can't put it in a profile you still use for 4.7.2, though, because 4.7.2 doesn't have the option. My trial build adds it on top of the 4.7.2 profile and checks that every option it sets exists in the Godot tree it builds (&lt;a href=&quot;https://github.com/cascadiacollections/saltline/pull/154&quot;&gt;saltline#154&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;With that change, the stripped 4.8-beta3 arm64 &lt;code&gt;libgodot_android.so&lt;/code&gt; is 21,041,224 B, against 23,186,048 B for my shipping 4.7.2 engine. That's 2.1 MB (9%) smaller, before I've tried turning off the new &lt;code&gt;tilemap&lt;/code&gt; and &lt;code&gt;texture_streaming&lt;/code&gt; modules.&lt;/p&gt;
+&lt;p&gt;The same code is on beta2 and on Godot's &lt;code&gt;master&lt;/code&gt;, so this isn't a beta3 regression. I only hit it now because beta2's trial never built the stripped engine. If you build a Vulkan-less Godot 4.8, set &lt;code&gt;rendering_device=false&lt;/code&gt; too.&lt;/p&gt;
 </content>
   </entry>
   <entry>

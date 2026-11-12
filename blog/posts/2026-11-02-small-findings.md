@@ -1,5 +1,6 @@
 ---
 published: 2026-11-03T03:20:00Z
+updated: 2026-11-12T16:50:44Z
 ---
 
 # Small Findings
@@ -39,3 +40,28 @@ GodotApp.java:49: error: cannot find symbol
 4.8 moved `com/godot/game/GodotApp.java` to `com/godot/game/app/GodotApplication.java`. My build script unpacked the 4.8 Android build template over the 4.7.2 one that the job had just used, so the old `GodotApp.java` stayed behind and was compiled against 4.8's Gradle project.
 
 The fix was to delete `android/build` before unpacking the template ([saltline#144](https://github.com/cascadiacollections/saltline/pull/144)). If you switch Godot versions in one checkout and see a strange Java error in the Android export, check for files left over from the old template.
+
+## Godot 4.8: `vulkan=false` is no longer enough for a Vulkan-less build
+
+_2026-11-12_
+
+I ship Salt Line with a stripped Godot engine, compiled from a [build profile](https://docs.godotengine.org/en/stable/engine_details/development/compiling/optimizing_for_size.html) that turns off what the game doesn't use, Vulkan included. On Godot 4.7.2 that profile sets `"vulkan": false`. When I built the same profile against 4.8-beta3, the Android template stopped compiling:
+
+```
+platform/android/display_server_android.cpp:883:2: error: use of undeclared identifier 'free_vulkan_global_context'
+```
+
+The cause is a new option in 4.8. `SConstruct` now has a `rendering_device` option, on by default, and defines `RD_ENABLED` from it. In 4.7.2, only the Vulkan driver turned on `RD_ENABLED` on Android. So `vulkan=false` now leaves `RD_ENABLED` defined without `VULKAN_ENABLED`. The Android display server's destructor calls `free_vulkan_global_context()` under `#if defined(RD_ENABLED)`, but the header only declares that function under `#ifdef VULKAN_ENABLED`.
+
+The fix is to turn off the new option as well:
+
+```json
+"vulkan": false,
+"rendering_device": false
+```
+
+That's also the setting you want: with no Vulkan driver there's nothing for RenderingDevice to drive. You can't put it in a profile you still use for 4.7.2, though, because 4.7.2 doesn't have the option. My trial build adds it on top of the 4.7.2 profile and checks that every option it sets exists in the Godot tree it builds ([saltline#154](https://github.com/cascadiacollections/saltline/pull/154)).
+
+With that change, the stripped 4.8-beta3 arm64 `libgodot_android.so` is 21,041,224 B, against 23,186,048 B for my shipping 4.7.2 engine. That's 2.1 MB (9%) smaller, before I've tried turning off the new `tilemap` and `texture_streaming` modules.
+
+The same code is on beta2 and on Godot's `master`, so this isn't a beta3 regression. I only hit it now because beta2's trial never built the stripped engine. If you build a Vulkan-less Godot 4.8, set `rendering_device=false` too.
