@@ -19,7 +19,7 @@
 - [lazydeck](https://lazydeck.dev/): lazydocker-style terminal UI for managing Steam Deck and Steam Machine devkits (Go).
 - [An untitled racer](https://cascadiacollections.github.io/racer/): early prototype of a retro pseudo-3D roguelike racer where every track is proven drivable by a bot.
 - [bauhaus](https://github.com/cascadiacollections/bauhaus): daily style-transferred art from CC0 museum collections on Cloudflare Workers.
-- [mc-dad-server](https://kevintcoughlin.com/mc-dad-server/): a Minecraft server in 60 seconds (Go).
+- [mc-dad-server](https://kevintcoughlin.com/mc-dad-server/): a Minecraft server in about two minutes (Go).
 - [Cascadia Collections](https://www.cascadiacollections.com/): the independent studio Kevin founded, which publishes these.
 
 ## Verifying identity
