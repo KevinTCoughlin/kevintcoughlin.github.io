@@ -1,5 +1,5 @@
 ---
-published: 2026-11-14T18:00:00Z
+published: 2026-11-14T06:51:09Z
 ---
 
 # Running a 32-bit Counter-Strike 1.6 server on Apple silicon (without Rosetta)

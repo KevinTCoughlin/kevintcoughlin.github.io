@@ -126,7 +126,7 @@
     <main class="shell">
       <article>
         <h1>Running a 32-bit Counter-Strike 1.6 server on Apple silicon (without Rosetta)</h1>
-        <time datetime="2026-11-14T18:00:00Z">November 14, 2026</time>
+        <time datetime="2026-11-14T06:51:09Z">November 14, 2026</time>
 <p>I run <a href="https://github.com/KevinTCoughlin/cs-server">cs-server</a>, a containerized Counter-Strike 1.6 ScoutzKnivez server on the ReHLDS stack. It lives on a Linux box under Podman and Quadlet. I wanted it to run on a Mac too, with Apple's new <a href="https://github.com/apple/container"><code>container</code></a> CLI, and the obvious plan was <code>--platform linux/amd64 --rosetta</code>.</p>
 <p>That plan failed on the first command.</p>
 <h2 id="rosetta-for-linux-is-x8664-only">Rosetta for Linux is x86_64 only</h2>
