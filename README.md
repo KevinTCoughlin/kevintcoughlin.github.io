@@ -34,6 +34,7 @@ bun start               # http-server on :8080 — fastest local loop
 bun run stage           # Produce ./_site (exactly what Pages serves)
 bun run preview         # stage + http-server ./_site
 bun run preview:docker  # stage + nginx via docker compose (prod parity)
+bun run preview:container  # same image via Apple `container` on macOS (no compose)
 
 bun run lint            # ESLint (incl. html-eslint)
 bun run format          # Prettier check

@@ -4,6 +4,9 @@
 #   docker run --rm -p 8080:8080 kevintcoughlin-site
 # Or via compose:
 #   docker compose up
+# Or with Apple's `container` CLI on macOS (no compose; see `bun run preview:container`):
+#   container build -t kevintcoughlin-site:local .
+#   container run --rm -p 8080:8080 kevintcoughlin-site:local
 
 # ---------- Stage 1: stage runtime assets ----------
 FROM alpine:3.24 AS stage

@@ -9,6 +9,7 @@
     "blog:check": "bun scripts/blog.js --check",
     "preview": "bun run stage && http-server _site -o -p 8080",
     "preview:docker": "docker compose up --build",
+    "preview:container": "container build -t kevintcoughlin-site:local . && container run --rm -p 8080:8080 kevintcoughlin-site:local",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --check .",
