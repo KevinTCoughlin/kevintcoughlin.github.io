@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="I run cs-server, a containerized Counter-Strike 1.6 ScoutzKnivez server on the ReHLDS stack. It lives on a Linux box under Podman and Quadlet. I wanted it to run on a Mac too, with Apple's new container CLI, and the obvious plan was --platform linux/amd64 --rosetta." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/cs16-server-apple-silicon/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Running a 32-bit Counter-Strike 1.6 server on Apple silicon (without Rosetta) — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>Running a 32-bit Counter-Strike 1.6 server on Apple silicon (without Rosetta)</h1>
+        <time datetime="2026-11-14T18:00:00Z">November 14, 2026</time>
+<p>I run <a href="https://github.com/KevinTCoughlin/cs-server">cs-server</a>, a containerized Counter-Strike 1.6 ScoutzKnivez server on the ReHLDS stack. It lives on a Linux box under Podman and Quadlet. I wanted it to run on a Mac too, with Apple's new <a href="https://github.com/apple/container"><code>container</code></a> CLI, and the obvious plan was <code>--platform linux/amd64 --rosetta</code>.</p>
+<p>That plan failed on the first command.</p>
+<h2 id="rosetta-for-linux-is-x8664-only">Rosetta for Linux is x86_64 only</h2>
+<pre><code class="language-text">$ container run --rm --platform linux/amd64 --rosetta \
+    --entrypoint /hlds/hlds_linux ghcr.io/kevintcoughlin/cs-server -help
+Error: failed to exec [/hlds/hlds_linux -help] ... &quot;Exec format error&quot;
+</code></pre>
+<p>The same image's <code>/bin/sh</code> ran fine under Rosetta. The difference is byte 4 of the ELF header:</p>
+<pre><code class="language-text">$ od -An -tx1 -j4 -N1 /hlds/hlds_linux
+ 01
+</code></pre>
+<p><code>01</code> means ELFCLASS32. HLDS, the 2003-era Half-Life Dedicated Server, is a 32-bit i386 binary, and so are its engine, game DLL, Metamod and AMX Mod X modules. Even SteamCMD, which installs the server, is 32-bit. Rosetta for Linux translates 64-bit x86 only. No flag combination changes that.</p>
+<blockquote>
+<p><strong>Tip:</strong> before you try any game server on Apple silicon, check the ELF class of its binaries. One <code>od</code> call saves an afternoon.</p>
+</blockquote>
+<h2 id="plan-b-qemu-user-inside-an-arm64-image">Plan B: qemu-user inside an arm64 image</h2>
+<p>Rosetta translates at the CPU level. QEMU's <em>user-mode</em> emulator, <code>qemu-i386</code>, translates a single Linux process instead, so it doesn't care what the host is. The image therefore becomes <strong>linux/arm64</strong>, ships the i386 libraries through Debian multiarch (<code>libc6:i386</code> and friends install fine on arm64), and launches the server as <code>qemu-i386 /hlds/hlds_linux …</code>.</p>
+<p>Two details kept that small:</p>
+<ul>
+<li><strong>Copy one binary, not the package.</strong> Debian's <code>qemu-user</code> ships every target architecture, about 460 MB. The image copies the static <code>qemu-i386</code> (14 MB) out of it and purges the package in the same layer.</li>
+<li><strong>No binfmt registration needed.</strong> Apple <code>container</code> has no <code>--privileged</code>. Calling qemu explicitly sidesteps that. <code>hlds_run</code> accepts <code>-binary &lt;path&gt;</code>, so the entrypoint hands it a two-line wrapper.</li>
+</ul>
+<p>One trick kept the health check working. The health check looks for a process named <code>hlds_linux</code> in <code>/proc/*/comm</code>. Under qemu, the process name is the emulator's. Running qemu through a <strong>symlink named <code>hlds_linux</code></strong> fixes that, because the kernel takes the process name from the path you exec.</p>
+<h2 id="valves-libraries-vs-qemu-user">Valve's libraries vs. qemu-user</h2>
+<p>The engine and AMX Mod X ran on the first try. Steam's client library did not:</p>
+<pre><code class="language-text">Fatal error: futex robust_list not initialized by pthreads
+qemu: uncaught target signal 11 (Segmentation fault)
+</code></pre>
+<p>qemu-user doesn't implement the <code>set_robust_list</code> / <code>get_robust_list</code> syscalls. <code>steamclient.so</code> checks that the calling thread has a robust futex list and aborts when it can't read one back.</p>
+<p>The fix is a ~100-line <code>LD_PRELOAD</code> shim, cross-compiled with <code>gcc-i686-linux-gnu</code>. It intercepts libc's <code>syscall()</code> and answers <code>get_robust_list</code> with an empty, glibc-shaped list head. &quot;Glibc-shaped&quot; mattered: my first version left <code>futex_offset</code> at 0, and the error changed to <em>&quot;robust_list not pthreads-compatible&quot;</em>, which at least showed the check was reading my answer. glibc uses <code>offsetof(__lock) - offsetof(__list.__next)</code>, which is −20 on i386. With that value the check passes. Under emulation nothing in the kernel walks that list, so this only satisfies the check.</p>
+<p>SteamCMD, which runs at build time, needed three more workarounds:</p>
+<ol>
+<li><strong><code>/proc/cpuinfo</code>.</strong> SteamCMD exits(1) without an x86 <code>flags</code> line (it wants SSE). Under qemu-user the file still describes the ARM host. The build sandbox won't let you bind-mount over <code>/proc</code>, and <code>unshare</code> is blocked in <code>container build</code>. So the same shim redirects <code>open(&quot;/proc/cpuinfo&quot;)</code> to a fake x86 one. Include <code>cpu MHz</code>: without it SteamCMD still bails.</li>
+<li><strong><code>STEAM_PLATFORM=linux32</code>.</strong> After self-updating, <code>steamcmd.sh</code> notices <code>uname -m</code> is <code>aarch64</code> and looks for a <code>linuxarm64</code> build that isn't there.</li>
+<li><strong><code>DEBUGGER=run-i386</code>.</strong> <code>steamcmd.sh</code> already launches its binary through <code>$DEBUGGER</code> and keeps its restart-after-update loop. That makes it the perfect hook for an emulator wrapper.</li>
+</ol>
+<p>Finally, the server came up &quot;disconnected from Steam3&quot; until the runtime image got <strong><code>ca-certificates</code></strong>. <code>steamclient.so</code> couldn't open TLS without them. (Worth checking on the x86 image too.)</p>
+<h2 id="one-containerfile-two-architectures">One Containerfile, two architectures</h2>
+<p>I didn't want a separate Mac Containerfile. Everything architecture-specific lives in one script, <code>i386-compat.sh</code>:</p>
+<table>
+<thead>
+<tr><th></th><th>amd64</th><th>arm64</th></tr>
+</thead>
+<tbody>
+<tr><td>i386 libraries</td><td><code>lib32*</code> biarch packages (unchanged)</td><td>multiarch <code>:i386</code> + <code>ca-certificates</code></td></tr>
+<tr><td>Build-time i386 tools (<code>run-i386</code>)</td><td><code>exec &quot;$@&quot;</code></td><td><code>qemu-i386</code> + shim + fake cpuinfo</td></tr>
+<tr><td>Server launcher</td><td>not installed</td><td>qemu symlink named <code>hlds_linux</code></td></tr>
+</tbody>
+</table>
+<p>The Containerfile calls <code>run-i386 ./amxxpc</code> and <code>DEBUGGER=run-i386 steamcmd.sh</code>. On x86 those are a no-op <code>exec</code>, so the Linux image builds the same way as before (CI agrees). One gotcha: <strong>Apple's builder doesn't set <code>TARGETARCH</code></strong>, so <code>FROM stage-${TARGETARCH}</code> fails with <code>invalid ref: stage-</code>. Branch inside a script instead.</p>
+<h2 id="does-it-hold-up">Does it hold up?</h2>
+<p>On an M-series Mac with 2 vCPUs, 20 slots and 10 bots, at <code>sys_ticrate 1000</code> with <code>pingboost 2</code>:</p>
+<ul>
+<li><strong>~250 server FPS</strong>, which is plenty for LAN and friends (clients update at ≤100 Hz)</li>
+<li><strong>~50–80% of the VM's CPU</strong> and <strong>~340 MiB</strong> of RAM</li>
+<li>the server connects to Steam in secure mode, and answers A2S queries on the LAN</li>
+<li>a from-source image build in about ten minutes, most of it SteamCMD downloading under emulation</li>
+</ul>
+<p>For a busy public server I'd still use Linux on x86. For a Mac in the living room on LAN night, it's more than enough. A small launchd agent makes it start at login and restart on crashes, and the in-game shutdown countdown still runs on stop.</p>
+<h2 id="takeaways">Takeaways</h2>
+<ul>
+<li><strong>Check the ELF class first.</strong> Rosetta for Linux won't run 32-bit x86.</li>
+<li><strong>qemu-user is a real option</strong> for small, old, single-process servers. Copy just the one target binary into your image.</li>
+<li><strong>Most breakage was at the edges:</strong> syscalls qemu doesn't implement, <code>/proc</code> files describing the wrong CPU, and scripts that sniff <code>uname -m</code>. An <code>LD_PRELOAD</code> shim covers a surprising amount of that.</li>
+<li><strong>Keep architecture logic in one script</strong> with a no-op path for the native case. Then the x86 build doesn't change.</li>
+</ul>
+<p>The full change is <a href="https://github.com/KevinTCoughlin/cs-server/pull/56">cs-server#56</a>. The interesting files are <code>scripts/i386-compat.sh</code> and <code>scripts/i386-qemu-shim.c</code>.</p>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>
