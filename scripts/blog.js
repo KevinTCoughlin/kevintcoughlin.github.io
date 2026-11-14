@@ -1,6 +1,7 @@
 // Render blog/posts/*.md into static pages and an Atom feed.
 //
-//   bun scripts/blog.js          # write blog/index.html, blog/<slug>/index.html, blog/feed.atom
+//   bun scripts/blog.js          # write blog/index.html, blog/<slug>/index.html, blog/feed.atom,
+//                                # and the generated regions of index.html and sitemap.xml
 //   bun scripts/blog.js --check  # fail if the committed output is stale (CI)
 //
 // The output is committed so Pages still serves plain files with no build step.
@@ -11,6 +12,7 @@
 
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import * as prettier from 'prettier';
 
 const SITE = 'https://kevintcoughlin.com';
 const BLOG_URL = `${SITE}/blog/`;
@@ -18,6 +20,8 @@ const FEED_URL = `${SITE}/blog/feed.atom`;
 const FEED_TITLE = "Kevin Coughlin's Blog";
 const AUTHOR = 'Kevin T. Coughlin';
 const POSTS_DIR = 'blog/posts';
+// How many posts the homepage "Writing" section lists.
+const HOME_POSTS = 3;
 
 const escape = (s) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -302,6 +306,53 @@ ${entries}
 `;
 }
 
+const ymd = (d) => d.toISOString().slice(0, 10);
+
+// Replace the lines between `<!-- {name}:start ... -->` and `<!-- {name}:end -->`
+// in a hand-written file, so new posts reach it without manual edits.
+function splice(path, name, lines) {
+  const text = readFileSync(path, 'utf8');
+  const re = new RegExp(
+    `(<!-- ${name}:start[^>]*-->\\n)[\\s\\S]*?(\\n[ \\t]*<!-- ${name}:end -->)`
+  );
+  if (!re.test(text)) throw new Error(`${path}: missing <!-- ${name}:start/end --> markers`);
+  return text.replace(re, (_, start, end) => `${start}${lines}${end}`);
+}
+
+async function homePage(posts) {
+  const items = posts
+    .slice(0, HOME_POSTS)
+    .map(
+      (p) =>
+        `<li><a href="/blog/${p.slug}/"><time datetime="${ymd(p.published)}">${ymd(p.published)}</time><span>${escape(p.title)}</span></a></li>`
+    )
+    .join('\n');
+  const html = splice('index.html', 'blog:latest', items);
+  // index.html is Prettier-checked in CI, so emit it already formatted.
+  const options = await prettier.resolveConfig('index.html');
+  return prettier.format(html, { ...options, filepath: 'index.html' });
+}
+
+function sitemap(posts) {
+  const updated = new Date(Math.max(...posts.map((p) => p.updated.getTime())));
+  const urls = [
+    { loc: BLOG_URL, lastmod: updated },
+    ...[...posts].reverse().map((p) => ({ loc: p.url, lastmod: p.updated })),
+  ];
+  return splice(
+    'sitemap.xml',
+    'blog',
+    urls
+      .map(
+        ({ loc, lastmod }) => `  <url>
+    <loc>${loc}</loc>
+    <lastmod>${ymd(lastmod)}</lastmod>
+  </url>`
+      )
+      .join('\n')
+  );
+}
+
 const posts = readdirSync(POSTS_DIR)
   .filter((f) => f.endsWith('.md'))
   .map(parsePost)
@@ -310,6 +361,8 @@ const posts = readdirSync(POSTS_DIR)
 const outputs = new Map([
   ['blog/index.html', indexPage(posts)],
   ['blog/feed.atom', feed(posts)],
+  ['index.html', await homePage(posts)],
+  ['sitemap.xml', sitemap(posts)],
   ...posts.map((p) => [`blog/${p.slug}/index.html`, postPage(p)]),
 ]);
 
