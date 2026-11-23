@@ -166,6 +166,54 @@
 <p>That's also the setting you want: with no Vulkan driver there's nothing for RenderingDevice to drive. You can't put it in a profile you still use for 4.7.2, though, because 4.7.2 doesn't have the option. My trial build adds it on top of the 4.7.2 profile and checks that every option it sets exists in the Godot tree it builds (<a href="https://github.com/cascadiacollections/saltline/pull/154">saltline#154</a>).</p>
 <p>With that change, the stripped 4.8-beta3 arm64 <code>libgodot_android.so</code> is 21,041,224 B, against 23,186,048 B for my shipping 4.7.2 engine. That's 2.1 MB (9%) smaller, before I've tried turning off the new <code>tilemap</code> and <code>texture_streaming</code> modules.</p>
 <p>The same code is on beta2 and on Godot's <code>master</code>, so this isn't a beta3 regression. I only hit it now because beta2's trial never built the stripped engine. If you build a Vulkan-less Godot 4.8, set <code>rendering_device=false</code> too.</p>
+<h2 id="a-github-traffic-referrer-that-was-only-bots">A GitHub traffic referrer that was only bots</h2>
+<p><em>2026-11-04</em></p>
+<p>GitHub's traffic page started listing <code>aocr.org</code> as a referrer. Every one of my repos spiked on the same day, 2026-10-29. The &quot;visitors&quot; landed on old merged PRs and on <code>.gitignore</code>, which nobody reads on purpose. The site itself sits behind a Cloudflare challenge.</p>
+<p>GitHub builds its referrer list from the <code>Referer</code> header, and any client can set that header to anything. This is referrer spam. I'm treating referrer counts as noise until I have install counts to compare against.</p>
+<h2 id="my-media-keys-never-worked-and-i-didnt-notice">My media keys never worked, and I didn't notice</h2>
+<p><em>2026-11-04</em></p>
+<p><code>mediactl</code> in <a href="https://github.com/KevinTCoughlin/wezterm-media">wezterm-media</a> sends media keys on macOS by posting an <code>NSEvent</code> from <code>otherEventWithType:14 subtype:8</code>. It used key codes 1016, 1017 and 1018 for play, next and previous. But <code>NX_KEYTYPE_PLAY</code>, <code>NX_KEYTYPE_NEXT</code> and <code>NX_KEYTYPE_PREVIOUS</code> in <code>IOKit/hidsystem/ev_keymap.h</code> are 16, 17 and 18. So those three keys never did anything.</p>
+<p>Nobody noticed because my Mac controlled playback through AppleScript instead. The fix is <a href="https://github.com/KevinTCoughlin/wezterm-media/pull/4">wezterm-media#4</a>.</p>
+<h2 id="steam-validation-rejected-was-a-text-file-with-the-wrong-number-in-it">&quot;STEAM validation rejected&quot; was a text file with the wrong number in it</h2>
+<p><em>2026-11-22</em></p>
+<p><a href="https://github.com/KevinTCoughlin/cs-server">cs-server</a> is my containerized Counter-Strike 1.6 server. It had bots, a passing health check, a connection to Steam and VAC turned on. Then I joined it from a real game client for the first time and got <code>STEAM validation rejected</code>.</p>
+<p>The image had <code>70</code> in <code>steam_appid.txt</code>. That is Half-Life's Steam app id; Counter-Strike's is 10. The engine normally rewrites that file at startup with the id of the game it is running. My container has a read-only root filesystem, so it couldn't, and the server signed on to Steam as Half-Life. Steam then refused every ticket a Counter-Strike client presented. The one hint in the log was a line I had read past many times:</p>
+<pre><code>Setting breakpad minidump AppID = 70
+</code></pre>
+<p>I confirmed it by starting the same image with the file set to <code>10</code>. The same client connected and the server logged <code>STEAM USERID validated</code>.</p>
+<p>Nothing automated could have caught this. Bots don't authenticate, and neither do the server-browser query or my health check. The fix writes each game's own id at build time (<a href="https://github.com/KevinTCoughlin/cs-server/pull/114">cs-server#114</a>). If you run a GoldSrc server on a read-only filesystem, check that file.</p>
+<h2 id="a-config-file-my-server-couldnt-read-and-didnt-complain-about">A config file my server couldn't read, and didn't complain about</h2>
+<p><em>2026-11-22</em></p>
+<p>My installer for the same server copies <code>server.cfg</code> into a directory under <code>~/.config</code> and used to set it to mode 600, because the file can hold an RCON password. A server installed that way ran on stock settings and said nothing about it.</p>
+<p>The server process runs as a non-root user inside the container (uid 10001). Under rootless Podman my own user maps to root in the container, so the bind-mounted file showed up as owned by root with mode 600, and the server's user fell under &quot;other&quot;. The engine doesn't treat a config file it can't open as an error. It carries on with defaults. The only trace was from a plugin that reads the map cycle:</p>
+<pre><code>Couldn't read file &quot;mapcycle.txt&quot;
+</code></pre>
+<p>I found it when I test-installed a second game, Day of Defeat, and its hostname came up as &quot;Half-Life&quot; instead of the one in its config.</p>
+<p>The fix was mode 644 for the files inside a directory that stays 700 (<a href="https://github.com/KevinTCoughlin/cs-server/pull/109">cs-server#109</a>). Other users on the host still can't reach the files, because they can't get through the directory. The container can, because each file is mounted on its own and the container never walks the host path.</p>
+<h2 id="tfsgsc-a-file-name-that-only-works-on-x86"><code>Tf_sg.sc</code>: a file name that only works on x86</h2>
+<p><em>2026-11-22</em></p>
+<p>I added Team Fortress Classic to the same image build. It passed its test on amd64 and died on arm64, where the 32-bit server runs under <code>qemu-i386</code>:</p>
+<pre><code>Host_Error: EV_Precache_internal: file events/wpn/tf_sg.sc missing from server
+</code></pre>
+<p>I blamed SteamCMD, which has a known habit of not downloading every file in one pass, and wrote two different retry loops to make the download &quot;complete&quot;. Both were wrong. The download had been complete the whole time. The file is there, as <code>Tf_sg.sc</code> with a capital T, and the game asks for <code>tf_sg.sc</code>.</p>
+<p>On x86 the engine finds it anyway. Under <code>qemu-i386</code> on arm64 it doesn't. I haven't worked out why the lookup behaves differently there. The fix doesn't depend on knowing: the build adds a lower-case symlink next to every mixed-case file in the game directory (<a href="https://github.com/KevinTCoughlin/cs-server/pull/109">cs-server#109</a>). Team Fortress Classic had 36 such files; this is the one that stopped the server.</p>
+<p>What I'd do differently: list the directory before theorizing about the download.</p>
+<h2 id="my-ci-never-ran-the-docker-release-that-broke-my-server">My CI never ran the Docker release that broke my server</h2>
+<p><em>2026-11-22</em></p>
+<p>Docker Engine 29.4.2 (2026-05-01) blocked the <code>socketcall</code> system call in its default seccomp profile, as a mitigation for CVE-2026-31431. 32-bit programs open sockets through that call, so every i386 program lost networking, my game server included. It was reported as <a href="https://github.com/moby/moby/issues/52506">moby/moby#52506</a> and undone five days later in 29.4.3.</p>
+<p>I hit it months later on a machine that still had 29.4.2, and worked around it by shipping a copy of Docker's upstream profile and passing it to every <code>docker run</code>. When I went to remove that workaround, I checked what my CI had been testing all along. GitHub's hosted <code>ubuntu-24.04</code> runners had Docker 28.0.4, which is older than the bug. So CI had never run the broken release, and it couldn't tell me whether a current one worked either.</p>
+<p>I removed the copied profile and added a small weekly job that installs the newest Docker Engine on a runner with <code>docker/setup-docker-action</code> and starts the published image under the built-in profile (<a href="https://github.com/KevinTCoughlin/cs-server/pull/121">cs-server#121</a>). Its first run was on 29.10.0 and passed. The installer now refuses 29.4.2 by name.</p>
+<p>If your software is sensitive to the container runtime, check which runtime version your CI actually has. Mine was a major version behind the one people install today.</p>
+<h2 id="a-crash-ive-seen-three-times-and-a-core-dump-i-didnt-expect-to-have">A crash I've seen three times, and a core dump I didn't expect to have</h2>
+<p><em>2026-11-22</em></p>
+<p>Two release builds of cs-server in a row failed the same test step: the game server segfaulted on a map change sent a second or two after startup, with bots turned off. The same step passed on every pull request. Locally I got it once in about 350 boots.</p>
+<p>The server couldn't write its own crash log, because the container's root filesystem is read-only. But the host is Fedora, and <code>systemd-coredump</code> had kept a record of the crash inside the rootless container:</p>
+<pre><code>$ coredumpctl info hlds_linux
+  #0  0x00000000f1b4338a n/a (/hlds/cstrike/dlls/cs.so + 0x1fc38a)
+</code></pre>
+<p>The game library is stripped, but it exports its C++ symbols. <code>nm -D</code> on the file puts that address inside <code>CNavArea::UpdateOnOpenList()</code>, which is bot navigation in <a href="https://github.com/rehlds/ReGameDLL_CS">ReGameDLL</a>. On a server with bots off.</p>
+<p>It turned out bots-off wasn't quite off. <code>server.cfg</code> sets <code>bot_quota 10</code> at every map start, the game adds a bot on the next frame, and my plugin put the quota back to 0 half a second later, kicking it. That half-second bot is the only thing using navigation on such a server. My plugin now hooks the cvar and holds it at 0, so no bot joins (<a href="https://github.com/KevinTCoughlin/cs-server/pull/124">cs-server#124</a>).</p>
+<p>I can't say that fixes the crash. At one failure in a few hundred runs, a clean run proves very little, and the faulty pointer is in ReGameDLL's code, not mine. What I can say is that the only suspect is gone, and that <code>coredumpctl</code> is worth checking even when the crash happened in a container.</p>
 
       </article>
     </main>
