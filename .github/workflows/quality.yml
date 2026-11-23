@@ -48,6 +48,8 @@ jobs:
           key: cache-lychee-${{ github.sha }}
           restore-keys: cache-lychee-
 
+      # sitemap.xml uses absolute blog URLs. A new post 404s on the live site
+      # until this commit is deployed, so check /blog/ against the files here.
       - name: Run lychee
         uses: lycheeverse/lychee-action@v2
         with:
@@ -57,6 +59,7 @@ jobs:
             --root-dir ${{ github.workspace }}
             --exclude '^http://localhost'
             --accept 200,206,301,302,403,429
+            --remap 'https://kevintcoughlin.com/blog/ file://${{ github.workspace }}/blog/'
             'index.html' 'README.md' 'sitemap.xml'
           fail: true
 
