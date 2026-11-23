@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="The Pages workflow for deathban-pro uploaded the site and then failed. Checkout, staging, and the upload all succeeded. About a second later the deploy step said the artifact wasn't there." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/github-pages-deploy-artifact-race/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>A GitHub Pages deploy that missed the artifact it just uploaded — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>A GitHub Pages deploy that missed the artifact it just uploaded</h1>
+        <time datetime="2026-11-23T16:10:05Z">November 23, 2026</time>
+<p>The Pages workflow for <a href="https://github.com/KevinTCoughlin/deathban-pro">deathban-pro</a> uploaded the site and then failed. Checkout, staging, and the upload all succeeded. About a second later the deploy step said the artifact wasn't there.</p>
+<p><a href="https://github.com/KevinTCoughlin/deathban-pro/actions/runs/45110071846">Run 45110071846</a> is the deploy of commit <a href="https://github.com/KevinTCoughlin/deathban-pro/commit/c43913e55d33eb390dd9ec3745c754799d6ed635"><code>c43913e</code></a>. The upload step finished an artifact named <code>github-pages</code>. The next step, <code>actions/deploy-pages</code>, logged:</p>
+<pre><code>Found 0 artifact(s)
+Error: No artifacts named &quot;github-pages&quot; were found for this workflow run. Ensure artifacts are uploaded with actions/upload-artifact@v4 or later.
+</code></pre>
+<p>Both steps were in the same job. <code>deploy-pages</code> lists artifacts as soon as it starts, and the upload from that job isn't visible yet. That's the race in <a href="https://github.com/actions/deploy-pages/issues/451">actions/deploy-pages#451</a>.</p>
+<p>The log says to re-run the deployment. Re-running that run is the wrong recovery. A second upload on the same run then fails, because the run already has an artifact with that name.</p>
+<h2 id="put-the-deploy-in-the-next-job">Put the deploy in the next job</h2>
+<p>Upload in a <code>build</code> job. Deploy in a <code>deploy</code> job with <code>needs: build</code>, so it starts only after the upload job has finished. Move the <code>environment</code> block with the deploy step. <code>pages: write</code> and <code>id-token: write</code> stay on the workflow, where they already were.</p>
+<p>Before, <code>.github/workflows/pages.yml</code> did the staging, the upload, and the deploy in one job:</p>
+<pre><code class="language-yaml">jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+
+      - name: Stage public site
+        run: |
+          mkdir -p _site
+          cp index.html .nojekyll _site/
+          if [ -d assets ]; then cp -R assets _site/; fi
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: '_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+</code></pre>
+<p>After, in <a href="https://github.com/KevinTCoughlin/deathban-pro/pull/82">deathban-pro#82</a> (<a href="https://github.com/KevinTCoughlin/deathban-pro/commit/69e0bf349fd8d3c711a6e67875fbc3d1079bc836"><code>69e0bf3</code></a>):</p>
+<pre><code class="language-yaml">jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+
+      - name: Stage public site
+        run: |
+          mkdir -p _site
+          cp index.html .nojekyll _site/
+          if [ -d assets ]; then cp -R assets _site/; fi
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: '_site'
+
+  # deploy-pages lists artifacts as soon as it starts. In the same job as the
+  # upload, that list is often still empty (actions/deploy-pages#451). A later
+  # job sees the artifact after the upload job has finished.
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+</code></pre>
+<p>If a Pages workflow uploads and deploys in one job and then fails with <code>Found 0 artifact(s)</code> right after a successful upload, split it the same way.</p>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>
