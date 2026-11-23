@@ -7,7 +7,7 @@
 ## TL;DR
 
 - Static personal website. No framework. No build step. No backend.
-- Node 24 LTS + Bun 1.3.14. ESLint v10 flat config. Prettier 3.
+- Node 24 LTS + Bun 1.4.5. ESLint v10 flat config. Prettier 3.
 - `master` auto-deploys to GitHub Pages → <https://kevintcoughlin.com>.
 - Analytics: **Cloudflare Web Analytics** (Google Analytics + AdSense were removed in #47).
 - Background images: Cloudflare Worker at `bauhaus.cascadiacollections.workers.dev`.

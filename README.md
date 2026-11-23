@@ -21,7 +21,7 @@ My personal website. Static, framework-free, deployed to GitHub Pages.
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) 24.x (LTS) — pinned via [`.nvmrc`](.nvmrc)
-- [Bun](https://bun.sh/) 1.3.x — installed via Bun setup / local toolchain
+- [Bun](https://bun.sh/) 1.4.x — installed via Bun setup / local toolchain
 - [Docker](https://www.docker.com/) (optional — for production-parity preview)
 
 A [devcontainer](.devcontainer/devcontainer.json) is provided for VS Code and Codespaces.
