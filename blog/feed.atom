@@ -4,7 +4,7 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-14T06:51:09Z</updated>
+  <updated>2026-11-23T01:37:15Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
@@ -90,7 +90,7 @@ qemu: uncaught target signal 11 (Segmentation fault)
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/small-findings/"/>
     <id>https://kevintcoughlin.com/blog/small-findings/</id>
     <published>2026-11-03T03:20:00Z</published>
-    <updated>2026-11-12T16:50:44Z</updated>
+    <updated>2026-11-23T01:37:15Z</updated>
     <summary>Short notes from side projects. Each one is something I measured or hit, not a general claim.</summary>
     <content type="html">&lt;p&gt;Short notes from side projects. Each one is something I measured or hit, not a general claim.&lt;/p&gt;
 &lt;h2 id=&quot;godot-48-beta-2-makes-my-android-apk-about-6-mb-smaller&quot;&gt;Godot 4.8 beta 2 makes my Android APK about 6 MB smaller&lt;/h2&gt;
@@ -131,6 +131,54 @@ qemu: uncaught target signal 11 (Segmentation fault)
 &lt;p&gt;That's also the setting you want: with no Vulkan driver there's nothing for RenderingDevice to drive. You can't put it in a profile you still use for 4.7.2, though, because 4.7.2 doesn't have the option. My trial build adds it on top of the 4.7.2 profile and checks that every option it sets exists in the Godot tree it builds (&lt;a href=&quot;https://github.com/cascadiacollections/saltline/pull/154&quot;&gt;saltline#154&lt;/a&gt;).&lt;/p&gt;
 &lt;p&gt;With that change, the stripped 4.8-beta3 arm64 &lt;code&gt;libgodot_android.so&lt;/code&gt; is 21,041,224 B, against 23,186,048 B for my shipping 4.7.2 engine. That's 2.1 MB (9%) smaller, before I've tried turning off the new &lt;code&gt;tilemap&lt;/code&gt; and &lt;code&gt;texture_streaming&lt;/code&gt; modules.&lt;/p&gt;
 &lt;p&gt;The same code is on beta2 and on Godot's &lt;code&gt;master&lt;/code&gt;, so this isn't a beta3 regression. I only hit it now because beta2's trial never built the stripped engine. If you build a Vulkan-less Godot 4.8, set &lt;code&gt;rendering_device=false&lt;/code&gt; too.&lt;/p&gt;
+&lt;h2 id=&quot;a-github-traffic-referrer-that-was-only-bots&quot;&gt;A GitHub traffic referrer that was only bots&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;2026-11-04&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;GitHub's traffic page started listing &lt;code&gt;aocr.org&lt;/code&gt; as a referrer. Every one of my repos spiked on the same day, 2026-10-29. The &amp;quot;visitors&amp;quot; landed on old merged PRs and on &lt;code&gt;.gitignore&lt;/code&gt;, which nobody reads on purpose. The site itself sits behind a Cloudflare challenge.&lt;/p&gt;
+&lt;p&gt;GitHub builds its referrer list from the &lt;code&gt;Referer&lt;/code&gt; header, and any client can set that header to anything. This is referrer spam. I'm treating referrer counts as noise until I have install counts to compare against.&lt;/p&gt;
+&lt;h2 id=&quot;my-media-keys-never-worked-and-i-didnt-notice&quot;&gt;My media keys never worked, and I didn't notice&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;2026-11-04&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;mediactl&lt;/code&gt; in &lt;a href=&quot;https://github.com/KevinTCoughlin/wezterm-media&quot;&gt;wezterm-media&lt;/a&gt; sends media keys on macOS by posting an &lt;code&gt;NSEvent&lt;/code&gt; from &lt;code&gt;otherEventWithType:14 subtype:8&lt;/code&gt;. It used key codes 1016, 1017 and 1018 for play, next and previous. But &lt;code&gt;NX_KEYTYPE_PLAY&lt;/code&gt;, &lt;code&gt;NX_KEYTYPE_NEXT&lt;/code&gt; and &lt;code&gt;NX_KEYTYPE_PREVIOUS&lt;/code&gt; in &lt;code&gt;IOKit/hidsystem/ev_keymap.h&lt;/code&gt; are 16, 17 and 18. So those three keys never did anything.&lt;/p&gt;
+&lt;p&gt;Nobody noticed because my Mac controlled playback through AppleScript instead. The fix is &lt;a href=&quot;https://github.com/KevinTCoughlin/wezterm-media/pull/4&quot;&gt;wezterm-media#4&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;steam-validation-rejected-was-a-text-file-with-the-wrong-number-in-it&quot;&gt;&amp;quot;STEAM validation rejected&amp;quot; was a text file with the wrong number in it&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;2026-11-22&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/KevinTCoughlin/cs-server&quot;&gt;cs-server&lt;/a&gt; is my containerized Counter-Strike 1.6 server. It had bots, a passing health check, a connection to Steam and VAC turned on. Then I joined it from a real game client for the first time and got &lt;code&gt;STEAM validation rejected&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The image had &lt;code&gt;70&lt;/code&gt; in &lt;code&gt;steam_appid.txt&lt;/code&gt;. That is Half-Life's Steam app id; Counter-Strike's is 10. The engine normally rewrites that file at startup with the id of the game it is running. My container has a read-only root filesystem, so it couldn't, and the server signed on to Steam as Half-Life. Steam then refused every ticket a Counter-Strike client presented. The one hint in the log was a line I had read past many times:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Setting breakpad minidump AppID = 70
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I confirmed it by starting the same image with the file set to &lt;code&gt;10&lt;/code&gt;. The same client connected and the server logged &lt;code&gt;STEAM USERID validated&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Nothing automated could have caught this. Bots don't authenticate, and neither do the server-browser query or my health check. The fix writes each game's own id at build time (&lt;a href=&quot;https://github.com/KevinTCoughlin/cs-server/pull/114&quot;&gt;cs-server#114&lt;/a&gt;). If you run a GoldSrc server on a read-only filesystem, check that file.&lt;/p&gt;
+&lt;h2 id=&quot;a-config-file-my-server-couldnt-read-and-didnt-complain-about&quot;&gt;A config file my server couldn't read, and didn't complain about&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;2026-11-22&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;My installer for the same server copies &lt;code&gt;server.cfg&lt;/code&gt; into a directory under &lt;code&gt;~/.config&lt;/code&gt; and used to set it to mode 600, because the file can hold an RCON password. A server installed that way ran on stock settings and said nothing about it.&lt;/p&gt;
+&lt;p&gt;The server process runs as a non-root user inside the container (uid 10001). Under rootless Podman my own user maps to root in the container, so the bind-mounted file showed up as owned by root with mode 600, and the server's user fell under &amp;quot;other&amp;quot;. The engine doesn't treat a config file it can't open as an error. It carries on with defaults. The only trace was from a plugin that reads the map cycle:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Couldn't read file &amp;quot;mapcycle.txt&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I found it when I test-installed a second game, Day of Defeat, and its hostname came up as &amp;quot;Half-Life&amp;quot; instead of the one in its config.&lt;/p&gt;
+&lt;p&gt;The fix was mode 644 for the files inside a directory that stays 700 (&lt;a href=&quot;https://github.com/KevinTCoughlin/cs-server/pull/109&quot;&gt;cs-server#109&lt;/a&gt;). Other users on the host still can't reach the files, because they can't get through the directory. The container can, because each file is mounted on its own and the container never walks the host path.&lt;/p&gt;
+&lt;h2 id=&quot;tfsgsc-a-file-name-that-only-works-on-x86&quot;&gt;&lt;code&gt;Tf_sg.sc&lt;/code&gt;: a file name that only works on x86&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;2026-11-22&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;I added Team Fortress Classic to the same image build. It passed its test on amd64 and died on arm64, where the 32-bit server runs under &lt;code&gt;qemu-i386&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Host_Error: EV_Precache_internal: file events/wpn/tf_sg.sc missing from server
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I blamed SteamCMD, which has a known habit of not downloading every file in one pass, and wrote two different retry loops to make the download &amp;quot;complete&amp;quot;. Both were wrong. The download had been complete the whole time. The file is there, as &lt;code&gt;Tf_sg.sc&lt;/code&gt; with a capital T, and the game asks for &lt;code&gt;tf_sg.sc&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;On x86 the engine finds it anyway. Under &lt;code&gt;qemu-i386&lt;/code&gt; on arm64 it doesn't. I haven't worked out why the lookup behaves differently there. The fix doesn't depend on knowing: the build adds a lower-case symlink next to every mixed-case file in the game directory (&lt;a href=&quot;https://github.com/KevinTCoughlin/cs-server/pull/109&quot;&gt;cs-server#109&lt;/a&gt;). Team Fortress Classic had 36 such files; this is the one that stopped the server.&lt;/p&gt;
+&lt;p&gt;What I'd do differently: list the directory before theorizing about the download.&lt;/p&gt;
+&lt;h2 id=&quot;my-ci-never-ran-the-docker-release-that-broke-my-server&quot;&gt;My CI never ran the Docker release that broke my server&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;2026-11-22&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Docker Engine 29.4.2 (2026-05-01) blocked the &lt;code&gt;socketcall&lt;/code&gt; system call in its default seccomp profile, as a mitigation for CVE-2026-31431. 32-bit programs open sockets through that call, so every i386 program lost networking, my game server included. It was reported as &lt;a href=&quot;https://github.com/moby/moby/issues/52506&quot;&gt;moby/moby#52506&lt;/a&gt; and undone five days later in 29.4.3.&lt;/p&gt;
+&lt;p&gt;I hit it months later on a machine that still had 29.4.2, and worked around it by shipping a copy of Docker's upstream profile and passing it to every &lt;code&gt;docker run&lt;/code&gt;. When I went to remove that workaround, I checked what my CI had been testing all along. GitHub's hosted &lt;code&gt;ubuntu-24.04&lt;/code&gt; runners had Docker 28.0.4, which is older than the bug. So CI had never run the broken release, and it couldn't tell me whether a current one worked either.&lt;/p&gt;
+&lt;p&gt;I removed the copied profile and added a small weekly job that installs the newest Docker Engine on a runner with &lt;code&gt;docker/setup-docker-action&lt;/code&gt; and starts the published image under the built-in profile (&lt;a href=&quot;https://github.com/KevinTCoughlin/cs-server/pull/121&quot;&gt;cs-server#121&lt;/a&gt;). Its first run was on 29.10.0 and passed. The installer now refuses 29.4.2 by name.&lt;/p&gt;
+&lt;p&gt;If your software is sensitive to the container runtime, check which runtime version your CI actually has. Mine was a major version behind the one people install today.&lt;/p&gt;
+&lt;h2 id=&quot;a-crash-ive-seen-three-times-and-a-core-dump-i-didnt-expect-to-have&quot;&gt;A crash I've seen three times, and a core dump I didn't expect to have&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;2026-11-22&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Two release builds of cs-server in a row failed the same test step: the game server segfaulted on a map change sent a second or two after startup, with bots turned off. The same step passed on every pull request. Locally I got it once in about 350 boots.&lt;/p&gt;
+&lt;p&gt;The server couldn't write its own crash log, because the container's root filesystem is read-only. But the host is Fedora, and &lt;code&gt;systemd-coredump&lt;/code&gt; had kept a record of the crash inside the rootless container:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ coredumpctl info hlds_linux
+  #0  0x00000000f1b4338a n/a (/hlds/cstrike/dlls/cs.so + 0x1fc38a)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The game library is stripped, but it exports its C++ symbols. &lt;code&gt;nm -D&lt;/code&gt; on the file puts that address inside &lt;code&gt;CNavArea::UpdateOnOpenList()&lt;/code&gt;, which is bot navigation in &lt;a href=&quot;https://github.com/rehlds/ReGameDLL_CS&quot;&gt;ReGameDLL&lt;/a&gt;. On a server with bots off.&lt;/p&gt;
+&lt;p&gt;It turned out bots-off wasn't quite off. &lt;code&gt;server.cfg&lt;/code&gt; sets &lt;code&gt;bot_quota 10&lt;/code&gt; at every map start, the game adds a bot on the next frame, and my plugin put the quota back to 0 half a second later, kicking it. That half-second bot is the only thing using navigation on such a server. My plugin now hooks the cvar and holds it at 0, so no bot joins (&lt;a href=&quot;https://github.com/KevinTCoughlin/cs-server/pull/124&quot;&gt;cs-server#124&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;I can't say that fixes the crash. At one failure in a few hundred runs, a clean run proves very little, and the faulty pointer is in ReGameDLL's code, not mine. What I can say is that the only suspect is gone, and that &lt;code&gt;coredumpctl&lt;/code&gt; is worth checking even when the crash happened in a container.&lt;/p&gt;
 </content>
   </entry>
   <entry>
