@@ -177,8 +177,17 @@
     </header>
     <main class="shell">
       <h1>containers</h1>
-      <p class="meta">2 posts · <a href="/blog/tags/">All tags</a></p>
+      <p class="meta">3 posts · <a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
+        <li>
+          <time datetime="2026-11-24T16:18:32Z">November 24, 2026</time>
+          <h2><a href="/blog/regamedll-nav-open-list-fix/">The ReGameDLL nav crash was an uninitialized open-list marker</a></h2>
+          <p>The SIGSEGV in CNavArea::UpdateOnOpenList() comes from three fields Initialize() never sets. A leftover m_openMarker equal to the live generation makes a new area look open, and the pathfinder follows m_prevOpen. The upstream pull request is still open. My server image rebuilds the library with those fields set.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/containers/" aria-current="page">containers</a></li>
+            <li><a href="/blog/tags/tips/">tips</a></li>
+          </ul>
+        </li>
         <li>
           <time datetime="2026-11-14T06:51:09Z">November 14, 2026</time>
           <h2><a href="/blog/cs16-server-apple-silicon/">Running a 32-bit Counter-Strike 1.6 server on Apple silicon (without Rosetta)</a></h2>

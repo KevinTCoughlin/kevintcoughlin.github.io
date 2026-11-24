@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="The SIGSEGV in CNavArea::UpdateOnOpenList() comes from three fields Initialize() never sets. A leftover m_openMarker equal to the live generation makes a new area look open, and the pathfinder follows m_prevOpen. The upstream pull request is still open. My server image rebuilds the library with those fields set." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/regamedll-nav-open-list-fix/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>The ReGameDLL nav crash was an uninitialized open-list marker — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>The ReGameDLL nav crash was an uninitialized open-list marker</h1>
+        <time datetime="2026-11-24T16:18:32Z">November 24, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/containers/">containers</a></li>
+          <li><a href="/blog/tags/tips/">tips</a></li>
+        </ul>
+<p>The <code>SIGSEGV</code> in <code>CNavArea::UpdateOnOpenList()</code> comes from three fields <code>Initialize()</code> never sets. A leftover <code>m_openMarker</code> equal to the live generation makes a new area look open, and the pathfinder follows <code>m_prevOpen</code>. The upstream pull request is still open. My server image rebuilds the library with those fields set.</p>
+<p><a href="https://kevintcoughlin.com/blog/small-findings/#a-crash-ive-seen-three-times-and-a-core-dump-i-didnt-expect-to-have">A crash I've seen three times, and a core dump I didn't expect to have</a> named the function and left the cause open. The bad pointer is in <a href="https://github.com/rehlds/ReGameDLL_CS">ReGameDLL</a>. This is why.</p>
+<h2 id="a-new-area-can-already-look-open">A new area can already look open</h2>
+<p><code>CNavArea::Initialize()</code> sets <code>m_marker</code> and the hash links. It leaves <code>m_nextOpen</code>, <code>m_prevOpen</code>, and <code>m_openMarker</code> untouched. Areas come from <code>new CNavArea</code>, so those three fields keep whatever the allocation held.</p>
+<p><code>IsOpen()</code> is <code>m_openMarker == m_masterMarker</code>. <code>m_masterMarker</code> starts at 1 and counts up by one per search, so early in a server's life the live value is a small integer. Leftover memory holding that same integer is not rare. When it matches, <code>NavAreaBuildPath</code> takes the &quot;already on the open list&quot; branch and <code>UpdateOnOpenList()</code> follows the uninitialized <code>m_prevOpen</code>.</p>
+<p><a href="https://github.com/rehlds/ReGameDLL_CS/pull/1202">rehlds/ReGameDLL_CS#1202</a> had the same signature, from hostage path-finding on a server with no bots. It was closed as apparently fixed by later commits. <code>master</code> (<code>1f16a7f</code>) still has this code. That pull request also unlinked areas in the destructor, cleared the open list in <code>DestroyNavigationMap()</code>, and returned immediately from <code>UpdateOnOpenList()</code> when <code>IsOpen()</code> was false. The crash is <code>IsOpen()</code> being true, so that early return never runs for it. The initialization is the fix. <a href="https://github.com/rehlds/ReGameDLL_CS/pull/1210">rehlds/ReGameDLL_CS#1210</a> keeps only that.</p>
+<h2 id="set-the-fields-to-a-value-the-marker-never-holds">Set the fields to a value the marker never holds</h2>
+<p><a href="https://github.com/rehlds/ReGameDLL_CS/pull/1210">#1210</a> is open and unmerged. It writes the three fields in <code>Initialize()</code>, which every constructor calls. <code>0</code> is never a live marker: <code>m_masterMarker</code> starts at 1 and <code>MakeNewMarker()</code> skips 0. A new area stays off the list until <code>AddToOpenList()</code>.</p>
+<pre><code class="language-cpp">    // 0 is not a live generation: m_masterMarker starts at 1 and MakeNewMarker() skips 0.
+    m_nextOpen = nullptr;
+    m_prevOpen = nullptr;
+    m_openMarker = 0;
+</code></pre>
+<p>The test <code>NavOpenList::ConstructedAreaIsNotOpen</code>, in <code>regamedll/unittests/nav_openlist_tests.cpp</code>, makes that deterministic. It allocates <code>sizeof(CNavArea)</code>, fills the block with the live marker value <code>1</code>, constructs a <code>CNavArea</code> in that memory, and checks <code>IsOpen()</code> is false. The object is left alive, because <code>~CNavArea()</code> calls <code>TheCSBots()</code>.</p>
+<pre><code class="language-cpp">TEST(ConstructedAreaIsNotOpen, NavOpenList, 1000)
+{
+    void *mem = std::malloc(sizeof(CNavArea));
+    CHECK(&quot;allocation&quot;, mem != nullptr);
+    if (!mem)
+        return;
+
+    unsigned int live = 1;
+    auto *bytes = static_cast&lt;unsigned char *&gt;(mem);
+    for (size_t i = 0; i + sizeof(live) &lt;= sizeof(CNavArea); i += sizeof(live))
+        std::memcpy(bytes + i, &amp;live, sizeof(live));
+
+    CNavArea *area = new (mem) CNavArea();
+    CHECK(&quot;a new area is not on the open list&quot;, !area-&gt;IsOpen());
+}
+</code></pre>
+<p>I ran the Linux <code>Unittests</code> build the way <code>build.yml</code> does, in <code>debian:11-slim</code>. Without the fix the log is <code>Failure in test 'ConstructedAreaIsNotOpen' : a new area is not on the open list</code>. With the fix it is <code>There were no test failures; Tests executed: 6</code>.</p>
+<h2 id="the-image-rebuilds-the-library-anyway">The image rebuilds the library anyway</h2>
+<p><a href="https://github.com/KevinTCoughlin/cs-server/pull/127">cs-server#127</a> (<a href="https://github.com/KevinTCoughlin/cs-server/commit/a2b8175df0b5859a59af7b909ce445058aa88732"><code>a2b8175</code></a>) clones tag 5.30.0.814, applies <code>scripts/regamedll-nav-openlist.patch</code>, and installs the rebuilt <code>cs.so</code> over the copy from the release zip. The patch value-initializes the same three fields on the class:</p>
+<pre><code class="language-cpp">    // Not on the list until AddToOpenList. m_masterMarker starts at 1 and
+    // MakeNewMarker() never returns to 0, so 0 is not a live generation.
+    // Leaving these uninitialized makes IsOpen() true for leftover heap
+    // and UpdateOnOpenList() follows that m_prevOpen (cs-server#122).
+    CNavArea *m_nextOpen = nullptr;	// only valid if m_openMarker == m_masterMarker
+    CNavArea *m_prevOpen = nullptr;
+    unsigned int m_openMarker = 0;
+</code></pre>
+<p>Default member initializers run before the constructor body. <code>Initialize()</code> leaves them as they are, so a new area starts with null links and <code>m_openMarker</code> 0. The Containerfile runs that build at the end of the builder stage. The script and the patch are bind-mounted, so editing the patch re-runs the compile and the copy of <code>/hlds</code>, and the SteamCMD download stays cached:</p>
+<pre><code class="language-dockerfile">RUN --mount=type=bind,source=scripts/build-regamedll.sh,target=/usr/local/src/cs-server/build-regamedll.sh \
+    --mount=type=bind,source=scripts/regamedll-nav-openlist.patch,target=/usr/local/src/cs-server/regamedll-nav-openlist.patch \
+    . /usr/local/share/cs-server/game.env &amp;&amp; \
+    [ &quot;${GAME_REGAMEDLL}&quot; != 1 ] || bash /usr/local/src/cs-server/build-regamedll.sh \
+        &quot;${REGAMEDLL_VERSION}&quot; \
+        &quot;/hlds/${GAME}/dlls/cs.so&quot; \
+        /usr/local/src/cs-server/regamedll-nav-openlist.patch
+</code></pre>
+<p>Before it compiles, the script requires the patched header to contain the initializer:</p>
+<pre><code class="language-bash">grep -q -F 'unsigned int m_openMarker = 0;' \
+    &quot;${src}/regamedll/game_shared/bot/nav_area.h&quot; \
+    || die &quot;patch did not apply to nav_area.h&quot;
+</code></pre>
+<h2 id="the-unit-test-is-the-evidence">The unit test is the evidence</h2>
+<p>I have been running 5.30.0.814 rebuilt with this change on a live server since yesterday without problems. That is too short to say anything about a crash this rare. The unit test is the evidence. Upstream <code>master</code> keeps the bug until <a href="https://github.com/rehlds/ReGameDLL_CS/pull/1210">#1210</a> merges.</p>
+<p>A generation compared for equality is safe when a new object starts at a value the counter can never hold. Fill the allocation with the live marker and construct the object in that memory, and the uninitialized field fails on every run. On the server the same crash showed up three times in a few hundred starts.</p>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>

@@ -180,6 +180,15 @@
       <p class="meta"><a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
         <li>
+          <time datetime="2026-11-24T16:18:32Z">November 24, 2026</time>
+          <h2><a href="/blog/regamedll-nav-open-list-fix/">The ReGameDLL nav crash was an uninitialized open-list marker</a></h2>
+          <p>The SIGSEGV in CNavArea::UpdateOnOpenList() comes from three fields Initialize() never sets. A leftover m_openMarker equal to the live generation makes a new area look open, and the pathfinder follows m_prevOpen. The upstream pull request is still open. My server image rebuilds the library with those fields set.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/containers/">containers</a></li>
+            <li><a href="/blog/tags/tips/">tips</a></li>
+          </ul>
+        </li>
+        <li>
           <time datetime="2026-11-23T16:10:05Z">November 23, 2026</time>
           <h2><a href="/blog/github-pages-deploy-artifact-race/">A GitHub Pages deploy that missed the artifact it just uploaded</a></h2>
           <p>The Pages workflow for deathban-pro uploaded the site and then failed. Checkout, staging, and the upload all succeeded. About a second later the deploy step said the artifact wasn't there.</p>
