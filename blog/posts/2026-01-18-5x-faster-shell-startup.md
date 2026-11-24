@@ -1,5 +1,9 @@
 ---
 published: 2026-01-18T19:22:33Z
+tags:
+  - macos
+  - performance
+  - shell
 ---
 
 # 5x Faster Shell Startup: A macOS Developer Environment Audit

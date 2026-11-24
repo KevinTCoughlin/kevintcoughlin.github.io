@@ -104,6 +104,58 @@
       ul.posts h2 {
         margin: 4px 0;
       }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
       footer {
         margin: 64px auto 32px;
         padding-top: 16px;
@@ -127,6 +179,12 @@
       <article>
         <h1>Network-Aware Minecraft Server on macOS</h1>
         <time datetime="2026-01-18T18:15:54Z">January 18, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/homelab/">homelab</a></li>
+          <li><a href="/blog/tags/macos/">macos</a></li>
+          <li><a href="/blog/tags/minecraft/">minecraft</a></li>
+          <li><a href="/blog/tags/shell/">shell</a></li>
+        </ul>
 <p>I wanted my Minecraft server to automatically start when I connect to my home WiFi, gracefully shut down when I leave, and perform daily maintenance restarts like production game servers. Here's how I set it up on macOS.</p>
 <h2 id="the-problem">The Problem</h2>
 <p>Running a Minecraft server 24/7 on a laptop isn't practical. I wanted it to:</p>
@@ -322,6 +380,8 @@ vim ~/.config/mc-server/config
       </article>
     </main>
     <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
       <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
     </footer>
   </body>

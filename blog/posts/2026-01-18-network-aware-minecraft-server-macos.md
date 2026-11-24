@@ -1,5 +1,10 @@
 ---
 published: 2026-01-18T18:15:54Z
+tags:
+  - homelab
+  - macos
+  - minecraft
+  - shell
 ---
 
 # Network-Aware Minecraft Server on macOS

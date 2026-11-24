@@ -104,6 +104,58 @@
       ul.posts h2 {
         margin: 4px 0;
       }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
       footer {
         margin: 64px auto 32px;
         padding-top: 16px;
@@ -127,6 +179,10 @@
       <article>
         <h1>A GitHub Pages deploy that missed the artifact it just uploaded</h1>
         <time datetime="2026-11-23T16:10:05Z">November 23, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/github-actions/">github-actions</a></li>
+          <li><a href="/blog/tags/tips/">tips</a></li>
+        </ul>
 <p>The Pages workflow for <a href="https://github.com/KevinTCoughlin/deathban-pro">deathban-pro</a> uploaded the site and then failed. Checkout, staging, and the upload all succeeded. About a second later the deploy step said the artifact wasn't there.</p>
 <p><a href="https://github.com/KevinTCoughlin/deathban-pro/actions/runs/45110071846">Run 45110071846</a> is the deploy of commit <a href="https://github.com/KevinTCoughlin/deathban-pro/commit/c43913e55d33eb390dd9ec3745c754799d6ed635"><code>c43913e</code></a>. The upload step finished an artifact named <code>github-pages</code>. The next step, <code>actions/deploy-pages</code>, logged:</p>
 <pre><code>Found 0 artifact(s)
@@ -206,6 +262,8 @@ Error: No artifacts named &quot;github-pages&quot; were found for this workflow 
       </article>
     </main>
     <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
       <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
     </footer>
   </body>

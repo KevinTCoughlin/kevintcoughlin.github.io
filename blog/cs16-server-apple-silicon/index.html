@@ -104,6 +104,58 @@
       ul.posts h2 {
         margin: 4px 0;
       }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
       footer {
         margin: 64px auto 32px;
         padding-top: 16px;
@@ -127,6 +179,11 @@
       <article>
         <h1>Running a 32-bit Counter-Strike 1.6 server on Apple silicon (without Rosetta)</h1>
         <time datetime="2026-11-14T06:51:09Z">November 14, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/containers/">containers</a></li>
+          <li><a href="/blog/tags/homelab/">homelab</a></li>
+          <li><a href="/blog/tags/macos/">macos</a></li>
+        </ul>
 <p>I run <a href="https://github.com/KevinTCoughlin/cs-server">cs-server</a>, a containerized Counter-Strike 1.6 ScoutzKnivez server on the ReHLDS stack. It lives on a Linux box under Podman and Quadlet. I wanted it to run on a Mac too, with Apple's new <a href="https://github.com/apple/container"><code>container</code></a> CLI, and the obvious plan was <code>--platform linux/amd64 --rosetta</code>.</p>
 <p>That plan failed on the first command.</p>
 <h2 id="rosetta-for-linux-is-x8664-only">Rosetta for Linux is x86_64 only</h2>
@@ -198,6 +255,8 @@ qemu: uncaught target signal 11 (Segmentation fault)
       </article>
     </main>
     <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
       <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
     </footer>
   </body>

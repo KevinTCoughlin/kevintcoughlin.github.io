@@ -1,7 +1,9 @@
-// Render blog/posts/*.md into static pages and an Atom feed.
+// Render blog/posts/*.md into static pages, tag pages, and an Atom feed.
 //
-//   bun scripts/blog.js          # write blog/index.html, blog/<slug>/index.html, blog/feed.atom,
-//                                # and the generated regions of index.html and sitemap.xml
+//   bun scripts/blog.js          # write blog/index.html, blog/<slug>/index.html,
+//                                # blog/tags/index.html, blog/tags/<tag>/index.html,
+//                                # blog/feed.atom, and the generated regions of
+//                                # index.html and sitemap.xml
 //   bun scripts/blog.js --check  # fail if the committed output is stale (CI)
 //
 // The output is committed so Pages still serves plain files with no build step.
@@ -9,8 +11,11 @@
 // absolute URLs, permalink ids, full content, and dates that never move.
 // A post's `published` time is fixed once it ships; bump `updated` only for
 // significant edits.
+//
+// Every post needs a `tags` list in front matter: lowercase hyphenated labels,
+// shown alphabetically. Each tag links to blog/tags/<tag>/.
 
-import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import * as prettier from 'prettier';
 
@@ -26,16 +31,66 @@ const HOME_POSTS = 3;
 const escape = (s) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+// Lowercase words, digits, and single hyphens: `github-actions`, not `GitHub Actions`.
+const TAG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+function parseFrontMatter(file, block) {
+  const meta = {};
+  const lines = block.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    const colon = line.indexOf(':');
+    if (colon === -1 || /^\s/.test(line)) {
+      throw new Error(`${file}: bad front matter line "${line}"`);
+    }
+    const key = line.slice(0, colon).trim();
+    const value = line.slice(colon + 1).trim();
+    if (Object.hasOwn(meta, key)) throw new Error(`${file}: duplicate front matter key "${key}"`);
+    if (value === '') {
+      const items = [];
+      while (i + 1 < lines.length && /^\s+-\s+\S/.test(lines[i + 1])) {
+        i += 1;
+        items.push(lines[i].replace(/^\s+-\s+/, '').trim());
+      }
+      if (!items.length) throw new Error(`${file}: "${key}" needs a value or a list`);
+      meta[key] = items;
+    } else if (value.startsWith('[') && value.endsWith(']')) {
+      meta[key] = value
+        .slice(1, -1)
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    } else {
+      meta[key] = value;
+    }
+  }
+  return meta;
+}
+
+function parseTags(file, raw) {
+  if (raw == null) throw new Error(`${file}: missing tags`);
+  const tags = Array.isArray(raw)
+    ? raw
+    : String(raw)
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+  if (!tags.length) throw new Error(`${file}: tags must list at least one tag`);
+  for (const tag of tags) {
+    if (!TAG_RE.test(tag)) {
+      throw new Error(`${file}: invalid tag "${tag}" (lowercase words, digits, and hyphens)`);
+    }
+  }
+  if (new Set(tags).size !== tags.length) throw new Error(`${file}: duplicate tag`);
+  return [...tags].sort();
+}
+
 function parsePost(file) {
   const raw = readFileSync(join(POSTS_DIR, file), 'utf8');
   const fm = raw.match(/^---\n([\s\S]*?)\n---\n/);
   if (!fm) throw new Error(`${file}: missing front matter`);
-  const meta = Object.fromEntries(
-    fm[1].split('\n').map((line) => {
-      const i = line.indexOf(':');
-      return [line.slice(0, i).trim(), line.slice(i + 1).trim()];
-    })
-  );
+  const meta = parseFrontMatter(file, fm[1]);
   const body = raw.slice(fm[0].length).trim();
   const heading = body.match(/^# (.+)\n/);
   if (!heading) throw new Error(`${file}: first line must be a "# Title" heading`);
@@ -63,6 +118,7 @@ function parsePost(file) {
       .trim(),
     published,
     updated,
+    tags: parseTags(file, meta.tags),
     html,
   };
 }
@@ -104,7 +160,7 @@ const humanDate = (d) =>
     timeZone: 'UTC',
   });
 
-function page({ title, description, canonical, main }) {
+function page({ title, description, canonical, main, tagsCurrent = false }) {
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -211,6 +267,58 @@ function page({ title, description, canonical, main }) {
       ul.posts h2 {
         margin: 4px 0;
       }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
       footer {
         margin: 64px auto 32px;
         padding-top: 16px;
@@ -234,11 +342,41 @@ function page({ title, description, canonical, main }) {
 ${main}
     </main>
     <footer class="shell">
+      <a href="/blog/tags/"${tagsCurrent ? ' aria-current="page"' : ''}>Tags</a>
+      ·
       <a href="${FEED_URL}">Subscribe via Atom feed</a>
     </footer>
   </body>
 </html>
 `;
+}
+
+const countLabel = (n, noun) => `${n} ${noun}${n === 1 ? '' : 's'}`;
+
+function tagsList(tags, indent, currentTag) {
+  const pad = ' '.repeat(indent);
+  const items = tags
+    .map((tag) => {
+      const current = tag === currentTag ? ' aria-current="page"' : '';
+      return `${pad}  <li><a href="/blog/tags/${tag}/"${current}>${escape(tag)}</a></li>`;
+    })
+    .join('\n');
+  return `${pad}<ul class="tags" aria-label="Tags">\n${items}\n${pad}</ul>`;
+}
+
+function postListItem(post, currentTag) {
+  return `        <li>
+          <time datetime="${isoDate(post.published)}">${humanDate(post.published)}</time>
+          <h2><a href="/blog/${post.slug}/">${escape(post.title)}</a></h2>
+          <p>${escape(post.summary)}</p>
+${tagsList(post.tags, 10, currentTag)}
+        </li>`;
+}
+
+function postList(posts, currentTag) {
+  return `      <ul class="posts">
+${posts.map((post) => postListItem(post, currentTag)).join('\n')}
+      </ul>`;
 }
 
 function postPage(post) {
@@ -249,27 +387,67 @@ function postPage(post) {
     main: `      <article>
         <h1>${escape(post.title)}</h1>
         <time datetime="${isoDate(post.published)}">${humanDate(post.published)}</time>
+${tagsList(post.tags, 8)}
 ${post.html}
       </article>`,
   });
 }
 
 function indexPage(posts) {
-  const items = posts
-    .map(
-      (p) => `        <li>
-          <time datetime="${isoDate(p.published)}">${humanDate(p.published)}</time>
-          <h2><a href="/blog/${p.slug}/">${escape(p.title)}</a></h2>
-          <p>${escape(p.summary)}</p>
-        </li>`
-    )
-    .join('\n');
   return page({
     title: FEED_TITLE,
     description: 'Notes on developer tooling, games and servers by Kevin Coughlin.',
     canonical: BLOG_URL,
     main: `      <h1>Blog</h1>
-      <ul class="posts">
+      <p class="meta"><a href="/blog/tags/">All tags</a></p>
+${postList(posts)}`,
+  });
+}
+
+// Posts are newest-first, so each tag's list stays newest-first.
+function postsByTag(posts) {
+  const groups = new Map();
+  for (const post of posts) {
+    for (const tag of post.tags) {
+      const list = groups.get(tag);
+      if (list) list.push(post);
+      else groups.set(tag, [post]);
+    }
+  }
+  return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+}
+
+function tagPage(tag, tagged) {
+  return page({
+    title: `${tag} — Kevin Coughlin`,
+    description: `Posts tagged ${tag}.`,
+    canonical: `${BLOG_URL}tags/${tag}/`,
+    main: `      <h1>${escape(tag)}</h1>
+      <p class="meta">${countLabel(tagged.length, 'post')} · <a href="/blog/tags/">All tags</a></p>
+${postList(tagged, tag)}`,
+  });
+}
+
+function tagIndexPage(tagGroups) {
+  const items = tagGroups
+    .map(([tag, tagged]) => {
+      const label = countLabel(tagged.length, 'post');
+      return `        <li>
+          <a href="/blog/tags/${tag}/">
+            <span>${escape(tag)}</span>
+            <span class="count">${label}</span>
+          </a>
+        </li>`;
+    })
+    .join('\n');
+  return page({
+    title: `Tags — Kevin Coughlin`,
+    description: "All tags on Kevin Coughlin's blog.",
+    canonical: `${BLOG_URL}tags/`,
+    tagsCurrent: true,
+    main: `      <h1>Tags</h1>
+      <p class="meta">${countLabel(tagGroups.length, 'tag')}</p>
+      <ul class="tag-index">
 ${items}
       </ul>`,
   });
@@ -278,17 +456,19 @@ ${items}
 function feed(posts) {
   const updated = new Date(Math.max(...posts.map((p) => p.updated.getTime())));
   const entries = posts
-    .map(
-      (p) => `  <entry>
+    .map((p) => {
+      const categories = p.tags.map((tag) => `    <category term="${escape(tag)}"/>`).join('\n');
+      return `  <entry>
     <title>${escape(p.title)}</title>
     <link rel="alternate" type="text/html" href="${p.url}"/>
     <id>${p.url}</id>
     <published>${isoDate(p.published)}</published>
     <updated>${isoDate(p.updated)}</updated>
+${categories}
     <summary>${escape(p.summary)}</summary>
     <content type="html">${escape(absoluteFragments(p.html, p.url))}</content>
-  </entry>`
-    )
+  </entry>`;
+    })
     .join('\n');
   return `<?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
@@ -333,11 +513,16 @@ async function homePage(posts) {
   return prettier.format(html, { ...options, filepath: 'index.html' });
 }
 
-function sitemap(posts) {
+function sitemap(posts, tagGroups) {
   const updated = new Date(Math.max(...posts.map((p) => p.updated.getTime())));
   const urls = [
     { loc: BLOG_URL, lastmod: updated },
     ...[...posts].reverse().map((p) => ({ loc: p.url, lastmod: p.updated })),
+    { loc: `${BLOG_URL}tags/`, lastmod: updated },
+    ...tagGroups.map(([tag, tagged]) => ({
+      loc: `${BLOG_URL}tags/${tag}/`,
+      lastmod: new Date(Math.max(...tagged.map((p) => p.updated.getTime()))),
+    })),
   ];
   return splice(
     'sitemap.xml',
@@ -353,32 +538,59 @@ function sitemap(posts) {
   );
 }
 
+function filesUnder(dir) {
+  if (!existsSync(dir)) return [];
+  const out = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) out.push(...filesUnder(path));
+    else if (entry.isFile()) out.push(path);
+  }
+  return out;
+}
+
+function removeEmptyDirs(dir) {
+  if (!existsSync(dir)) return;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) removeEmptyDirs(`${dir}/${entry.name}`);
+  }
+  if (readdirSync(dir).length === 0) rmSync(dir);
+}
+
 const posts = readdirSync(POSTS_DIR)
   .filter((f) => f.endsWith('.md'))
   .map(parsePost)
   .sort((a, b) => b.published - a.published);
+const tagGroups = postsByTag(posts);
 
 const outputs = new Map([
   ['blog/index.html', indexPage(posts)],
   ['blog/feed.atom', feed(posts)],
+  ['blog/tags/index.html', tagIndexPage(tagGroups)],
   ['index.html', await homePage(posts)],
-  ['sitemap.xml', sitemap(posts)],
+  ['sitemap.xml', sitemap(posts, tagGroups)],
   ...posts.map((p) => [`blog/${p.slug}/index.html`, postPage(p)]),
+  ...tagGroups.map(([tag, tagged]) => [`blog/tags/${tag}/index.html`, tagPage(tag, tagged)]),
 ]);
+
+const unexpected = filesUnder('blog/tags').filter((path) => !outputs.has(path));
 
 if (process.argv.includes('--check')) {
   const stale = [...outputs].filter(
     ([path, text]) => !existsSync(path) || readFileSync(path, 'utf8') !== text
   );
-  if (stale.length) {
-    console.error(`Stale blog output (run \`bun run blog\`): ${stale.map(([p]) => p).join(', ')}`);
+  const paths = [...stale.map(([p]) => p), ...unexpected];
+  if (paths.length) {
+    console.error(`Stale blog output (run \`bun run blog\`): ${paths.join(', ')}`);
     process.exit(1);
   }
-  console.log(`Blog output up to date (${posts.length} posts)`);
+  console.log(`Blog output up to date (${posts.length} posts, ${tagGroups.length} tags)`);
 } else {
+  for (const path of unexpected) rmSync(path);
+  removeEmptyDirs('blog/tags');
   for (const [path, text] of outputs) {
     mkdirSync(path.slice(0, path.lastIndexOf('/')), { recursive: true });
     writeFileSync(path, text);
   }
-  console.log(`Wrote ${outputs.size} files for ${posts.length} posts`);
+  console.log(`Wrote ${outputs.size} files for ${posts.length} posts and ${tagGroups.length} tags`);
 }

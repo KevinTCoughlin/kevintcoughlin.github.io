@@ -16,25 +16,50 @@ This file is the canonical entry point for AI coding agents working in this repo
 
 ## What lives where
 
-| Path                                      | Purpose                                                                                                                                                                                                                            |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `index.html`                              | Single-page entry; inline `<style>` + module imports                                                                                                                                                                               |
-| `bauhaus.js`                              | Hero image rotation + caching logic                                                                                                                                                                                                |
-| `sw.js`                                   | Service worker (image cache)                                                                                                                                                                                                       |
-| `telemetry.js`                            | Self-hosted error/perf beacons                                                                                                                                                                                                     |
-| `web-vitals.js`                           | Vendored web-vitals (do not lint/modify by hand)                                                                                                                                                                                   |
-| `manifest.json`                           | PWA manifest                                                                                                                                                                                                                       |
-| `sitemap.xml`, `robots.txt`, `humans.txt` | SEO / crawler hints                                                                                                                                                                                                                |
-| `.well-known/security.txt`                | Disclosure contact                                                                                                                                                                                                                 |
-| `scripts/stage-site.sh`                   | **Source of truth** for "what files ship to prod"                                                                                                                                                                                  |
-| `blog/posts/*.md`                         | Blog sources; `bun run blog` pre-renders `blog/**/index.html` + `blog/feed.atom` and rewrites the marked blog regions of `index.html` (Writing) and `sitemap.xml` — never hand-edit those regions (committed, CI checks freshness) |
-| `scripts/og-image.sh`                     | Regenerates `og-image.png` from `scripts/og-image.html` (Chromium + oxipng; not shipped)                                                                                                                                           |
-| `Dockerfile` + `docker-compose.yml`       | Production-parity local preview via nginx                                                                                                                                                                                          |
-| `.github/workflows/deploy.yml`            | Validate → stage → Pages deploy                                                                                                                                                                                                    |
-| `.github/workflows/quality.yml`           | Lighthouse CI + lychee link check (PRs); devcontainer smoke test (weekly cron)                                                                                                                                                     |
-| `.github/workflows/images.yml`            | Fails PR if any shipping PNG can be losslessly minified by ≥ 5% (oxipng)                                                                                                                                                           |
-| `.github/rulesets/branch-master.json`     | Branch-protection rules for `master`, version-controlled (apply via `gh api`)                                                                                                                                                      |
-| `.github/workflows/codeql.yml`            | _(removed — GitHub's default Code Scanning setup is enabled in repo settings; no workflow file required)_                                                                                                                          |
+| Path                                      | Purpose                                                                                                                                                                                                                                        |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html`                              | Single-page entry; inline `<style>` + module imports                                                                                                                                                                                           |
+| `bauhaus.js`                              | Hero image rotation + caching logic                                                                                                                                                                                                            |
+| `sw.js`                                   | Service worker (image cache)                                                                                                                                                                                                                   |
+| `telemetry.js`                            | Self-hosted error/perf beacons                                                                                                                                                                                                                 |
+| `web-vitals.js`                           | Vendored web-vitals (do not lint/modify by hand)                                                                                                                                                                                               |
+| `manifest.json`                           | PWA manifest                                                                                                                                                                                                                                   |
+| `sitemap.xml`, `robots.txt`, `humans.txt` | SEO / crawler hints                                                                                                                                                                                                                            |
+| `.well-known/security.txt`                | Disclosure contact                                                                                                                                                                                                                             |
+| `scripts/stage-site.sh`                   | **Source of truth** for "what files ship to prod"                                                                                                                                                                                              |
+| `blog/posts/*.md`                         | Blog sources. `bun run blog` pre-renders post pages, `blog/tags/`, `blog/feed.atom`, and the marked regions of `index.html` (Writing) and `sitemap.xml`. Never hand-edit generated output; CI checks freshness. See [Blog posts](#blog-posts). |
+| `scripts/og-image.sh`                     | Regenerates `og-image.png` from `scripts/og-image.html` (Chromium + oxipng; not shipped)                                                                                                                                                       |
+| `Dockerfile` + `docker-compose.yml`       | Production-parity local preview via nginx                                                                                                                                                                                                      |
+| `.github/workflows/deploy.yml`            | Validate → stage → Pages deploy                                                                                                                                                                                                                |
+| `.github/workflows/quality.yml`           | Lighthouse CI + lychee link check (PRs); devcontainer smoke test (weekly cron)                                                                                                                                                                 |
+| `.github/workflows/images.yml`            | Fails PR if any shipping PNG can be losslessly minified by ≥ 5% (oxipng)                                                                                                                                                                       |
+| `.github/rulesets/branch-master.json`     | Branch-protection rules for `master`, version-controlled (apply via `gh api`)                                                                                                                                                                  |
+| `.github/workflows/codeql.yml`            | _(removed — GitHub's default Code Scanning setup is enabled in repo settings; no workflow file required)_                                                                                                                                      |
+
+## Blog posts
+
+Sources live in `blog/posts/YYYY-MM-DD-slug.md`. Run `bun run blog` and commit
+the output (`blog/<slug>/index.html`, `blog/index.html`, `blog/tags/`,
+`blog/feed.atom`, and the marked regions of `index.html` and `sitemap.xml`).
+`scripts/stage-site.sh` ships `blog/` and drops `blog/posts`.
+
+```yaml
+---
+published: 2026-01-18T19:22:33Z # fixed once the post ships
+updated: 2026-02-01T12:00:00Z # optional; significant edits only
+tags:
+  - macos
+  - shell
+---
+```
+
+- The first line of the body is a `# Title` heading. That title is the page
+  title; the first paragraph is the summary.
+- `tags` is required. Use 2–4 lowercase, hyphenated labels (`github-actions`,
+  not `GitHub Actions`). Reuse a tag from `blog/tags/` before adding one.
+  Tags render on the post and the blog index, link to `blog/tags/<tag>/`,
+  and are `<category term="...">` entries in the Atom feed.
+- `published` never moves. Bump `updated` only for a significant edit.
 
 ## Commands
 
