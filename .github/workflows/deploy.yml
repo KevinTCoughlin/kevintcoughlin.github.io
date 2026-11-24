@@ -38,15 +38,14 @@ jobs:
       - name: Check blog output is up to date
         run: bun run blog:check
 
-  deploy:
-    if: github.event_name != 'pull_request'
+  # deploy-pages lists artifacts as soon as it starts. In the same job as the
+  # upload, that list is often still empty (actions/deploy-pages#451) and the
+  # deploy fails with "No artifacts named github-pages". A later job sees the
+  # artifact after the upload job has finished. Same split as
+  # KevinTCoughlin/deathban-pro#82.
+  build:
+    if: github.event_name != 'pull_request' && success()
     needs: validate
-    concurrency:
-      group: 'pages'
-      cancel-in-progress: false
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -75,6 +74,21 @@ jobs:
         with:
           path: '_site'
 
+  deploy:
+    if: github.event_name != 'pull_request' && success()
+    needs: build
+    concurrency:
+      group: 'pages'
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
