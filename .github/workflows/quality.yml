@@ -38,6 +38,15 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      LYCHEE_ARGS: >-
+        --cache --max-cache-age 1d
+        --cache-exclude-status '503'
+        --no-progress
+        --root-dir ${{ github.workspace }}
+        --exclude '^http://localhost'
+        --accept 200,206,301,302,403,429
+        'index.html' 'README.md' 'sitemap.xml'
     steps:
       - uses: actions/checkout@v7
 
@@ -48,16 +57,27 @@ jobs:
           key: cache-lychee-${{ github.sha }}
           restore-keys: cache-lychee-
 
+      # lychee 0.24 retries transport errors and HTTP 429, not a rejected 503.
+      # https://bauhaus.cascadiacollections.workers.dev/api/feed.atom returned
+      # one 503 on 52c82be and 200 on the next probes, so skip caching that
+      # status and run the check once more before failing the job.
       - name: Run lychee
+        id: lychee
+        continue-on-error: true
         uses: lycheeverse/lychee-action@v2
         with:
-          args: >-
-            --cache --max-cache-age 1d
-            --no-progress
-            --root-dir ${{ github.workspace }}
-            --exclude '^http://localhost'
-            --accept 200,206,301,302,403,429
-            'index.html' 'README.md' 'sitemap.xml'
+          args: ${{ env.LYCHEE_ARGS }}
+          fail: true
+
+      - name: Wait before lychee retry
+        if: steps.lychee.outcome == 'failure'
+        run: sleep 15
+
+      - name: Retry lychee
+        if: steps.lychee.outcome == 'failure'
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: ${{ env.LYCHEE_ARGS }}
           fail: true
 
   devcontainer:
