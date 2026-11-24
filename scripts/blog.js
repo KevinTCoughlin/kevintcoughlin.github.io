@@ -74,7 +74,7 @@ function addHeadingIds(html) {
   return html.replace(/<h([2-6])>([\s\S]*?)<\/h\1>/g, (_, level, inner) => {
     // Strip tags until none are left; the id keeps only letters, digits and hyphens.
     let text = inner;
-    for (let prev = ''; prev !== text; ) {
+    for (let prev = ''; prev !== text;) {
       prev = text;
       text = text.replace(/<[^>]*>/g, '');
     }
