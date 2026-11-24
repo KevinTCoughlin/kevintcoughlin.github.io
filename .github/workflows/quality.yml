@@ -46,6 +46,7 @@ jobs:
         --root-dir ${{ github.workspace }}
         --exclude '^http://localhost'
         --accept 200,206,301,302,403,429
+        --remap 'https://kevintcoughlin.com/blog/ file://${{ github.workspace }}/blog/'
         'index.html' 'README.md' 'sitemap.xml'
     steps:
       - uses: actions/checkout@v7
@@ -57,6 +58,9 @@ jobs:
           key: cache-lychee-${{ github.sha }}
           restore-keys: cache-lychee-
 
+      # sitemap.xml uses absolute blog URLs. A new post 404s on the live site
+      # until this commit is deployed, so check /blog/ against the files here.
+      #
       # lychee 0.24 retries transport errors and HTTP 429, not a rejected 503.
       # https://bauhaus.cascadiacollections.workers.dev/api/feed.atom returned
       # one 503 on 52c82be and 200 on the next probes, so skip caching that
