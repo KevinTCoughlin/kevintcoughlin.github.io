@@ -4,11 +4,80 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-23T16:10:05Z</updated>
+  <updated>2026-11-24T16:18:32Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>The ReGameDLL nav crash was an uninitialized open-list marker</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/regamedll-nav-open-list-fix/"/>
+    <id>https://kevintcoughlin.com/blog/regamedll-nav-open-list-fix/</id>
+    <published>2026-11-24T16:18:32Z</published>
+    <updated>2026-11-24T16:18:32Z</updated>
+    <category term="containers"/>
+    <category term="tips"/>
+    <summary>The SIGSEGV in CNavArea::UpdateOnOpenList() comes from three fields Initialize() never sets. A leftover m_openMarker equal to the live generation makes a new area look open, and the pathfinder follows m_prevOpen. The upstream pull request is still open. My server image rebuilds the library with those fields set.</summary>
+    <content type="html">&lt;p&gt;The &lt;code&gt;SIGSEGV&lt;/code&gt; in &lt;code&gt;CNavArea::UpdateOnOpenList()&lt;/code&gt; comes from three fields &lt;code&gt;Initialize()&lt;/code&gt; never sets. A leftover &lt;code&gt;m_openMarker&lt;/code&gt; equal to the live generation makes a new area look open, and the pathfinder follows &lt;code&gt;m_prevOpen&lt;/code&gt;. The upstream pull request is still open. My server image rebuilds the library with those fields set.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://kevintcoughlin.com/blog/small-findings/#a-crash-ive-seen-three-times-and-a-core-dump-i-didnt-expect-to-have&quot;&gt;A crash I've seen three times, and a core dump I didn't expect to have&lt;/a&gt; named the function and left the cause open. The bad pointer is in &lt;a href=&quot;https://github.com/rehlds/ReGameDLL_CS&quot;&gt;ReGameDLL&lt;/a&gt;. This is why.&lt;/p&gt;
+&lt;h2 id=&quot;a-new-area-can-already-look-open&quot;&gt;A new area can already look open&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;CNavArea::Initialize()&lt;/code&gt; sets &lt;code&gt;m_marker&lt;/code&gt; and the hash links. It leaves &lt;code&gt;m_nextOpen&lt;/code&gt;, &lt;code&gt;m_prevOpen&lt;/code&gt;, and &lt;code&gt;m_openMarker&lt;/code&gt; untouched. Areas come from &lt;code&gt;new CNavArea&lt;/code&gt;, so those three fields keep whatever the allocation held.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;IsOpen()&lt;/code&gt; is &lt;code&gt;m_openMarker == m_masterMarker&lt;/code&gt;. &lt;code&gt;m_masterMarker&lt;/code&gt; starts at 1 and counts up by one per search, so early in a server's life the live value is a small integer. Leftover memory holding that same integer is not rare. When it matches, &lt;code&gt;NavAreaBuildPath&lt;/code&gt; takes the &amp;quot;already on the open list&amp;quot; branch and &lt;code&gt;UpdateOnOpenList()&lt;/code&gt; follows the uninitialized &lt;code&gt;m_prevOpen&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/rehlds/ReGameDLL_CS/pull/1202&quot;&gt;rehlds/ReGameDLL_CS#1202&lt;/a&gt; had the same signature, from hostage path-finding on a server with no bots. It was closed as apparently fixed by later commits. &lt;code&gt;master&lt;/code&gt; (&lt;code&gt;1f16a7f&lt;/code&gt;) still has this code. That pull request also unlinked areas in the destructor, cleared the open list in &lt;code&gt;DestroyNavigationMap()&lt;/code&gt;, and returned immediately from &lt;code&gt;UpdateOnOpenList()&lt;/code&gt; when &lt;code&gt;IsOpen()&lt;/code&gt; was false. The crash is &lt;code&gt;IsOpen()&lt;/code&gt; being true, so that early return never runs for it. The initialization is the fix. &lt;a href=&quot;https://github.com/rehlds/ReGameDLL_CS/pull/1210&quot;&gt;rehlds/ReGameDLL_CS#1210&lt;/a&gt; keeps only that.&lt;/p&gt;
+&lt;h2 id=&quot;set-the-fields-to-a-value-the-marker-never-holds&quot;&gt;Set the fields to a value the marker never holds&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/rehlds/ReGameDLL_CS/pull/1210&quot;&gt;#1210&lt;/a&gt; is open and unmerged. It writes the three fields in &lt;code&gt;Initialize()&lt;/code&gt;, which every constructor calls. &lt;code&gt;0&lt;/code&gt; is never a live marker: &lt;code&gt;m_masterMarker&lt;/code&gt; starts at 1 and &lt;code&gt;MakeNewMarker()&lt;/code&gt; skips 0. A new area stays off the list until &lt;code&gt;AddToOpenList()&lt;/code&gt;.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-cpp&quot;&gt;    // 0 is not a live generation: m_masterMarker starts at 1 and MakeNewMarker() skips 0.
+    m_nextOpen = nullptr;
+    m_prevOpen = nullptr;
+    m_openMarker = 0;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The test &lt;code&gt;NavOpenList::ConstructedAreaIsNotOpen&lt;/code&gt;, in &lt;code&gt;regamedll/unittests/nav_openlist_tests.cpp&lt;/code&gt;, makes that deterministic. It allocates &lt;code&gt;sizeof(CNavArea)&lt;/code&gt;, fills the block with the live marker value &lt;code&gt;1&lt;/code&gt;, constructs a &lt;code&gt;CNavArea&lt;/code&gt; in that memory, and checks &lt;code&gt;IsOpen()&lt;/code&gt; is false. The object is left alive, because &lt;code&gt;~CNavArea()&lt;/code&gt; calls &lt;code&gt;TheCSBots()&lt;/code&gt;.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-cpp&quot;&gt;TEST(ConstructedAreaIsNotOpen, NavOpenList, 1000)
+{
+    void *mem = std::malloc(sizeof(CNavArea));
+    CHECK(&amp;quot;allocation&amp;quot;, mem != nullptr);
+    if (!mem)
+        return;
+
+    unsigned int live = 1;
+    auto *bytes = static_cast&amp;lt;unsigned char *&amp;gt;(mem);
+    for (size_t i = 0; i + sizeof(live) &amp;lt;= sizeof(CNavArea); i += sizeof(live))
+        std::memcpy(bytes + i, &amp;amp;live, sizeof(live));
+
+    CNavArea *area = new (mem) CNavArea();
+    CHECK(&amp;quot;a new area is not on the open list&amp;quot;, !area-&amp;gt;IsOpen());
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I ran the Linux &lt;code&gt;Unittests&lt;/code&gt; build the way &lt;code&gt;build.yml&lt;/code&gt; does, in &lt;code&gt;debian:11-slim&lt;/code&gt;. Without the fix the log is &lt;code&gt;Failure in test 'ConstructedAreaIsNotOpen' : a new area is not on the open list&lt;/code&gt;. With the fix it is &lt;code&gt;There were no test failures; Tests executed: 6&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;the-image-rebuilds-the-library-anyway&quot;&gt;The image rebuilds the library anyway&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/KevinTCoughlin/cs-server/pull/127&quot;&gt;cs-server#127&lt;/a&gt; (&lt;a href=&quot;https://github.com/KevinTCoughlin/cs-server/commit/a2b8175df0b5859a59af7b909ce445058aa88732&quot;&gt;&lt;code&gt;a2b8175&lt;/code&gt;&lt;/a&gt;) clones tag 5.30.0.814, applies &lt;code&gt;scripts/regamedll-nav-openlist.patch&lt;/code&gt;, and installs the rebuilt &lt;code&gt;cs.so&lt;/code&gt; over the copy from the release zip. The patch value-initializes the same three fields on the class:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-cpp&quot;&gt;    // Not on the list until AddToOpenList. m_masterMarker starts at 1 and
+    // MakeNewMarker() never returns to 0, so 0 is not a live generation.
+    // Leaving these uninitialized makes IsOpen() true for leftover heap
+    // and UpdateOnOpenList() follows that m_prevOpen (cs-server#122).
+    CNavArea *m_nextOpen = nullptr;	// only valid if m_openMarker == m_masterMarker
+    CNavArea *m_prevOpen = nullptr;
+    unsigned int m_openMarker = 0;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Default member initializers run before the constructor body. &lt;code&gt;Initialize()&lt;/code&gt; leaves them as they are, so a new area starts with null links and &lt;code&gt;m_openMarker&lt;/code&gt; 0. The Containerfile runs that build at the end of the builder stage. The script and the patch are bind-mounted, so editing the patch re-runs the compile and the copy of &lt;code&gt;/hlds&lt;/code&gt;, and the SteamCMD download stays cached:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-dockerfile&quot;&gt;RUN --mount=type=bind,source=scripts/build-regamedll.sh,target=/usr/local/src/cs-server/build-regamedll.sh \
+    --mount=type=bind,source=scripts/regamedll-nav-openlist.patch,target=/usr/local/src/cs-server/regamedll-nav-openlist.patch \
+    . /usr/local/share/cs-server/game.env &amp;amp;&amp;amp; \
+    [ &amp;quot;${GAME_REGAMEDLL}&amp;quot; != 1 ] || bash /usr/local/src/cs-server/build-regamedll.sh \
+        &amp;quot;${REGAMEDLL_VERSION}&amp;quot; \
+        &amp;quot;/hlds/${GAME}/dlls/cs.so&amp;quot; \
+        /usr/local/src/cs-server/regamedll-nav-openlist.patch
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Before it compiles, the script requires the patched header to contain the initializer:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;grep -q -F 'unsigned int m_openMarker = 0;' \
+    &amp;quot;${src}/regamedll/game_shared/bot/nav_area.h&amp;quot; \
+    || die &amp;quot;patch did not apply to nav_area.h&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&quot;the-unit-test-is-the-evidence&quot;&gt;The unit test is the evidence&lt;/h2&gt;
+&lt;p&gt;I have been running 5.30.0.814 rebuilt with this change on a live server since yesterday without problems. That is too short to say anything about a crash this rare. The unit test is the evidence. Upstream &lt;code&gt;master&lt;/code&gt; keeps the bug until &lt;a href=&quot;https://github.com/rehlds/ReGameDLL_CS/pull/1210&quot;&gt;#1210&lt;/a&gt; merges.&lt;/p&gt;
+&lt;p&gt;A generation compared for equality is safe when a new object starts at a value the counter can never hold. Fill the allocation with the live marker and construct the object in that memory, and the uninitialized field fails on every run. On the server the same crash showed up three times in a few hundred starts.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>A GitHub Pages deploy that missed the artifact it just uploaded</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/github-pages-deploy-artifact-race/"/>
