@@ -1,5 +1,8 @@
 ---
 published: 2026-11-23T16:10:05Z
+tags:
+  - github-actions
+  - tips
 ---
 
 # A GitHub Pages deploy that missed the artifact it just uploaded

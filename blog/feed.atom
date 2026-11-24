@@ -15,6 +15,8 @@
     <id>https://kevintcoughlin.com/blog/github-pages-deploy-artifact-race/</id>
     <published>2026-11-23T16:10:05Z</published>
     <updated>2026-11-23T16:10:05Z</updated>
+    <category term="github-actions"/>
+    <category term="tips"/>
     <summary>The Pages workflow for deathban-pro uploaded the site and then failed. Checkout, staging, and the upload all succeeded. About a second later the deploy step said the artifact wasn't there.</summary>
     <content type="html">&lt;p&gt;The Pages workflow for &lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro&quot;&gt;deathban-pro&lt;/a&gt; uploaded the site and then failed. Checkout, staging, and the upload all succeeded. About a second later the deploy step said the artifact wasn't there.&lt;/p&gt;
 &lt;p&gt;&lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/actions/runs/45110071846&quot;&gt;Run 45110071846&lt;/a&gt; is the deploy of commit &lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/commit/c43913e55d33eb390dd9ec3745c754799d6ed635&quot;&gt;&lt;code&gt;c43913e&lt;/code&gt;&lt;/a&gt;. The upload step finished an artifact named &lt;code&gt;github-pages&lt;/code&gt;. The next step, &lt;code&gt;actions/deploy-pages&lt;/code&gt;, logged:&lt;/p&gt;
@@ -99,6 +101,9 @@ Error: No artifacts named &amp;quot;github-pages&amp;quot; were found for this w
     <id>https://kevintcoughlin.com/blog/cs16-server-apple-silicon/</id>
     <published>2026-11-14T06:51:09Z</published>
     <updated>2026-11-14T06:51:09Z</updated>
+    <category term="containers"/>
+    <category term="homelab"/>
+    <category term="macos"/>
     <summary>I run cs-server, a containerized Counter-Strike 1.6 ScoutzKnivez server on the ReHLDS stack. It lives on a Linux box under Podman and Quadlet. I wanted it to run on a Mac too, with Apple's new container CLI, and the obvious plan was --platform linux/amd64 --rosetta.</summary>
     <content type="html">&lt;p&gt;I run &lt;a href=&quot;https://github.com/KevinTCoughlin/cs-server&quot;&gt;cs-server&lt;/a&gt;, a containerized Counter-Strike 1.6 ScoutzKnivez server on the ReHLDS stack. It lives on a Linux box under Podman and Quadlet. I wanted it to run on a Mac too, with Apple's new &lt;a href=&quot;https://github.com/apple/container&quot;&gt;&lt;code&gt;container&lt;/code&gt;&lt;/a&gt; CLI, and the obvious plan was &lt;code&gt;--platform linux/amd64 --rosetta&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;That plan failed on the first command.&lt;/p&gt;
@@ -175,6 +180,10 @@ qemu: uncaught target signal 11 (Segmentation fault)
     <id>https://kevintcoughlin.com/blog/small-findings/</id>
     <published>2026-11-03T03:20:00Z</published>
     <updated>2026-11-23T01:37:15Z</updated>
+    <category term="containers"/>
+    <category term="github-actions"/>
+    <category term="performance"/>
+    <category term="tips"/>
     <summary>Short notes from side projects. Each one is something I measured or hit, not a general claim.</summary>
     <content type="html">&lt;p&gt;Short notes from side projects. Each one is something I measured or hit, not a general claim.&lt;/p&gt;
 &lt;h2 id=&quot;godot-48-beta-2-makes-my-android-apk-about-6-mb-smaller&quot;&gt;Godot 4.8 beta 2 makes my Android APK about 6 MB smaller&lt;/h2&gt;
@@ -271,6 +280,8 @@ qemu: uncaught target signal 11 (Segmentation fault)
     <id>https://kevintcoughlin.com/blog/lg-c2-black-hdmi-after-cleanyourtv/</id>
     <published>2026-10-26T14:17:02Z</published>
     <updated>2026-11-01T19:03:06Z</updated>
+    <category term="tips"/>
+    <category term="tv"/>
     <summary>I customized my downstairs LG C2 with CleanYourTV. The next morning, my Apple TV would turn on, but selecting its HDMI input left me staring at a black screen.</summary>
     <content type="html">&lt;p&gt;I customized my downstairs LG C2 with CleanYourTV. The next morning, my Apple TV would turn on, but selecting its HDMI input left me staring at a black screen.&lt;/p&gt;
 &lt;p&gt;The TV could see the Apple TV. It could see a video signal. It still wasn't putting that video on the screen.&lt;/p&gt;
@@ -428,6 +439,9 @@ afterSam: f.sdk === '10.3.1' ? 'umediaserver' : (major &amp;gt; 0 &amp;amp;&amp;
     <id>https://kevintcoughlin.com/blog/5x-faster-shell-startup/</id>
     <published>2026-01-18T19:22:33Z</published>
     <updated>2026-01-18T19:22:33Z</updated>
+    <category term="macos"/>
+    <category term="performance"/>
+    <category term="shell"/>
     <summary>My shell took 2.5 seconds to start. Now it takes 0.47 seconds. Here's what I learned.</summary>
     <content type="html">&lt;p&gt;My shell took 2.5 seconds to start. Now it takes 0.47 seconds. Here's what I learned.&lt;/p&gt;
 &lt;h2 id=&quot;the-problem&quot;&gt;The Problem&lt;/h2&gt;
@@ -604,6 +618,10 @@ alias cat=&amp;quot;bat&amp;quot;
     <id>https://kevintcoughlin.com/blog/network-aware-minecraft-server-macos/</id>
     <published>2026-01-18T18:15:54Z</published>
     <updated>2026-01-18T18:15:54Z</updated>
+    <category term="homelab"/>
+    <category term="macos"/>
+    <category term="minecraft"/>
+    <category term="shell"/>
     <summary>I wanted my Minecraft server to automatically start when I connect to my home WiFi, gracefully shut down when I leave, and perform daily maintenance restarts like production game servers. Here's how I set it up on macOS.</summary>
     <content type="html">&lt;p&gt;I wanted my Minecraft server to automatically start when I connect to my home WiFi, gracefully shut down when I leave, and perform daily maintenance restarts like production game servers. Here's how I set it up on macOS.&lt;/p&gt;
 &lt;h2 id=&quot;the-problem&quot;&gt;The Problem&lt;/h2&gt;

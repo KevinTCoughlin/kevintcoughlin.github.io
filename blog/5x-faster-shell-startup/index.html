@@ -104,6 +104,58 @@
       ul.posts h2 {
         margin: 4px 0;
       }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
       footer {
         margin: 64px auto 32px;
         padding-top: 16px;
@@ -127,6 +179,11 @@
       <article>
         <h1>5x Faster Shell Startup: A macOS Developer Environment Audit</h1>
         <time datetime="2026-01-18T19:22:33Z">January 18, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/macos/">macos</a></li>
+          <li><a href="/blog/tags/performance/">performance</a></li>
+          <li><a href="/blog/tags/shell/">shell</a></li>
+        </ul>
 <p>My shell took 2.5 seconds to start. Now it takes 0.47 seconds. Here's what I learned.</p>
 <h2 id="the-problem">The Problem</h2>
 <p>Every new terminal tab felt sluggish. I'd open a tab, wait, then forget what I was about to do. Death by a thousand cuts.</p>
@@ -298,6 +355,8 @@ alias cat=&quot;bat&quot;
       </article>
     </main>
     <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
       <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
     </footer>
   </body>

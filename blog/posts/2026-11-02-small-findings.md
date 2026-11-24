@@ -1,6 +1,11 @@
 ---
 published: 2026-11-03T03:20:00Z
 updated: 2026-11-23T01:37:15Z
+tags:
+  - containers
+  - github-actions
+  - performance
+  - tips
 ---
 
 # Small Findings

@@ -104,6 +104,58 @@
       ul.posts h2 {
         margin: 4px 0;
       }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
       footer {
         margin: 64px auto 32px;
         padding-top: 16px;
@@ -127,6 +179,10 @@
       <article>
         <h1>Fixing a Black HDMI Picture on My LG C2 After Installing CleanYourTV</h1>
         <time datetime="2026-10-26T14:17:02Z">October 26, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/tips/">tips</a></li>
+          <li><a href="/blog/tags/tv/">tv</a></li>
+        </ul>
 <p>I customized my downstairs LG C2 with CleanYourTV. The next morning, my Apple TV would turn on, but selecting its HDMI input left me staring at a black screen.</p>
 <p>The TV could see the Apple TV. It could see a video signal. It still wasn't putting that video on the screen.</p>
 <p>Here's what I checked over SSH, what restored the picture, and the boot workaround I installed afterward.</p>
@@ -279,6 +335,8 @@ afterSam: f.sdk === '10.3.1' ? 'umediaserver' : (major &gt; 0 &amp;&amp; major &
       </article>
     </main>
     <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
       <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
     </footer>
   </body>
