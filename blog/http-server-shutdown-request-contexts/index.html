@@ -226,7 +226,7 @@ case &lt;-ctx.Done():
     return ctx.Err()
 }
 </code></pre>
-<p>When that context is already expired, the <code>select</code> takes <code>ctx.Done()</code> while <code>execute</code> is still inside <code>cmd.Run</code>. The cancel has been signaled. The process is free to exit.</p>
+<p>When the stream holds the drain for the whole 30 seconds, that shared context is already expired. The <code>select</code> takes <code>ctx.Done()</code> and returns <code>ctx.Err()</code> while <code>execute</code> is still inside <code>cmd.Run</code>. The cancel has been signaled. The wait never runs, and the process is free to exit.</p>
 <h2 id="the-stream-that-held-the-drain">The stream that held the drain</h2>
 <p><a href="https://pkg.go.dev/net/http#Server.Shutdown">Shutdown</a> closes listeners, closes idle connections, and waits for the rest to return to idle. A job event stream is in the middle of a response. Its handler returns when the request context ends.</p>
 <p><a href="https://pkg.go.dev/net/http#Server.BaseContext"><code>BaseContext</code></a> is the parent of incoming request contexts. Left nil, that parent is <code>context.Background()</code>. Cancelling the serve context does not reach the stream, so the stream holds <code>Shutdown</code> until the 30 second context expires. The reap then runs on that same context.</p>
@@ -270,8 +270,8 @@ if err := apiServer.jobs.Shutdown(jobCtx); err != nil {
     }
 }
 </code></pre>
-<p><code>cancelWaitDelay</code> is 10 seconds. <code>killProcessGroup</code> sends <code>SIGKILL</code> to <code>-pid</code>, the group. <code>uv</code> execs Python, which shells out to <code>ssh</code> and <code>rsync</code>. Those grandchildren survive the serve process exiting, because they are not in its group. Waiting until <code>cmd.Run</code> returns is what reaps them.</p>
-<p><code>TestRunShutdownWaitsForInFlightJobWithEventStreamOpen</code> holds the event stream open, cancels serve, and fails if <code>Run</code> returns while deploy is still unwinding. The fake deploy sleeps 200 milliseconds after its context is cancelled, so a shutdown that only signals cancel is visible.</p>
+<p><code>cancelWaitDelay</code> is 10 seconds. <code>killProcessGroup</code> is <code>syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)</code>, the group. <code>uv</code> execs Python, which shells out to <code>ssh</code> and <code>rsync</code>. Those grandchildren survive the serve process exiting, because they are not in its group. Waiting until <code>cmd.Run</code> returns is what reaps them.</p>
+<p><code>TestRunShutdownWaitsForInFlightJobWithEventStreamOpen</code> holds <code>GET /v1/jobs/{id}/events</code> open. Its client blocks in <code>Deploy</code> until the job context is cancelled, then sleeps 200 milliseconds. <code>Run</code> has to return within 5 seconds, and only after that sleep. The old path can sit in <code>Shutdown</code> for the full 30 seconds while the stream is open, so the test fails on the previous shutdown code and passes with this change. The pull request's <code>go test -race ./...</code> was clean with a stub <code>uv</code> on <code>PATH</code>. That environment has no <code>uv</code>.</p>
 <p>The fix is <a href="https://github.com/KevinTCoughlin/lazydeck/pull/125">lazydeck#125</a> (<a href="https://github.com/KevinTCoughlin/lazydeck/commit/408c5cacdb8df8292426b45cd9ba5312a3ee3606"><code>408c5ca</code></a>).</p>
 <h2 id="quitting-the-tui-leaked-the-same-way">Quitting the TUI leaked the same way</h2>
 <p>I started the TUI's device commands from <code>context.Background()</code>: status, register, deploy, sync-logs, delete, list-games, discover, connection info, and custom commands. Deploy looked like this:</p>
@@ -280,7 +280,7 @@ defer cancel()
 err := cli.Deploy(ctx, dev.Machine, dev.Login, name, dir, false, nil)
 </code></pre>
 <p><code>q</code> and Ctrl+C returned from Bubble Tea's <code>Run</code> without cancelling those contexts and without waiting. The children sit in their own process group, so they outlived the process too.</p>
-<p>They now share one context, created with <code>context.WithCancel</code> and stored on the model. <code>q</code> and Ctrl+C cancel it, then quit:</p>
+<p>They now share one context, created with <code>context.WithCancel</code> and stored on the model. Each command's timeout is a child of that context. <code>q</code> and Ctrl+C cancel it, then quit:</p>
 <pre><code class="language-go">case &quot;ctrl+c&quot;, &quot;q&quot;:
     if m.gate != nil {
         m.gate.cancel()
@@ -299,10 +299,11 @@ return err
 // so a descendant holding a pipe open is reaped before the process exits.
 const commandShutdownBudget = 15 * time.Second
 </code></pre>
-<p><code>TestQuitTerminatesCustomCommandProcessGroup</code> runs a shell that backgrounds <code>sleep</code> and checks the grandchild is gone after quit and <code>Shutdown</code>.</p>
+<p>Custom commands already set <code>Setpgid</code> and <code>SIGKILL</code> the group on cancel, same as the client. Their <code>WaitDelay</code> is 2 seconds.</p>
+<p><code>TestQuitTerminatesCustomCommandProcessGroup</code> runs a shell that backgrounds <code>sleep 120</code> and checks the grandchild is gone after quit and <code>Shutdown</code>.</p>
 <h2 id="a-panic-skipped-finish">A panic skipped finish</h2>
 <p>In the same change, a panic inside a job's run function skipped <code>finish</code>. The job stayed <code>running</code>, so it was never pruned, and a client watching its event stream waited. The device lock was still released, because <code>releaseDevice</code> is deferred.</p>
-<p><code>execute</code> now recovers, logs the panic value, and finishes the job as failed. The job error is a fixed internal message. The panic text stays in the log:</p>
+<p><code>execute</code> now recovers, logs the panic value, and finishes the job as failed. The job error is a fixed internal message. The panic text stays in the log. <code>finish</code> still runs the completion hook:</p>
 <pre><code class="language-go">defer func() {
     rec := recover()
     if rec == nil {
@@ -316,7 +317,7 @@ const commandShutdownBudget = 15 * time.Second
 }()
 </code></pre>
 <p><code>finish</code> also prunes terminal jobs. Queued and running jobs cannot be evicted, so a burst past the cap used to sit until some later <code>Submit</code>. The cap is still 500.</p>
-<p><code>TestRunPanicFinishesAndReleasesTheDevice</code> panics, checks the job is failed with kind <code>internal</code>, and checks the panic text is absent from the job error. <code>TestPruneOnFinishDropsTerminalJobsWithoutAnotherSubmit</code> fills the manager past the cap, lets the jobs finish, and expects only 500 to remain with no further submit.</p>
+<p><code>TestRunPanicFinishesAndReleasesTheDevice</code> panics with <code>boom secret</code>, checks the job is failed with kind <code>internal</code>, and checks that neither word is in the job error. <code>TestPruneOnFinishDropsTerminalJobsWithoutAnotherSubmit</code> fills the manager past the cap, lets the jobs finish, and expects only 500 to remain with no further submit.</p>
 <p>This is <a href="https://github.com/KevinTCoughlin/lazydeck/pull/126">lazydeck#126</a> (<a href="https://github.com/KevinTCoughlin/lazydeck/commit/c8a1fab2c3257681ad5ecf9b1c63cc24bdd8bb6e"><code>c8a1fab</code></a>).</p>
 <p>If a handler can outlive the deadline you also use to reap subprocesses, give the reap its own context and wait until the goroutine that owns the process has returned. Parent long-lived request contexts on a context you cancel when those handlers should leave. <code>Shutdown</code> will keep waiting until they do.</p>
 

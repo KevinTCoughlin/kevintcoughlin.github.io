@@ -61,7 +61,7 @@ case <-ctx.Done():
 }
 ```
 
-When that context is already expired, the `select` takes `ctx.Done()` while `execute` is still inside `cmd.Run`. The cancel has been signaled. The process is free to exit.
+When the stream holds the drain for the whole 30 seconds, that shared context is already expired. The `select` takes `ctx.Done()` and returns `ctx.Err()` while `execute` is still inside `cmd.Run`. The cancel has been signaled. The wait never runs, and the process is free to exit.
 
 ## The stream that held the drain
 
@@ -119,9 +119,9 @@ func configureCancellation(cmd *exec.Cmd) {
 }
 ```
 
-`cancelWaitDelay` is 10 seconds. `killProcessGroup` sends `SIGKILL` to `-pid`, the group. `uv` execs Python, which shells out to `ssh` and `rsync`. Those grandchildren survive the serve process exiting, because they are not in its group. Waiting until `cmd.Run` returns is what reaps them.
+`cancelWaitDelay` is 10 seconds. `killProcessGroup` is `syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)`, the group. `uv` execs Python, which shells out to `ssh` and `rsync`. Those grandchildren survive the serve process exiting, because they are not in its group. Waiting until `cmd.Run` returns is what reaps them.
 
-`TestRunShutdownWaitsForInFlightJobWithEventStreamOpen` holds the event stream open, cancels serve, and fails if `Run` returns while deploy is still unwinding. The fake deploy sleeps 200 milliseconds after its context is cancelled, so a shutdown that only signals cancel is visible.
+`TestRunShutdownWaitsForInFlightJobWithEventStreamOpen` holds `GET /v1/jobs/{id}/events` open. Its client blocks in `Deploy` until the job context is cancelled, then sleeps 200 milliseconds. `Run` has to return within 5 seconds, and only after that sleep. The old path can sit in `Shutdown` for the full 30 seconds while the stream is open, so the test fails on the previous shutdown code and passes with this change. The pull request's `go test -race ./...` was clean with a stub `uv` on `PATH`. That environment has no `uv`.
 
 The fix is [lazydeck#125](https://github.com/KevinTCoughlin/lazydeck/pull/125) ([`408c5ca`](https://github.com/KevinTCoughlin/lazydeck/commit/408c5cacdb8df8292426b45cd9ba5312a3ee3606)).
 
@@ -137,7 +137,7 @@ err := cli.Deploy(ctx, dev.Machine, dev.Login, name, dir, false, nil)
 
 `q` and Ctrl+C returned from Bubble Tea's `Run` without cancelling those contexts and without waiting. The children sit in their own process group, so they outlived the process too.
 
-They now share one context, created with `context.WithCancel` and stored on the model. `q` and Ctrl+C cancel it, then quit:
+They now share one context, created with `context.WithCancel` and stored on the model. Each command's timeout is a child of that context. `q` and Ctrl+C cancel it, then quit:
 
 ```go
 case "ctrl+c", "q":
@@ -165,13 +165,15 @@ return err
 const commandShutdownBudget = 15 * time.Second
 ```
 
-`TestQuitTerminatesCustomCommandProcessGroup` runs a shell that backgrounds `sleep` and checks the grandchild is gone after quit and `Shutdown`.
+Custom commands already set `Setpgid` and `SIGKILL` the group on cancel, same as the client. Their `WaitDelay` is 2 seconds.
+
+`TestQuitTerminatesCustomCommandProcessGroup` runs a shell that backgrounds `sleep 120` and checks the grandchild is gone after quit and `Shutdown`.
 
 ## A panic skipped finish
 
 In the same change, a panic inside a job's run function skipped `finish`. The job stayed `running`, so it was never pruned, and a client watching its event stream waited. The device lock was still released, because `releaseDevice` is deferred.
 
-`execute` now recovers, logs the panic value, and finishes the job as failed. The job error is a fixed internal message. The panic text stays in the log:
+`execute` now recovers, logs the panic value, and finishes the job as failed. The job error is a fixed internal message. The panic text stays in the log. `finish` still runs the completion hook:
 
 ```go
 defer func() {
@@ -189,7 +191,7 @@ defer func() {
 
 `finish` also prunes terminal jobs. Queued and running jobs cannot be evicted, so a burst past the cap used to sit until some later `Submit`. The cap is still 500.
 
-`TestRunPanicFinishesAndReleasesTheDevice` panics, checks the job is failed with kind `internal`, and checks the panic text is absent from the job error. `TestPruneOnFinishDropsTerminalJobsWithoutAnotherSubmit` fills the manager past the cap, lets the jobs finish, and expects only 500 to remain with no further submit.
+`TestRunPanicFinishesAndReleasesTheDevice` panics with `boom secret`, checks the job is failed with kind `internal`, and checks that neither word is in the job error. `TestPruneOnFinishDropsTerminalJobsWithoutAnotherSubmit` fills the manager past the cap, lets the jobs finish, and expects only 500 to remain with no further submit.
 
 This is [lazydeck#126](https://github.com/KevinTCoughlin/lazydeck/pull/126) ([`c8a1fab`](https://github.com/KevinTCoughlin/lazydeck/commit/c8a1fab2c3257681ad5ecf9b1c63cc24bdd8bb6e)).
 
