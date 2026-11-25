@@ -177,8 +177,17 @@
     </header>
     <main class="shell">
       <h1>tips</h1>
-      <p class="meta">5 posts · <a href="/blog/tags/">All tags</a></p>
+      <p class="meta">6 posts · <a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
+        <li>
+          <time datetime="2026-11-25T16:10:00Z">November 25, 2026</time>
+          <h2><a href="/blog/circuit-breaker-publisher-feeds-one-probe/">Bad publisher feeds were opening the circuit breaker for iTunes</a></h2>
+          <p>Five broken publisher feeds in a row used to open the circuit breaker in podr-service for 30 seconds. Search (/?q=), top podcasts (/?q=toppodcasts), and /podcast/{id} share that breaker with iTunes and Podcast Index, so they returned 500, or a cached entry still inside ttl + STALE_SECONDS. The log called the publisher failure an iTunes API error.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/python/">python</a></li>
+            <li><a href="/blog/tags/tips/" aria-current="page">tips</a></li>
+          </ul>
+        </li>
         <li>
           <time datetime="2026-11-25T04:02:00Z">November 25, 2026</time>
           <h2><a href="/blog/trivy-action-sarif-ignores-severity/">trivy-action ignored the severity I set when it uploaded SARIF</a></h2>

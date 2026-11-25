@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Five broken publisher feeds in a row used to open the circuit breaker in podr-service for 30 seconds. Search (/?q=), top podcasts (/?q=toppodcasts), and /podcast/{id} share that breaker with iTunes and Podcast Index, so they returned 500, or a cached entry still inside ttl + STALE_SECONDS. The log called the publisher failure an iTunes API error." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/circuit-breaker-publisher-feeds-one-probe/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Bad publisher feeds were opening the circuit breaker for iTunes — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>Bad publisher feeds were opening the circuit breaker for iTunes</h1>
+        <time datetime="2026-11-25T16:10:00Z">November 25, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/python/">python</a></li>
+          <li><a href="/blog/tags/tips/">tips</a></li>
+        </ul>
+<p>Five broken publisher feeds in a row used to open the circuit breaker in <a href="https://github.com/cascadiacollections/podr-service">podr-service</a> for 30 seconds. Search (<code>/?q=</code>), top podcasts (<code>/?q=toppodcasts</code>), and <code>/podcast/{id}</code> share that breaker with iTunes and Podcast Index, so they returned 500, or a cached entry still inside <code>ttl + STALE_SECONDS</code>. The log called the publisher failure an iTunes API error.</p>
+<p>One <code>CircuitBreaker</code> lives on the Worker isolate. <code>/health</code> reports it as <code>circuitBreaker</code>. <code>failure()</code> opens it at <code>failures &gt;= 5</code>, and the open state rests for 30 seconds. With <code>podcastSummaries</code> on, detail also fetches the iTunes <code>feedUrl</code> through <code>rss_description()</code>, on the same cached upstream as search, top, and detail. <code>get()</code> defaults <code>proxy</code> to <code>True</code>, so a status of 400 or more was raised as <code>iTunes API error</code>. <code>rss_description()</code> logs that and returns no summary. <code>except Exception</code> still called <code>failure()</code>, and a 200 called <code>success()</code>, which cleared the counter and closed the breaker. <code>feed()</code> already skipped <code>CachedUpstream</code>. Its docstring says a caller-supplied URL must not take iTunes down with it.</p>
+<h2 id="only-count-failures-of-the-dependency-the-breaker-protects">Only count failures of the dependency the breaker protects</h2>
+<p>I stopped counting those fetches in <a href="https://github.com/cascadiacollections/podr-service/pull/719">podr-service#719</a> (<a href="https://github.com/cascadiacollections/podr-service/commit/bed0cd30dd4dcecbb7927c44db0f20dabc5b2c6a"><code>bed0cd3</code></a>). They still use the cache. <code>breaker=False</code> skips <code>failure()</code> and <code>success()</code>.</p>
+<p>Before:</p>
+<pre><code class="language-python">response, _ = await self.upstream.get(url, TTL_DETAIL, header_only=True)
+</code></pre>
+<pre><code class="language-python">provider = &quot;iTunes&quot; if proxy else &quot;Podcast Index&quot;
+raise UpstreamError(f&quot;{provider} API error: {response.status} {response.reason}&quot;)
+</code></pre>
+<pre><code class="language-python">except Exception:
+    self.circuit.failure()
+    raise
+self.circuit.success()
+</code></pre>
+<p>After, same commit. The comment is on the call in <code>rss_description()</code>:</p>
+<pre><code class="language-python"># The URL belongs to the publisher. Counting it on the shared breaker
+# would let a few broken feeds rest iTunes and Podcast Index, and the
+# failure is not an error from either API.
+response, _ = await self.upstream.get(url, TTL_DETAIL, header_only=True, breaker=False)
+</code></pre>
+<pre><code class="language-python">if breaker:
+    provider = &quot;iTunes&quot; if proxy else &quot;Podcast Index&quot;
+    label = f&quot;{provider} API error&quot;
+else:
+    label = &quot;Feed error&quot;
+raise UpstreamError(f&quot;{label}: {response.status} {response.reason}&quot;)
+</code></pre>
+<pre><code class="language-python">except asyncio.CancelledError:
+    if probe:
+        self.circuit.cancel_probe()
+    raise
+except Exception:
+    if breaker:
+        self.circuit.failure()
+    raise
+if breaker:
+    self.circuit.success()
+</code></pre>
+<p><code>breaker</code> defaults to <code>True</code>, so search, top, and detail still move it. A publisher 404 is now <code>Feed error: 404</code>. A connect error or a read timeout raises as itself, and <code>rss_description()</code> still logs <code>RSS description unavailable</code>. The new test sends 404, 500, 503, a connect error, a read timeout, and 502, then checks the breaker is <code>&quot;closed&quot;</code>, <code>failures</code> is 0, and <code>/?q=python</code> returns 200. A successful fetch leaves a count of 4 where it was, and leaves an open breaker open. iTunes and Podcast Index still share the field <code>/health</code> reports, so an outage on either side can still rest the other.</p>
+<h2 id="half-open-should-admit-one-probe">Half-open should admit one probe</h2>
+<p>The old <code>is_open()</code> checked the rest and let callers through. <code>get()</code> fetches when it returns false:</p>
+<pre><code class="language-python">def is_open(self):
+    if self.state == &quot;open&quot; and time.time() - self.last_failure &gt;= 30:
+        self.state = &quot;half-open&quot;
+    return self.state == &quot;open&quot;
+</code></pre>
+<p>The call that ends the 30 seconds sets <code>&quot;half-open&quot;</code> and gets false back. Every later caller does too, because the return is <code>self.state == &quot;open&quot;</code>. They hit upstream together.</p>
+<p><code>is_open()</code> now only answers. <code>&quot;half-open&quot;</code> stays off upstream, and so does <code>&quot;open&quot;</code> while <code>time.time() - self.last_failure &lt; 30</code>. A fresh cache hit returns from <code>get()</code> before <code>_fetch</code>, so the probe stays available. The test uses a fresh entry with <code>last_failure</code> 31 seconds ago and checks the state is still <code>&quot;open&quot;</code> with no upstream call. The next miss is the probe.</p>
+<p><code>admit()</code> reserves that one attempt, and it does not await:</p>
+<pre><code class="language-python">def admit(self):
+    &quot;&quot;&quot;Reserve one upstream attempt. Half-open keeps the rest waiting.&quot;&quot;&quot;
+    if self.state == &quot;closed&quot;:
+        return True
+    if self.state == &quot;open&quot; and time.time() - self.last_failure &gt;= 30:
+        self.state = &quot;half-open&quot;
+        return True
+    return False
+</code></pre>
+<p>A second request during the probe gets 500 and <code>Service temporarily unavailable</code>, with one upstream call. <code>failure()</code> on a failed probe sets <code>last_failure</code> to now and opens the breaker again, because the state is <code>&quot;half-open&quot;</code>. The following request does not call upstream. The pull request's 503 case checks that.</p>
+<p>A cancelled probe has no result to count. <code>cancel_probe()</code> returns the state to <code>&quot;open&quot;</code> and leaves <code>last_failure</code> where it was:</p>
+<pre><code class="language-python">def cancel_probe(self):
+    &quot;&quot;&quot;The probe ended without a result. Leave the rest window where it was.&quot;&quot;&quot;
+    if self.state == &quot;half-open&quot;:
+        self.state = &quot;open&quot;
+</code></pre>
+<p>Otherwise the breaker would sit in <code>&quot;half-open&quot;</code>. <code>is_open()</code> keeps later callers off upstream there, and <code>admit()</code> only starts a probe from <code>&quot;open&quot;</code>.</p>
+<p>The docstring on <code>is_open()</code> says this needs no lock. <code>admit()</code> does not await, and a Worker isolate has one event loop, so a second caller cannot pass <code>admit()</code> before the state is <code>&quot;half-open&quot;</code>. On a cache miss, <code>get()</code> calls <code>admit()</code> before it awaits the fetch. While the breaker is <code>&quot;closed&quot;</code>, <code>admit()</code> returns immediately and concurrent misses each still fetch. <code>refreshing</code> de-duplicates revalidation only on the <code>Podcasts</code> object <code>fetch()</code> builds per request.</p>
+<p>Only count failures of the dependency the breaker protects. Half-open should admit one probe.</p>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>
