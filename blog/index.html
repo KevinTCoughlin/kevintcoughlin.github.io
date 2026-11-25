@@ -180,6 +180,16 @@
       <p class="meta"><a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
         <li>
+          <time datetime="2026-11-25T17:19:00Z">November 25, 2026</time>
+          <h2><a href="/blog/shoutkit-underrun-volume-dip/">Why my radio app dipped to 1/14 volume on every network blip</a></h2>
+          <p>In ShoutKit I fade player.volume in from silence when a station rejoins, so the live edge does not arrive as a click. A buffer underrun reports .playing again, and the rejoin fade treated that as a fresh start. The stream came back at full volume, the fade waited one step, then set the volume to 1/14 and swelled back to full. shoutkit#274 runs the fade only after the player was silenced.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/audio/">audio</a></li>
+            <li><a href="/blog/tags/ios/">ios</a></li>
+            <li><a href="/blog/tags/swift/">swift</a></li>
+          </ul>
+        </li>
+        <li>
           <time datetime="2026-11-25T07:00:00Z">November 25, 2026</time>
           <h2><a href="/blog/track-solver-a-third-faster-same-answers/">I Made My Track Solver a Third Faster Without Changing One Answer</a></h2>
           <p>I'm building a racing game in Rust and Godot, a sibling to Salt Line. Every track in it is generated, and every generated track is proven drivable before a player sees it. Proving is slow: a late track costs about four million physics ticks, and a phone does that while the player looks at a menu.</p>
