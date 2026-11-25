@@ -180,6 +180,15 @@
       <p class="meta"><a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
         <li>
+          <time datetime="2026-11-25T17:20:00Z">November 25, 2026</time>
+          <h2><a href="/blog/material-icons-extended-debug-apk/">I stopped dexing every Material icon in the ShoutKit debug build</a></h2>
+          <p>ShoutKit depended on material-icons-extended for a handful of icons. The phone app uses 31 and the watch app 3. Release builds shrink the rest away. Debug builds dex the whole library, and that dex is where CI ran out of heap.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/android/">android</a></li>
+            <li><a href="/blog/tags/performance/">performance</a></li>
+          </ul>
+        </li>
+        <li>
           <time datetime="2026-11-25T07:00:00Z">November 25, 2026</time>
           <h2><a href="/blog/track-solver-a-third-faster-same-answers/">I Made My Track Solver a Third Faster Without Changing One Answer</a></h2>
           <p>I'm building a racing game in Rust and Godot, a sibling to Salt Line. Every track in it is generated, and every generated track is proven drivable before a player sees it. Proving is slow: a late track costs about four million physics ticks, and a phone does that while the player looks at a menu.</p>

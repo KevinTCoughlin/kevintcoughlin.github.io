@@ -4,11 +4,101 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-25T07:00:00Z</updated>
+  <updated>2026-11-25T17:20:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>I stopped dexing every Material icon in the ShoutKit debug build</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/material-icons-extended-debug-apk/"/>
+    <id>https://kevintcoughlin.com/blog/material-icons-extended-debug-apk/</id>
+    <published>2026-11-25T17:20:00Z</published>
+    <updated>2026-11-25T17:20:00Z</updated>
+    <category term="android"/>
+    <category term="performance"/>
+    <summary>ShoutKit depended on material-icons-extended for a handful of icons. The phone app uses 31 and the watch app 3. Release builds shrink the rest away. Debug builds dex the whole library, and that dex is where CI ran out of heap.</summary>
+    <content type="html">&lt;p&gt;&lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android&quot;&gt;ShoutKit&lt;/a&gt; depended on &lt;code&gt;material-icons-extended&lt;/code&gt; for a handful of icons. The phone app uses 31 and the watch app 3. Release builds shrink the rest away. Debug builds dex the whole library, and that dex is where CI ran out of heap.&lt;/p&gt;
+&lt;h2 id=&quot;the-library-is-the-whole-catalog&quot;&gt;The library is the whole catalog&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;androidx.compose.material:material-icons-extended&lt;/code&gt; 1.7.8 is the last release on Google's Maven. The metadata lists &lt;code&gt;latest&lt;/code&gt; as 1.7.8 and &lt;code&gt;lastUpdated&lt;/code&gt; as 2025-02-12. &lt;code&gt;material-icons-core&lt;/code&gt; stopped at the same version. The 1.7.8 extended sources contain 11,105 &lt;code&gt;public val Icons&lt;/code&gt; properties. &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/pull/343&quot;&gt;shoutkit-android#343&lt;/a&gt; and the commit below both call that about 11,000 icons.&lt;/p&gt;
+&lt;p&gt;The phone app turns minify and resource shrinking on for the release build type only:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-kotlin&quot;&gt;release {
+    isMinifyEnabled = true
+    isShrinkResources = true
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Debug leaves both at the Android Gradle Plugin default, so the dex step sees every icon in the dependency.&lt;/p&gt;
+&lt;p&gt;On &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/pull/342&quot;&gt;#342&lt;/a&gt;, one push failed two jobs. &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/pull/343&quot;&gt;#343&lt;/a&gt; records them. The build job hit &lt;code&gt;Error while dexing&lt;/code&gt; &lt;code&gt;material-icons-extended&lt;/code&gt; in &lt;code&gt;:app:mergeExtDexPlayDebug&lt;/code&gt; and &lt;code&gt;:cast:mergeExtDexPlayDebug&lt;/code&gt;. CodeQL's autobuild hit &lt;code&gt;java.lang.OutOfMemoryError: Java heap space&lt;/code&gt;. Both passed on a re-run with no code change. That pull request raised &lt;code&gt;org.gradle.jvmargs&lt;/code&gt; from &lt;code&gt;-Xmx4g&lt;/code&gt; to &lt;code&gt;-Xmx6g&lt;/code&gt; and capped the Kotlin daemon at &lt;code&gt;-Xmx3g&lt;/code&gt;. It also says the real fix is to stop shipping the library. That change is &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/commit/9703448ed60085b7e56b69adc762e9ceb554346f&quot;&gt;&lt;code&gt;9703448&lt;/code&gt;&lt;/a&gt;, merged as &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/pull/345&quot;&gt;#345&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;fourteen-stay-in-core-seventeen-are-copied&quot;&gt;Fourteen stay in core, seventeen are copied&lt;/h2&gt;
+&lt;p&gt;After the change, fourteen phone icons are still imported from &lt;code&gt;androidx.compose.material.icons&lt;/code&gt;, and all fourteen are in the 1.7.8 core sources: Add, ArrowBack, Check, Clear, Close, Delete, Favorite, FavoriteBorder, MoreVert, PlayArrow, Refresh, Search, Settings, and Share. ArrowBack is the automirrored one. Core stays on the phone app.&lt;/p&gt;
+&lt;p&gt;The other seventeen are not in those core sources. They are copied from the 1.7.8 extended sources into &lt;code&gt;com.cascadiacollections.sir.ui.icons&lt;/code&gt;: Backup, Bedtime, ContentCopy, DragHandle, FileDownload, FileUpload, FilterList, GraphicEq, History, LibraryMusic, MusicNote, Pause, PlayCircle, QueueMusic, Radio, Stop, and WifiOff. Sixteen are &lt;code&gt;Icons.Filled&lt;/code&gt;. QueueMusic is &lt;code&gt;Icons.AutoMirrored.Filled&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The watch app uses three: PlayArrow from core, plus Pause and Stop. The wear module does not depend on the phone app, so Pause and Stop are copied again into &lt;code&gt;com.cascadiacollections.sir.wear.icons&lt;/code&gt;, and wear depends on core instead of extended.&lt;/p&gt;
+&lt;p&gt;Call sites keep &lt;code&gt;Icons.Default&lt;/code&gt;, &lt;code&gt;Icons.Filled&lt;/code&gt;, and &lt;code&gt;Icons.AutoMirrored.Filled&lt;/code&gt;. &lt;code&gt;SirTab&lt;/code&gt; still says &lt;code&gt;Icons.Default.PlayCircle&lt;/code&gt;. The import is what moves:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-kotlin&quot;&gt;import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import com.cascadiacollections.sir.ui.icons.LibraryMusic
+import com.cascadiacollections.sir.ui.icons.PlayCircle
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;Stop.kt&lt;/code&gt; is the shortest copy. The Apache-2.0 header above this comment is the upstream header, unchanged. The path data is the 1.7.8 path. Upstream declares &lt;code&gt;public val&lt;/code&gt;. The copy drops &lt;code&gt;public&lt;/code&gt; and adds the suppression.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-kotlin&quot;&gt;// Copied from androidx.compose.material:material-icons-extended 1.7.8, package
+// androidx.compose.material.icons.filled, so the app can use this icon without depending
+// on the whole library. Changes from the original: the package, no explicit `public`,
+// and the lint suppression below (the cache field's name is upstream's).
+@file:Suppress(&amp;quot;BackingPropertyNaming&amp;quot;)
+
+package com.cascadiacollections.sir.ui.icons
+
+val Icons.Filled.Stop: ImageVector
+    get() {
+        if (_stop != null) {
+            return _stop!!
+        }
+        _stop = materialIcon(name = &amp;quot;Filled.Stop&amp;quot;) {
+            materialPath {
+                moveTo(6.0f, 6.0f)
+                horizontalLineToRelative(12.0f)
+                verticalLineToRelative(12.0f)
+                horizontalLineTo(6.0f)
+                close()
+            }
+        }
+        return _stop!!
+    }
+
+private var _stop: ImageVector? = null
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;REUSE.toml&lt;/code&gt; marks both directories Apache-2.0:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-toml&quot;&gt;[[annotations]]
+path = [
+    &amp;quot;app/src/main/java/com/cascadiacollections/sir/ui/icons/**&amp;quot;,
+    &amp;quot;wear/src/main/java/com/cascadiacollections/sir/wear/icons/**&amp;quot;,
+]
+precedence = &amp;quot;override&amp;quot;
+SPDX-FileCopyrightText = &amp;quot;The Android Open Source Project&amp;quot;
+SPDX-License-Identifier = &amp;quot;Apache-2.0&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The phone app drops the extended dependency and keeps core:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-kotlin&quot;&gt;implementation(libs.androidx.compose.material.icons.core)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The wear module's dependency changes from extended to that same core artifact. The catalog entry for &lt;code&gt;material-icons-extended&lt;/code&gt; is removed.&lt;/p&gt;
+&lt;h2 id=&quot;the-debug-apk&quot;&gt;The debug APK&lt;/h2&gt;
+&lt;p&gt;The commit message says the FOSS debug APK went from 35.1 MB to 22.7 MB. &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/pull/345&quot;&gt;#345&lt;/a&gt; says that before figure came from an incremental build and overstates it. The like-for-like run is one workstation, FOSS flavour, &lt;code&gt;main&lt;/code&gt; at &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/commit/ff30d27ddb907631e54f8e0adf8fced2c393fdee&quot;&gt;&lt;code&gt;ff30d27&lt;/code&gt;&lt;/a&gt; against the branch, each with &lt;code&gt;--rerun-tasks --no-build-cache&lt;/code&gt;:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;&lt;/th&gt;&lt;th&gt;Before&lt;/th&gt;&lt;th&gt;After&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Debug APK&lt;/td&gt;&lt;td&gt;29,397,070 bytes&lt;/td&gt;&lt;td&gt;22,728,773 bytes&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Debug dex, uncompressed&lt;/td&gt;&lt;td&gt;85.2 MB&lt;/td&gt;&lt;td&gt;54.0 MB&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Methods defined in the debug APK&lt;/td&gt;&lt;td&gt;236,017&lt;/td&gt;&lt;td&gt;213,150&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;of which &lt;code&gt;androidx.compose.material.icons&lt;/code&gt;&lt;/td&gt;&lt;td&gt;23,529 (13.7 MB of dex)&lt;/td&gt;&lt;td&gt;628 (0.25 MB)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Release APK&lt;/td&gt;&lt;td&gt;4,278,226 bytes&lt;/td&gt;&lt;td&gt;4,278,226 bytes&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;22,728,773 bytes is the 22.7 MB in the commit message. The release APK is the same size both ways, because R8 was already dropping the unused icons. The same pull request also timed a clean debug build, one run each: 78.7 s to 71.0 s with a cold daemon, and 21.4 s to 19.6 s with a warm one. It says to read that as a little faster.&lt;/p&gt;
+&lt;p&gt;Nobody compared the icons on a screen. The vectors match the 1.7.8 sources, and the watch app was only compiled.&lt;/p&gt;
+&lt;p&gt;The 6 GB heap from #343 is still in &lt;code&gt;gradle.properties&lt;/code&gt;. The dex that ran out of memory was this library.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>I Made My Track Solver a Third Faster Without Changing One Answer</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/track-solver-a-third-faster-same-answers/"/>
