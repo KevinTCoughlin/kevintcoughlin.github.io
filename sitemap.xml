@@ -52,7 +52,39 @@
     <lastmod>2026-11-25</lastmod>
   </url>
   <url>
+    <loc>https://kevintcoughlin.com/blog/http-server-shutdown-request-contexts/</loc>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
+    <loc>https://kevintcoughlin.com/blog/shoutkit-underrun-volume-dip/</loc>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
+    <loc>https://kevintcoughlin.com/blog/dont-flip-the-jvm-flag/</loc>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
+    <loc>https://kevintcoughlin.com/blog/saltline-button-and-overflow/</loc>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
+    <loc>https://kevintcoughlin.com/blog/scorecard-safe-test-comment/</loc>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
+    <loc>https://kevintcoughlin.com/blog/shipped-11105-icons-to-use-17/</loc>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
     <loc>https://kevintcoughlin.com/blog/tags/</loc>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
+    <loc>https://kevintcoughlin.com/blog/tags/android/</loc>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
+    <loc>https://kevintcoughlin.com/blog/tags/audio/</loc>
     <lastmod>2026-11-25</lastmod>
   </url>
   <url>
@@ -60,12 +92,24 @@
     <lastmod>2026-11-25</lastmod>
   </url>
   <url>
+    <loc>https://kevintcoughlin.com/blog/tags/gamedev/</loc>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
     <loc>https://kevintcoughlin.com/blog/tags/github-actions/</loc>
     <lastmod>2026-11-25</lastmod>
   </url>
   <url>
+    <loc>https://kevintcoughlin.com/blog/tags/golang/</loc>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
     <loc>https://kevintcoughlin.com/blog/tags/homelab/</loc>
-    <lastmod>2026-11-14</lastmod>
+    <lastmod>2026-11-25</lastmod>
+  </url>
+  <url>
+    <loc>https://kevintcoughlin.com/blog/tags/ios/</loc>
+    <lastmod>2026-11-25</lastmod>
   </url>
   <url>
     <loc>https://kevintcoughlin.com/blog/tags/macos/</loc>
@@ -73,7 +117,7 @@
   </url>
   <url>
     <loc>https://kevintcoughlin.com/blog/tags/minecraft/</loc>
-    <lastmod>2026-01-18</lastmod>
+    <lastmod>2026-11-25</lastmod>
   </url>
   <url>
     <loc>https://kevintcoughlin.com/blog/tags/performance/</loc>
@@ -90,6 +134,10 @@
   <url>
     <loc>https://kevintcoughlin.com/blog/tags/shell/</loc>
     <lastmod>2026-01-18</lastmod>
+  </url>
+  <url>
+    <loc>https://kevintcoughlin.com/blog/tags/swift/</loc>
+    <lastmod>2026-11-25</lastmod>
   </url>
   <url>
     <loc>https://kevintcoughlin.com/blog/tags/tips/</loc>

@@ -4,11 +4,518 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-25T16:10:00Z</updated>
+  <updated>2026-11-25T17:25:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>I shipped 11,105 icons to use 17</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/shipped-11105-icons-to-use-17/"/>
+    <id>https://kevintcoughlin.com/blog/shipped-11105-icons-to-use-17/</id>
+    <published>2026-11-25T17:25:00Z</published>
+    <updated>2026-11-25T17:25:00Z</updated>
+    <category term="android"/>
+    <category term="performance"/>
+    <category term="tips"/>
+    <summary>Shoutkit's phone app draws 31 Material icons, and the watch app draws three: PlayArrow, Pause, and Stop. Fourteen of the phone's icons come from material-icons-core. The other seventeen came from material-icons-extended. The 1.7.8 Android archive of that library is 11,105 icon classes. Release builds shrink the unused ones away. Debug builds dex every class, and that step is where CI ran out of heap. Copying the seventeen and dropping the dependency took the FOSS debug APK from 29,397,070 bytes to 22,728,773.</summary>
+    <content type="html">&lt;p&gt;&lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android&quot;&gt;Shoutkit&lt;/a&gt;'s phone app draws 31 Material icons, and the watch app draws three: PlayArrow, Pause, and Stop. Fourteen of the phone's icons come from &lt;code&gt;material-icons-core&lt;/code&gt;. The other seventeen came from &lt;code&gt;material-icons-extended&lt;/code&gt;. The 1.7.8 Android archive of that library is 11,105 icon classes. Release builds shrink the unused ones away. Debug builds dex every class, and that step is where CI ran out of heap. Copying the seventeen and dropping the dependency took the FOSS debug APK from 29,397,070 bytes to 22,728,773.&lt;/p&gt;
+&lt;p&gt;The phone app turns minify and resource shrinking on for the release build type only:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-kotlin&quot;&gt;release {
+    isMinifyEnabled = true
+    isShrinkResources = true
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Debug leaves both at the Android Gradle Plugin default, so the dex step sees every icon in the dependency.&lt;/p&gt;
+&lt;h2 id=&quot;where-the-heap-went&quot;&gt;Where the heap went&lt;/h2&gt;
+&lt;p&gt;A push on &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/pull/342&quot;&gt;#342&lt;/a&gt; failed two jobs. The build died with &lt;code&gt;Error while dexing&lt;/code&gt; on &lt;code&gt;material-icons-extended&lt;/code&gt;, in &lt;code&gt;:app:mergeExtDexPlayDebug&lt;/code&gt; and &lt;code&gt;:cast:mergeExtDexPlayDebug&lt;/code&gt;. CodeQL's autobuild died with &lt;code&gt;java.lang.OutOfMemoryError: Java heap space&lt;/code&gt;. Both passed on a rerun. The Gradle heap was 4 GB. &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/pull/343&quot;&gt;#343&lt;/a&gt; raised &lt;code&gt;org.gradle.jvmargs&lt;/code&gt; to &lt;code&gt;-Xmx6g&lt;/code&gt; and set &lt;code&gt;kotlin.daemon.jvmargs=-Xmx3g&lt;/code&gt;, so the Kotlin compile daemon, a second JVM, fits a 16 GB runner alongside Gradle. The icon library stayed. That write-up called it about 11,000 icons, of which the app used 32, and left the replacement for a later change.&lt;/p&gt;
+&lt;p&gt;The removal counted 31 on the phone and 3 on the watch. &lt;code&gt;material-icons-extended-android&lt;/code&gt; 1.7.8 contains 11,105 classes, one &lt;code&gt;val Icons&lt;/code&gt; property each: 2,083 names in each of filled, outlined, rounded, sharp, and twotone, and 138 automirrored icons in each of those styles. None of those names are the fourteen the phone imports from core. Compose BOM &lt;code&gt;2026.09.00&lt;/code&gt;, the version in the &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/blob/9703448ed60085b7e56b69adc762e9ceb554346f/gradle/libs.versions.toml&quot;&gt;catalog&lt;/a&gt;, still resolves both icon artifacts to 1.7.8, and 1.7.8 is the latest release on Google's Maven repository. The metadata was last updated on 2025-02-12. The &lt;a href=&quot;https://dl.google.com/dl/android/maven2/androidx/compose/material/material-icons-extended-android/1.7.8/material-icons-extended-android-1.7.8.pom&quot;&gt;POM&lt;/a&gt; says the module is a very large dependency and should not be included directly.&lt;/p&gt;
+&lt;h2 id=&quot;the-seventeen-copies&quot;&gt;The seventeen copies&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/pull/345&quot;&gt;#345&lt;/a&gt; (&lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/commit/9703448ed60085b7e56b69adc762e9ceb554346f&quot;&gt;&lt;code&gt;9703448&lt;/code&gt;&lt;/a&gt;) removes &lt;code&gt;material-icons-extended&lt;/code&gt; from the phone app, the watch app, and the version catalog. The watch module depends on &lt;code&gt;material-icons-core&lt;/code&gt; on its own. The seventeen icons are copied from the 1.7.8 sources into &lt;code&gt;com.cascadiacollections.sir.ui.icons&lt;/code&gt;: Backup, Bedtime, ContentCopy, DragHandle, FileDownload, FileUpload, FilterList, GraphicEq, History, LibraryMusic, MusicNote, Pause, PlayCircle, QueueMusic, Radio, Stop, and WifiOff. Sixteen are &lt;code&gt;Icons.Filled&lt;/code&gt;. QueueMusic is &lt;code&gt;Icons.AutoMirrored.Filled&lt;/code&gt;, the variant the library screen already used. Pause and Stop are copied again into &lt;code&gt;com.cascadiacollections.sir.wear.icons&lt;/code&gt;, because the two apps share no Compose code. The watch's third icon, PlayArrow, stays on core. Call sites keep writing &lt;code&gt;Icons.Default&lt;/code&gt; (an alias for &lt;code&gt;Icons.Filled&lt;/code&gt;) and &lt;code&gt;Icons.AutoMirrored.Filled&lt;/code&gt;, and change the import. The phone app drops the extended dependency and keeps core:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-kotlin&quot;&gt;implementation(libs.androidx.compose.material.icons.core)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The fourteen that stay on core are Add, ArrowBack (automirrored), Check, Clear, Close, Delete, Favorite, FavoriteBorder, MoreVert, PlayArrow, Refresh, Search, Settings, and Share.&lt;/p&gt;
+&lt;p&gt;Under the Apache-2.0 header, &lt;code&gt;Pause&lt;/code&gt; says where it came from and what changed:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-kotlin&quot;&gt;// Copied from androidx.compose.material:material-icons-extended 1.7.8, package
+// androidx.compose.material.icons.filled, so the app can use this icon without depending
+// on the whole library. Changes from the original: the package, no explicit `public`,
+// and the lint suppression below (the cache field's name is upstream's).
+@file:Suppress(&amp;quot;BackingPropertyNaming&amp;quot;)
+
+val Icons.Filled.Pause: ImageVector
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;REUSE.toml&lt;/code&gt; marks both directories Apache-2.0, so those terms stay on the copies inside the GPL-3.0 apps:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-toml&quot;&gt;# Material icons copied from androidx.compose.material:material-icons-extended 1.7.8, so the
+# apps ship the 17 icons they use instead of the whole library. Apache-2.0, as each file's
+# header says; they keep those terms inside the GPL-3.0 apps.
+[[annotations]]
+path = [
+    &amp;quot;app/src/main/java/com/cascadiacollections/sir/ui/icons/**&amp;quot;,
+    &amp;quot;wear/src/main/java/com/cascadiacollections/sir/wear/icons/**&amp;quot;,
+]
+precedence = &amp;quot;override&amp;quot;
+SPDX-FileCopyrightText = &amp;quot;The Android Open Source Project&amp;quot;
+SPDX-License-Identifier = &amp;quot;Apache-2.0&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&quot;what-the-clean-build-measured&quot;&gt;What the clean build measured&lt;/h2&gt;
+&lt;p&gt;The commit message says the FOSS debug APK went from 35.1 MB to 22.7 MB. &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/pull/345&quot;&gt;#345&lt;/a&gt; measured both sides clean, &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/commit/ff30d27ddb907631e54f8e0adf8fced2c393fdee&quot;&gt;&lt;code&gt;ff30d27&lt;/code&gt;&lt;/a&gt; on &lt;code&gt;main&lt;/code&gt; against the branch, each with &lt;code&gt;--rerun-tasks --no-build-cache&lt;/code&gt;. The before size in that run is 29,397,070 bytes. The 35.1 MB figure came from an incremental build.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;&lt;/th&gt;&lt;th align=&quot;right&quot;&gt;Before&lt;/th&gt;&lt;th align=&quot;right&quot;&gt;After&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;FOSS debug APK&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;29,397,070 B&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;22,728,773 B&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Debug dex, uncompressed&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;85.2 MB&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;54.0 MB&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Methods defined in the debug APK&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;236,017&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;213,150&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;androidx.compose.material.icons&lt;/code&gt; methods&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;23,529 (13.7 MB of dex)&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;628 (0.25 MB)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Release APK&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;4,278,226 B&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;4,278,226 B&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;The release APK is the same 4,278,226 bytes. R8 was already removing the unused icons, so the bytes that moved are in the debug APK, which is what CI dexes. The debug APK is 6,668,297 bytes smaller, 22.7%. One clean debug build was a little faster, 78.7 s to 71.0 s with a cold daemon and 21.4 s to 19.6 s warm. Those are one run each.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;detekt&lt;/code&gt;, &lt;code&gt;:app:lintPlayDebug&lt;/code&gt;, &lt;code&gt;:wear:lintDebug&lt;/code&gt;, &lt;code&gt;:app:testFossDebugUnitTest&lt;/code&gt;, &lt;code&gt;:wear:testDebugUnitTest&lt;/code&gt;, &lt;code&gt;:app:assembleFossDebug&lt;/code&gt;, and &lt;code&gt;:wear:assembleDebug&lt;/code&gt; passed locally, and so did &lt;code&gt;reuse lint&lt;/code&gt; and &lt;code&gt;.github/scripts/check-license-boundary.sh&lt;/code&gt;. The vectors are the 1.7.8 paths. A side-by-side look on a device is still open, and the watch app was only compiled.&lt;/p&gt;
+&lt;p&gt;The 6 GB heap from #343 is still in &lt;code&gt;gradle.properties&lt;/code&gt;. The dex that ran out of memory was this library. If a debug build is dexing &lt;code&gt;material-icons-extended&lt;/code&gt; to draw a handful of icons, copy those icons and keep &lt;code&gt;material-icons-core&lt;/code&gt;.&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>Getting the test-results comment back without checks: write</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/scorecard-safe-test-comment/"/>
+    <id>https://kevintcoughlin.com/blog/scorecard-safe-test-comment/</id>
+    <published>2026-11-25T17:22:00Z</published>
+    <updated>2026-11-25T17:22:00Z</updated>
+    <category term="github-actions"/>
+    <category term="tips"/>
+    <summary>deathban-pro#83 removed EnricoMi/publish-unit-test-result-action from CI. The workflow had granted checks: write at the top, and OpenSSF Scorecard's Token-Permissions check warns on that scope, including when only a job sets it. The pull-request comment went away with the action. deathban-pro#87 puts a comment back from a later job whose write scope is pull-requests: write.</summary>
+    <content type="html">&lt;p&gt;&lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/pull/83&quot;&gt;deathban-pro#83&lt;/a&gt; removed &lt;code&gt;EnricoMi/publish-unit-test-result-action&lt;/code&gt; from CI. The workflow had granted &lt;code&gt;checks: write&lt;/code&gt; at the top, and OpenSSF Scorecard's Token-Permissions check warns on that scope, including when only a job sets it. The pull-request comment went away with the action. &lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/pull/87&quot;&gt;deathban-pro#87&lt;/a&gt; puts a comment back from a later job whose write scope is &lt;code&gt;pull-requests: write&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;what-the-publish-step-needed&quot;&gt;What the publish step needed&lt;/h2&gt;
+&lt;p&gt;The build job used to publish results itself:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-yaml&quot;&gt;- name: Publish test results
+  uses: EnricoMi/publish-unit-test-result-action@v2
+  if: always()
+  with:
+    files: build/test-results/test/*.xml
+    check_name: Test Results
+    comment_mode: always
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Above that job the workflow permissions were &lt;code&gt;contents: read&lt;/code&gt;, &lt;code&gt;checks: write&lt;/code&gt;, and &lt;code&gt;pull-requests: write&lt;/code&gt;. The step sets &lt;code&gt;check_name: Test Results&lt;/code&gt;, so the token has to create a check run. After #83 the top of &lt;code&gt;.github/workflows/ci.yml&lt;/code&gt; is &lt;code&gt;contents: read&lt;/code&gt;, and that step is gone.&lt;/p&gt;
+&lt;h2 id=&quot;a-separate-job&quot;&gt;A separate job&lt;/h2&gt;
+&lt;p&gt;The build job still runs Gradle, on that read-only token. After the tests it uploads &lt;code&gt;build/test-results/test/*.xml&lt;/code&gt; as an artifact named &lt;code&gt;junit-xml&lt;/code&gt;, and it appends the same counts to the job summary. The summary is &lt;code&gt;GITHUB_STEP_SUMMARY&lt;/code&gt;. It needs no extra scope, so a fork, Dependabot, and a push to &lt;code&gt;main&lt;/code&gt; still show the counts on the run.&lt;/p&gt;
+&lt;p&gt;The comment is the &lt;code&gt;test-results&lt;/code&gt; job, as merged in &lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/commit/d174f0565f6a4afd327bf8307809d46c325b8d95&quot;&gt;&lt;code&gt;d174f05&lt;/code&gt;&lt;/a&gt;. It waits for &lt;code&gt;build&lt;/code&gt;. It runs for a same-repo pull request that is not from Dependabot, when the build succeeded or failed:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-yaml&quot;&gt;# One comment for same-repo pull requests. The build job stays read-only.
+# Scorecard v5.7 (scorecard-action v2.6.0) warns when the checks scope is
+# write, including at job level, and does not treat pull-requests write as
+# one of those scopes. Fork and Dependabot tokens cannot write from this
+# event; pr-test-results.yml comments for those after CI completes.
+test-results:
+  name: Test result comment
+  needs: build
+  if: &amp;gt;-
+    always() &amp;amp;&amp;amp;
+    github.event_name == 'pull_request' &amp;amp;&amp;amp;
+    github.event.pull_request.head.repo.full_name == github.repository &amp;amp;&amp;amp;
+    github.actor != 'dependabot[bot]' &amp;amp;&amp;amp;
+    (needs.build.result == 'success' || needs.build.result == 'failure')
+  runs-on: ubuntu-24.04
+  timeout-minutes: 5
+  permissions:
+    actions: read
+    contents: read
+    pull-requests: write
+  steps:
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+
+    - name: Download JUnit XML
+      continue-on-error: true
+      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+      with:
+        name: junit-xml
+        path: junit-xml
+
+    - name: Publish pull request comment
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        RESULTS_DIR: junit-xml
+        BUILD_RESULT: ${{ needs.build.result }}
+      run: python3 scripts/test_results_comment.py post
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;actions: read&lt;/code&gt; is the artifact download. &lt;code&gt;contents: read&lt;/code&gt; is the checkout. &lt;code&gt;pull-requests: write&lt;/code&gt; is the comment.&lt;/p&gt;
+&lt;h2 id=&quot;what-scorecard-v57-counts&quot;&gt;What Scorecard v5.7 counts&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;.github/workflows/scorecard.yml&lt;/code&gt; pins &lt;code&gt;ossf/scorecard-action&lt;/code&gt; to &lt;code&gt;23f22cd43608bae7a1f1fa2603d7314dee9538a5&lt;/code&gt; (&lt;code&gt;v2.6.0&lt;/code&gt;). That tag's &lt;code&gt;go.mod&lt;/code&gt; requires &lt;code&gt;github.com/ossf/scorecard/v5 v5.7.0&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;In &lt;code&gt;checks/raw/permissions.go&lt;/code&gt; the writes that count are &lt;code&gt;statuses&lt;/code&gt;, &lt;code&gt;checks&lt;/code&gt;, &lt;code&gt;security-events&lt;/code&gt;, &lt;code&gt;deployments&lt;/code&gt;, &lt;code&gt;contents&lt;/code&gt;, &lt;code&gt;packages&lt;/code&gt;, and &lt;code&gt;actions&lt;/code&gt;. A write of one of those is recorded at the top of the file and on a job. &lt;code&gt;checks/evaluation/permissions.go&lt;/code&gt; warns when a job sets one of them to write. &lt;code&gt;checks: write&lt;/code&gt; on the job that creates the check run is still that warning, so the publish action does not fit there either.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;pull-requests&lt;/code&gt; is absent from that list. The raw check stores the write as a non-dangerous write, and the score does not drop for it.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/actions/runs/45500072078&quot;&gt;Run 45500072078&lt;/a&gt; is Scorecard v5.7.0 on the merge commit. Token-Permissions logged the comment job as &lt;code&gt;Info: jobLevel 'actions' permission set to 'read': .github/workflows/ci.yml:199&lt;/code&gt; and the same for &lt;code&gt;contents&lt;/code&gt; on line 200, then &lt;code&gt;Info: no jobLevel write permissions found&lt;/code&gt;. Line 201 is &lt;code&gt;pull-requests: write&lt;/code&gt;, and it is absent from that log. The check still scored 0, on a warning that was already there: &lt;code&gt;Warn: topLevel 'contents' permission set to 'write': .github/workflows/release.yml:14&lt;/code&gt;. #87 leaves &lt;code&gt;release.yml&lt;/code&gt; alone.&lt;/p&gt;
+&lt;p&gt;The Scorecard job on the pull request head never printed a score. &lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/actions/runs/45453315532&quot;&gt;Run 45453315532&lt;/a&gt; failed pulling &lt;code&gt;ghcr.io/ossf/scorecard-action:v2.6.0&lt;/code&gt; with &lt;code&gt;manifest unknown&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;the-checkout-and-the-one-comment&quot;&gt;The checkout and the one comment&lt;/h2&gt;
+&lt;p&gt;The comment job runs on its own runner. Its checkout leaves &lt;code&gt;ref&lt;/code&gt; unset, so the files are the commit that the workflow run is executing, and it sets &lt;code&gt;persist-credentials: false&lt;/code&gt;. The XML it reads is the &lt;code&gt;junit-xml&lt;/code&gt; artifact uploaded by &lt;code&gt;build&lt;/code&gt;. The Gradle job keeps the read-only token.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;scripts/test_results_comment.py&lt;/code&gt; starts the body with &lt;code&gt;&amp;lt;!-- deathban-pro-test-results --&amp;gt;&lt;/code&gt;. A later CI run edits the earliest &lt;code&gt;github-actions[bot]&lt;/code&gt; comment that contains that marker, and deletes later bot copies of it. Comments from any other author stay put.&lt;/p&gt;
+&lt;p&gt;On #87 that is &lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/pull/87#issuecomment-7139774177&quot;&gt;one comment&lt;/a&gt;. GitHub created it at 17:50 UTC and updated it at 17:54 UTC. The body shows &lt;code&gt;6f01d55cc66e&lt;/code&gt;, the second commit on the pull request, and links &lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/actions/runs/45453315718&quot;&gt;run 45453315718&lt;/a&gt;. CI ignores &lt;code&gt;**/*.md&lt;/code&gt;, so a docs-only push does not run the job. The comment says it is updated when CI finishes.&lt;/p&gt;
+&lt;p&gt;Fork &lt;code&gt;pull_request&lt;/code&gt; tokens stay read-only, and Dependabot tokens do too, even when the workflow file asks for write. The &lt;code&gt;test-results&lt;/code&gt; job is skipped for them. &lt;code&gt;.github/workflows/pr-test-results.yml&lt;/code&gt; runs on &lt;code&gt;workflow_run&lt;/code&gt; after CI completes, from the default-branch copy of the workflow. It downloads the artifact, and its checkout also leaves &lt;code&gt;ref&lt;/code&gt; unset. Same-repo runs that are not from Dependabot are skipped there, so those pull requests get the one comment from &lt;code&gt;ci.yml&lt;/code&gt;. Dangerous-Workflow on the merge run scored 10: &lt;code&gt;no dangerous workflow patterns detected&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;A test report that can live as a pull-request comment can use &lt;code&gt;pull-requests: write&lt;/code&gt; on its own job. &lt;code&gt;checks: write&lt;/code&gt; is the scope Scorecard warns on, at the top of the workflow and on the job.&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>The third draft card was pause, and the shell reserve could wrap</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/saltline-button-and-overflow/"/>
+    <id>https://kevintcoughlin.com/blog/saltline-button-and-overflow/</id>
+    <published>2026-11-25T17:21:00Z</published>
+    <updated>2026-11-25T17:21:00Z</updated>
+    <category term="gamedev"/>
+    <category term="github-actions"/>
+    <category term="rust"/>
+    <category term="tips"/>
+    <summary>Two bugs in Salt Line, both reachable from ordinary play and both fixed in saltline#167 (d5d720c). On a controller the third draft card shared B with pause, and pause is the first thing play asks for, so the press opened the pause screen. The shell reserve is an i32 with no cap unless Forced March imposes one, and a Standing Orders streak pays a bonus that grows on every one-shot clear. Past i32::MAX that add panics in a debug build and wraps negative in a release build. A negative reserve is out of shells.</summary>
+    <content type="html">&lt;p&gt;Two bugs in &lt;a href=&quot;https://github.com/cascadiacollections/saltline&quot;&gt;Salt Line&lt;/a&gt;, both reachable from ordinary play and both fixed in &lt;a href=&quot;https://github.com/cascadiacollections/saltline/pull/167&quot;&gt;saltline#167&lt;/a&gt; (&lt;a href=&quot;https://github.com/cascadiacollections/saltline/commit/d5d720c0e9566cb01c568ed3b6332ba7501657db&quot;&gt;&lt;code&gt;d5d720c&lt;/code&gt;&lt;/a&gt;). On a controller the third draft card shared B with pause, and pause is the first thing play asks for, so the press opened the pause screen. The shell reserve is an &lt;code&gt;i32&lt;/code&gt; with no cap unless Forced March imposes one, and a Standing Orders streak pays a bonus that grows on every one-shot clear. Past &lt;code&gt;i32::MAX&lt;/code&gt; that add panics in a debug build and wraps negative in a release build. A negative reserve is out of shells.&lt;/p&gt;
+&lt;h2 id=&quot;the-press-was-taken-by-pause&quot;&gt;The press was taken by pause&lt;/h2&gt;
+&lt;p&gt;A press is taken by the first action that asks for it. Two actions bound to the same button in the same mode never both fire. &lt;code&gt;input.rs&lt;/code&gt; says the order the core asks in is part of the behaviour, and &lt;code&gt;take_pad&lt;/code&gt; removes the press it reports.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;handle_play_input&lt;/code&gt; asks for pause, then for a draft pick, then for aim and fire. Pause wins, and the function returns:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;/// A run in play: pause, draft picks, then aim, fuse, reposition and fire.
+pub(super) fn handle_play_input(&amp;amp;mut self, delta: f64) {
+    if self.action_pressed(Action::Back) {
+        self.input.touch.cancel_drag();
+        self.mode = Mode::Paused;
+        return;
+    }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The draft ask is the next block, over &lt;code&gt;Draft1&lt;/code&gt;, &lt;code&gt;Draft2&lt;/code&gt; and &lt;code&gt;Draft3&lt;/code&gt;, and it returns too. Back's default pad button is B. Draft 3's was B too. Keys 1, 2 and 3, and a tap on the card, never went through that button.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;Action::Draft1 =&amp;gt; (&amp;quot;1&amp;quot;, &amp;quot;X&amp;quot;),
+Action::Draft2 =&amp;gt; (&amp;quot;2&amp;quot;, &amp;quot;A&amp;quot;),
+Action::Draft3 =&amp;gt; (&amp;quot;3&amp;quot;, &amp;quot;B&amp;quot;),
+Action::Back =&amp;gt; (&amp;quot;ESCAPE&amp;quot;, &amp;quot;B&amp;quot;),
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Pad A is also fire. That one works: the draft is asked before fire, the pick is taken, and the function returns. Pad B lost, because pause is asked before the draft and the function returns there. The third offer stayed on the table, and the pause screen opened over a draft that was still open.&lt;/p&gt;
+&lt;p&gt;Draft 3 is now Y. The comment on the binding is the reason Y is free while a draft is up:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;// Y, not B. Pause is B and is read before a draft pick, so a third
+// offer bound to B never took: the press opened the pause screen.
+// Y is free on the draft (reposition, replay and star read it on
+// other screens).
+Action::Draft3 =&amp;gt; (&amp;quot;3&amp;quot;, &amp;quot;Y&amp;quot;),
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;B still pauses. The settings screen used to show a draft as two buttons, one row of an action plus an optional second, so it listed X and A and left the third off. The draft row now carries all three actions, which with the defaults reads X/A/Y. With a controller in use, before the draft has been learned, the prompt is &lt;code&gt;X A Y  PICK A MODIFIER&lt;/code&gt;. A touchscreen still says &lt;code&gt;TAP A CARD  PICK A MODIFIER&lt;/code&gt;. The README row is &lt;code&gt;1 / 2 / 3&lt;/code&gt;, &lt;code&gt;X / A / Y&lt;/code&gt;, tap a card, and B still pauses.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;in_a_draft_pad_b_pauses_and_y_takes_the_third_card&lt;/code&gt; presses B, sees &lt;code&gt;Mode::Paused&lt;/code&gt; with the phase still &lt;code&gt;Drafting&lt;/code&gt; and zero stacks of the third offer, presses B again to resume, then presses Y. The loadout has that offer and the phase has left the draft.&lt;/p&gt;
+&lt;h2 id=&quot;the-reserve-stopped-at-the-top-of-an-i32&quot;&gt;The reserve stopped at the top of an &lt;code&gt;i32&lt;/code&gt;&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;Loadout::cap&lt;/code&gt; is &lt;code&gt;i32::MAX&lt;/code&gt; unless a modifier imposes one. Taking Forced March drops a reserve of 40 to 15 on the spot. The comment on &lt;code&gt;cap&lt;/code&gt; keeps the default open on purpose: a 40-shell ceiling would eat most of a Depot on the first draft, and Depot, Storm Front and Quartermaster would stop being worth taking. Standing Orders reads &amp;quot;One-shot clears grant +1 per consecutive streak.&amp;quot; The streak is a &lt;code&gt;u32&lt;/code&gt;. A one-shot clear increments it and adds that count to the shells paid for the screen.&lt;/p&gt;
+&lt;p&gt;The old grant was a plain add, then the cap:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;self.shells = (self.shells + n).min(self.loadout.cap());
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;and the streak was a plain increment, then a cast:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;self.one_shot_streak += 1;
+if self.loadout.standing_orders() {
+    gain += self.one_shot_streak as i32;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;i32&lt;/code&gt; addition panics on overflow in debug and wraps in release. A reserve at or below zero is &lt;code&gt;Phase::Over(RunOver::OutOfShells)&lt;/code&gt;, checked when a shot fails to clear and again when the run advances after a clear. That is the only way a run ends. Casting a streak above &lt;code&gt;i32::MAX&lt;/code&gt; wraps too, so the bonus itself could arrive negative. A streak already at &lt;code&gt;u32::MAX&lt;/code&gt; wraps to 0 on &lt;code&gt;+= 1&lt;/code&gt; in release, and panics in debug.&lt;/p&gt;
+&lt;p&gt;A debug panic is the error screen. The hook writes &lt;code&gt;user://crash.txt&lt;/code&gt;, and the next frame draws &lt;code&gt;SOMETHING BROKE&lt;/code&gt; / &lt;code&gt;THE GAME STOPPED RATHER THAN CARRY ON WRONG.&lt;/code&gt; Anything that writes, moves or deletes a file is dropped after a panic, so the half-updated run is not saved over the last good one. The report is the last file that session writes.&lt;/p&gt;
+&lt;p&gt;Grants now saturate, then the cap still applies. The supply screen's +6 goes through &lt;code&gt;grant&lt;/code&gt; too, instead of its own &lt;code&gt;shells + 6&lt;/code&gt;. The streak saturates at &lt;code&gt;u32::MAX&lt;/code&gt;, and the bonus is the streak as an &lt;code&gt;i32&lt;/code&gt;, or &lt;code&gt;i32::MAX&lt;/code&gt; when it does not fit:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;fn grant(&amp;amp;mut self, n: i32) {
+    // An uncapped reserve plus Standing Orders grows without a ceiling.
+    // A wrapping add would panic in debug and, in release, turn a huge
+    // reserve negative and end the run. Stop at `i32::MAX`, then apply
+    // the cap (`i32::MAX` when nothing has imposed one).
+    self.shells = self.shells.saturating_add(n).min(self.loadout.cap());
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;if shots &amp;lt;= 1 {
+    // Saturating: a streak that has already reached `u32::MAX` must
+    // not wrap, and the bonus paid below must not wrap to a negative
+    // shell count.
+    self.one_shot_streak = self.one_shot_streak.saturating_add(1);
+    if self.loadout.standing_orders() {
+        let bonus = i32::try_from(self.one_shot_streak).unwrap_or(i32::MAX);
+        gain = gain.saturating_add(bonus);
+    }
+} else {
+    self.one_shot_streak = 0;
+}
+self.grant(gain);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;depot_grants_its_shells_once_on_take&lt;/code&gt; moves a reserve of 10 to 18, so that grant is 8 shells. &lt;code&gt;the_reserve_stops_at_i32_max_instead_of_wrapping&lt;/code&gt; takes a Depot at &lt;code&gt;i32::MAX - 1&lt;/code&gt; and stops at &lt;code&gt;i32::MAX&lt;/code&gt;. The old add would have overflowed there. &lt;code&gt;a_huge_one_shot_streak_does_not_wrap_the_reserve&lt;/code&gt; starts from 20 shells with Standing Orders and &lt;code&gt;one_shot_streak&lt;/code&gt; already &lt;code&gt;u32::MAX&lt;/code&gt;, clears the screen in one shot, and expects &lt;code&gt;i32::MAX&lt;/code&gt; shells, the streak still at &lt;code&gt;u32::MAX&lt;/code&gt;, and the run not over.&lt;/p&gt;
+&lt;h2 id=&quot;the-golden-run-digest-stayed&quot;&gt;The golden-run digest stayed&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;SIM_EPOCH&lt;/code&gt; versions the sim's outcomes. A change that alters a replay bumps it. &lt;code&gt;tests/golden_runs.rs&lt;/code&gt; hashes the golden-run corpus and requires that epoch's digest. Epoch 6's is &lt;code&gt;0x0e22_2e08_a33e_af8a&lt;/code&gt;. This fix leaves the epoch at 6. Adds that stay inside the type are the same values as before, and the pull request records that the golden-run digest did not move.&lt;/p&gt;
+&lt;p&gt;Same standard as the &lt;a href=&quot;https://kevintcoughlin.com/blog/track-solver-a-third-faster-same-answers/&quot;&gt;track solver&lt;/a&gt; the same day. There, a faster proof was only allowed through if every timer and every failure stayed put, and a saved digest was the check.&lt;/p&gt;
+&lt;p&gt;The artillery digest is a different number from the Drone Trial digest. CI used to compare only the artillery one, so a replay break that existed only in the trial would still pass the matrix. &lt;a href=&quot;https://github.com/cascadiacollections/saltline/pull/173&quot;&gt;saltline#173&lt;/a&gt; runs &lt;code&gt;trial_determinism&lt;/code&gt; in the sim job, the Android emulator job and the iOS simulator job, and uploads &lt;code&gt;trial-digest-&amp;lt;platform&amp;gt;.txt&lt;/code&gt; beside the artillery file. The determinism job compares the two sets separately. Each set has to agree with itself: seven copies when the Apple jobs run, and fewer on a gameplay-only pull request, the same count the artillery set already uses.&lt;/p&gt;
+&lt;p&gt;The pull request records a local run, &lt;code&gt;cargo run --release -q -p salt-line-sim --bin trial_determinism&lt;/code&gt;: 200 replays, 139 hits, zero divergences, &lt;code&gt;digest: 0xff8e006571cf0da1&lt;/code&gt;, about five seconds. The Android emulator and the iOS simulator steps were left to CI. They spawn the second binary the same way they spawn the artillery digest. &lt;code&gt;just android-digest&lt;/code&gt; on a phone still runs the artillery binary only. The emulator covers the trial on bionic.&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>Don't flip the JVM flag, measure it on a copy of the world</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/dont-flip-the-jvm-flag/"/>
+    <id>https://kevintcoughlin.com/blog/dont-flip-the-jvm-flag/</id>
+    <published>2026-11-25T17:20:00Z</published>
+    <updated>2026-11-25T17:20:00Z</updated>
+    <category term="homelab"/>
+    <category term="minecraft"/>
+    <category term="performance"/>
+    <summary>JDK 25 can shrink object headers with -XX:+UseCompactObjectHeaders. On the Paper server that can cut the heap, and it can also move GC pauses and tick time. I built a harness that copies the world twice and compares the two runs. I have not measured the world yet. The numbers come later.</summary>
+    <content type="html">&lt;p&gt;JDK 25 can shrink object headers with &lt;code&gt;-XX:+UseCompactObjectHeaders&lt;/code&gt;. On the Paper server that can cut the heap, and it can also move GC pauses and tick time. I built a harness that copies the world twice and compares the two runs. I have not measured the world yet. The numbers come later.&lt;/p&gt;
+&lt;h2 id=&quot;the-flag-stays-off&quot;&gt;The flag stays off&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/KevinTCoughlin/minecraft-server/commit/cdb170bb10ba08c3f212321bf0bec4428f619d6d&quot;&gt;&lt;code&gt;cdb170b&lt;/code&gt;&lt;/a&gt; made &lt;code&gt;scripts/jvm-opts.sh&lt;/code&gt; the flag list for a host start and for the container image. With no container memory limit, that script boots on a safe default heap, about a quarter of host memory clamped between 1G and 4G, or 2G when host memory cannot be read. Compact headers stay out of that list. They sit outside &lt;a href=&quot;https://docs.papermc.io/paper/aikars-flags&quot;&gt;Aikar's flags&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/KevinTCoughlin/minecraft-server/pull/133&quot;&gt;minecraft-server#133&lt;/a&gt; (&lt;a href=&quot;https://github.com/KevinTCoughlin/minecraft-server/commit/b15e3533f59f6ea24fba6a7f915c09979e3374a0&quot;&gt;&lt;code&gt;b15e353&lt;/code&gt;&lt;/a&gt;) adds the opt-in on top of that script, and the harness that has to pass before the flag is turned on for a server people play. &lt;code&gt;scripts/jvm-opts.sh&lt;/code&gt; appends &lt;code&gt;-XX:+UseCompactObjectHeaders&lt;/code&gt; only when &lt;code&gt;COMPACT_OBJECT_HEADERS&lt;/code&gt; is &lt;code&gt;true&lt;/code&gt;, &lt;code&gt;1&lt;/code&gt;, &lt;code&gt;yes&lt;/code&gt;, or &lt;code&gt;on&lt;/code&gt;. Any other value is an error. Unset, &lt;code&gt;false&lt;/code&gt;, &lt;code&gt;0&lt;/code&gt;, &lt;code&gt;no&lt;/code&gt;, and &lt;code&gt;off&lt;/code&gt; leave it off. G1 already passes &lt;code&gt;-XX:+UnlockExperimentalVMOptions&lt;/code&gt;. ZGC does not, so the opt-in adds that unlock only for ZGC. JDK 25 still treats the flag as experimental.&lt;/p&gt;
+&lt;p&gt;Compose &lt;code&gt;JVM_XX_OPTS&lt;/code&gt; leaves the flag out. The custom image uses &lt;code&gt;scripts/jvm-opts.sh&lt;/code&gt;, so the same variable is the opt-in there. The live server keeps the current flags. An &lt;code&gt;ACCEPT&lt;/code&gt; from the harness is evidence for a follow-up. It leaves the default off.&lt;/p&gt;
+&lt;h2 id=&quot;two-copies-one-difference&quot;&gt;Two copies, one difference&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;scripts/measure-compact-headers.sh&lt;/code&gt; copies the world with &lt;code&gt;cp -a&lt;/code&gt;, once into &lt;code&gt;baseline/world&lt;/code&gt; and once into &lt;code&gt;compact/world&lt;/code&gt;, both from the original. The second run starts from the same files as the first. The server directory is always one of those copies, and &lt;code&gt;server.properties&lt;/code&gt; sets &lt;code&gt;level-name=world&lt;/code&gt; there.&lt;/p&gt;
+&lt;p&gt;Both runs call &lt;code&gt;scripts/jvm-opts.sh&lt;/code&gt; with &lt;code&gt;MEMORY_MODE=fixed&lt;/code&gt; and the same heap, GC, and dump settings. The compact run is the only one with &lt;code&gt;COMPACT_OBJECT_HEADERS=true&lt;/code&gt;. Before Java starts, the script stops if the baseline flags mention &lt;code&gt;UseCompactObjectHeaders&lt;/code&gt;, and it stops if the compact flags are missing the line &lt;code&gt;-XX:+UseCompactObjectHeaders&lt;/code&gt;. Each run adds the same &lt;code&gt;-Xlog:gc*&lt;/code&gt; options, with a different log path. &lt;code&gt;HeapDumpPath&lt;/code&gt; differs by run directory.&lt;/p&gt;
+&lt;p&gt;Defaults match a host start: G1, &lt;code&gt;-Xms4G -Xmx4G&lt;/code&gt;, view distance 10, simulation distance 10. The measurement server listens on &lt;code&gt;127.0.0.1:25566&lt;/code&gt;, with an empty plugins directory, peaceful difficulty, mob spawning off, and &lt;code&gt;pause-when-empty-seconds=-1&lt;/code&gt;. After Paper prints &lt;code&gt;Done&lt;/code&gt;, it waits 120 seconds, then samples for 180 seconds. The runs are sequential, so one heap is touched at a time, and &lt;code&gt;AlwaysPreTouch&lt;/code&gt; touches that whole heap. Leave disk for two full copies.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;./scripts/stop.sh
+./scripts/measure-compact-headers.sh --world server/parkour-spiral
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The argument is the world directory, the folder that contains &lt;code&gt;level.dat&lt;/code&gt;. &lt;code&gt;server/parkour-spiral&lt;/code&gt; is the usual map. Java 25 and &lt;code&gt;server/paper.jar&lt;/code&gt; have to be on the host. Paper 26.3 will not start on an older JDK.&lt;/p&gt;
+&lt;h2 id=&quot;what-it-refuses&quot;&gt;What it refuses&lt;/h2&gt;
+&lt;p&gt;A copy taken while the world is open, or a server whose level is the original, is not a before and after. The harness checks the copy after &lt;code&gt;cp&lt;/code&gt; and again immediately before Java starts. It refuses when:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;the work directory is the original world, sits inside it, or contains it, including a symlink whose target is the world&lt;/li&gt;
+&lt;li&gt;the work directory is the live &lt;code&gt;server/&lt;/code&gt; directory&lt;/li&gt;
+&lt;li&gt;the copy's &lt;code&gt;level.dat&lt;/code&gt; is missing, is a symlink, or is the same inode as the original&lt;/li&gt;
+&lt;li&gt;any symlink inside the copy points at the original world&lt;/li&gt;
+&lt;li&gt;any hardlink inside the copy is a file in the original world&lt;/li&gt;
+&lt;li&gt;Paper is still running from &lt;code&gt;server/server.pid&lt;/code&gt; and the world sits inside that server directory&lt;/li&gt;
+&lt;li&gt;the original &lt;code&gt;level.dat&lt;/code&gt; checksum changes during the two runs&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;A &lt;code&gt;session.lock&lt;/code&gt; in the original world prints a warning. The same check is available for a copy made by hand:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;./scripts/measure-compact-headers.sh check-copy \
+    --source server/parkour-spiral \
+    --dest /tmp/parkour-copy
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Exit 1 means the harness refused to run, or a server did not finish. Exit 0 means a comparison was written, including a rejection.&lt;/p&gt;
+&lt;h2 id=&quot;what-a-passing-run-has-to-show&quot;&gt;What a passing run has to show&lt;/h2&gt;
+&lt;p&gt;After warmup the harness samples used heap with &lt;code&gt;jcmd &amp;lt;pid&amp;gt; GC.heap_info&lt;/code&gt;, falling back to &lt;code&gt;jstat -gc&lt;/code&gt;, every 15 seconds through the soak. Pauses before the warmup mark are ignored, so startup GC stays out of the comparison. Then it sends &lt;code&gt;tps&lt;/code&gt; and &lt;code&gt;mspt&lt;/code&gt; on the console and stops the server.&lt;/p&gt;
+&lt;p&gt;The 1 minute TPS figure is the one that counts. A &lt;code&gt;*&lt;/code&gt; from Paper means that window is not full yet, and the verdict is inconclusive. MSPT is the 1 minute average. TPS is capped at 20, so a slower tick can sit behind a perfect TPS number. MSPT is part of &amp;quot;TPS no worse&amp;quot;.&lt;/p&gt;
+&lt;p&gt;The summary lands in &lt;code&gt;.compact-headers-measure/&amp;lt;timestamp&amp;gt;/summary.md&lt;/code&gt;. &lt;code&gt;latest&lt;/code&gt; points at that directory when the default work directory is used. &lt;code&gt;verdict.txt&lt;/code&gt; is one word: &lt;code&gt;ACCEPT&lt;/code&gt;, &lt;code&gt;REJECT&lt;/code&gt;, or &lt;code&gt;INCONCLUSIVE&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Enable the flag in &lt;code&gt;scripts/jvm-opts.sh&lt;/code&gt; and in Compose &lt;code&gt;JVM_XX_OPTS&lt;/code&gt; only when the copy shows a smaller heap and pauses and TPS are no worse:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Heap.&lt;/strong&gt; The first sample after warmup and the high-water mark during the soak are both strictly lower with the flag.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;GC pauses.&lt;/strong&gt; Soak max and p99 are less than or equal to the baseline. Zero pauses on both sides counts as equal. G1's target in the current flags is &lt;code&gt;-XX:MaxGCPauseMillis=200&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;TPS.&lt;/strong&gt; The 1 minute TPS is greater than or equal to the baseline, with a 0.05 tolerance so one decimal place from Paper is not a false failure.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;MSPT.&lt;/strong&gt; The 1 minute average is less than or equal to the baseline, with the same 0.05 ms tolerance.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;code&gt;ACCEPT&lt;/code&gt; means those gates passed. If the high-water drop is under 1%, the summary says to repeat the run before treating it as a real win. &lt;code&gt;REJECT&lt;/code&gt; means leave the flag out. &lt;code&gt;INCONCLUSIVE&lt;/code&gt; means a heap sample, a pause log, TPS, or MSPT was missing. One pair of idle soaks is noisy. A few milliseconds of pause jitter is a reason to run it again.&lt;/p&gt;
+&lt;h2 id=&quot;the-numbers-are-still-to-come&quot;&gt;The numbers are still to come&lt;/h2&gt;
+&lt;p&gt;I have not run this on &lt;code&gt;parkour-spiral&lt;/code&gt;. That soak needs Java 25 and the world on the host, with the live server stopped, and it has not happened. &lt;code&gt;tests/jvm-opts.sh&lt;/code&gt; checks the flag is absent by default and present when &lt;code&gt;COMPACT_OBJECT_HEADERS&lt;/code&gt; is set, and that an unknown value fails. &lt;code&gt;tests/compact-headers.sh&lt;/code&gt; checks the copy refusals (same path, symlink, hardlink, path overlap, and a live &lt;code&gt;server.pid&lt;/code&gt;) and the &lt;code&gt;ACCEPT&lt;/code&gt; / &lt;code&gt;REJECT&lt;/code&gt; / &lt;code&gt;INCONCLUSIVE&lt;/code&gt; parser, including a stubbed two-run measurement that never uses the original directory as the server world. Heap, pause, TPS, and MSPT numbers come from a real soak, and that soak has not been run.&lt;/p&gt;
+&lt;p&gt;The comparison is tracked on &lt;a href=&quot;https://github.com/KevinTCoughlin/minecraft-server/issues/129&quot;&gt;minecraft-server#129&lt;/a&gt;. When &lt;code&gt;summary.md&lt;/code&gt; exists I will put it there. Until then the flag stays off.&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>Why my radio app dipped to 1/14 volume on every network blip</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/shoutkit-underrun-volume-dip/"/>
+    <id>https://kevintcoughlin.com/blog/shoutkit-underrun-volume-dip/</id>
+    <published>2026-11-25T17:19:00Z</published>
+    <updated>2026-11-25T17:19:00Z</updated>
+    <category term="audio"/>
+    <category term="ios"/>
+    <category term="swift"/>
+    <summary>In ShoutKit I fade player.volume in from silence when a station rejoins, so the live edge does not arrive as a click. A buffer underrun reports .playing again, and the rejoin fade treated that as a fresh start. The stream came back at full volume, the fade waited one step, then set the volume to 1/14 and swelled back to full. shoutkit#274 runs the fade only after the player was silenced.</summary>
+    <content type="html">&lt;p&gt;In &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit&quot;&gt;ShoutKit&lt;/a&gt; I fade &lt;code&gt;player.volume&lt;/code&gt; in from silence when a station rejoins, so the live edge does not arrive as a click. A buffer underrun reports &lt;code&gt;.playing&lt;/code&gt; again, and the rejoin fade treated that as a fresh start. The stream came back at full volume, the fade waited one step, then set the volume to 1/14 and swelled back to full. &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit/pull/274&quot;&gt;shoutkit#274&lt;/a&gt; runs the fade only after the player was silenced.&lt;/p&gt;
+&lt;h2 id=&quot;the-rejoin-fade&quot;&gt;The rejoin fade&lt;/h2&gt;
+&lt;p&gt;Live radio has no position to resume. After an interruption, a stall, or a dropped connection, playback rejoins the stream at the live edge. The first decoded frames at full volume read as a click or a jump-cut, so since 2026-08-20 &lt;code&gt;silenceForUpcomingPlayback()&lt;/code&gt; has set &lt;code&gt;player.volume&lt;/code&gt; to zero in &lt;code&gt;start&lt;/code&gt;, &lt;code&gt;resume&lt;/code&gt;, and &lt;code&gt;replayCurrentStream&lt;/code&gt;, and &lt;code&gt;fadeInVolume()&lt;/code&gt; has brought it back over 350 ms once AudioStreaming reports &lt;code&gt;.playing&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The ramp is fourteen steps. The task sleeps, then sets &lt;code&gt;player.volume&lt;/code&gt; to &lt;code&gt;Float(step) / Float(steps)&lt;/code&gt;. The first assignment is 1/14. The last is 1.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;static let volumeRampDuration = Duration.milliseconds(350)
+static let volumeRampSteps = 14
+
+let steps = Self.volumeRampSteps
+let stepDuration = Self.volumeRampDuration / steps
+for step in 1 ... steps {
+    try? await Task.sleep(for: stepDuration)
+    guard Task.isCancelled == false else { return }
+    self.player.volume = Float(step) / Float(steps)
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;On a rejoin the volume was just zeroed, so that first step is silence becoming audible. On a player that is already at full volume, the same assignment is a dip.&lt;/p&gt;
+&lt;h2 id=&quot;a-buffer-underrun-reports-playing&quot;&gt;A buffer underrun reports .playing&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;audioPlayerStateChanged&lt;/code&gt; calls &lt;code&gt;fadeInVolume()&lt;/code&gt; on every transition into &lt;code&gt;.playing&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;case .playing:
+    self.fadeInVolume()
+    self.reportStatus(.playing, generation: generation)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;AudioStreaming also enters &lt;code&gt;.playing&lt;/code&gt; when a buffer underrun ends. Nothing on that path calls &lt;code&gt;silenceForUpcomingPlayback()&lt;/code&gt;, so the player is already at full volume. The old &lt;code&gt;fadeInVolume()&lt;/code&gt; still cancelled any ramp in flight, waited one step, set the volume to 1/14, and climbed back to 1. On ordinary network jitter during a long listen, the stream returned and then dipped.&lt;/p&gt;
+&lt;p&gt;The cancel is its own problem. A &lt;code&gt;.playing&lt;/code&gt; that arrives while a rejoin fade is still running would stop the task and leave &lt;code&gt;player.volume&lt;/code&gt; wherever the ramp had reached, then start again at 1/14. Coming back from an underrun has to leave a fade that is already running alone.&lt;/p&gt;
+&lt;h2 id=&quot;arm-the-fade-only-after-silence&quot;&gt;Arm the fade only after silence&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;silenceForUpcomingPlayback()&lt;/code&gt; still zeroes the volume, and it is the only call that arms a fade. &lt;code&gt;fadeInVolume()&lt;/code&gt; runs the fourteen steps only when that arm is set. An unarmed &lt;code&gt;.playing&lt;/code&gt; returns before it can cancel the task.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;func silenceForUpcomingPlayback() {
+    volumeRampTask?.cancel()
+    volumeRampTask = nil
+    volumeRampArm.arm()
+    player.volume = 0
+}
+
+func fadeInVolume() {
+    guard volumeRampArm.consume() else { return }
+    volumeRampTask?.cancel()
+    volumeRampTask = Task { @MainActor [weak self] in
+        guard let self else { return }
+        let steps = Self.volumeRampSteps
+        let stepDuration = Self.volumeRampDuration / steps
+        for step in 1 ... steps {
+            try? await Task.sleep(for: stepDuration)
+            guard Task.isCancelled == false else { return }
+            self.player.volume = Float(step) / Float(steps)
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;consume()&lt;/code&gt; answers true once, then false until the next &lt;code&gt;arm()&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;mutating func consume() -&amp;gt; Bool {
+    defer { isArmed = false }
+    return isArmed
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;start&lt;/code&gt;, &lt;code&gt;resume&lt;/code&gt;, and &lt;code&gt;replayCurrentStream&lt;/code&gt; still call &lt;code&gt;silenceForUpcomingPlayback()&lt;/code&gt; first, so a real rejoin still fades in. &lt;code&gt;VolumeRampArmTests&lt;/code&gt; covers the arm: &lt;code&gt;consume()&lt;/code&gt; is false, true once after &lt;code&gt;arm()&lt;/code&gt;, and false again. The fade and the arm live in &lt;code&gt;AudioStreamingPlaybackEngine+VolumeRamp.swift&lt;/code&gt;. The &lt;code&gt;.playing&lt;/code&gt; case is in &lt;code&gt;audioPlayerStateChanged&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;also-in-that-pull-request&quot;&gt;Also in that pull request&lt;/h2&gt;
+&lt;p&gt;A station re-sends the current &lt;code&gt;StreamTitle&lt;/code&gt; for the whole song, often about once a metadata interval, including while the app is backgrounded. When the lookup had produced neither artwork nor an Apple Music link, each repeat published again. That publication calls &lt;code&gt;onTrackHeard&lt;/code&gt;, which writes listening history on the main actor, so a song the catalog does not know was a SwiftData fetch and save at that interval. The lookup still retries. An unchanged answer does not write history or the lock screen again. The first miss still publishes, because that &lt;code&gt;.resolved&lt;/code&gt; push releases the artwork hold taken at the track boundary.&lt;/p&gt;
+&lt;p&gt;Old Shoutcast responses put their real headers in the body. &lt;code&gt;ICYInBodyHeaders&lt;/code&gt; runs only when the HTTP response has two headers or fewer. It was ported from AudioStreaming's &lt;code&gt;IcycastHeadersProcessor&lt;/code&gt; on 2026-11-14, including the part that passed each unfinished chunk straight through as audio. &lt;code&gt;URLSession&lt;/code&gt; chooses the chunk sizes, so the first callback was often shorter than the block and was played as audio. A body that started with &lt;code&gt;ICY &lt;/code&gt; or &lt;code&gt;HTTP&lt;/code&gt; and never sent a blank line kept every later byte for the rest of the session. The reader now holds bytes only while they might still be a header. A single audio byte that cannot be &lt;code&gt;ICY &lt;/code&gt; or &lt;code&gt;HTTP&lt;/code&gt; is returned immediately. At 8 KB with no blank line, the buffer is released and treated as audio.&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>http.Server.Shutdown doesn't cancel request contexts</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/http-server-shutdown-request-contexts/"/>
+    <id>https://kevintcoughlin.com/blog/http-server-shutdown-request-contexts/</id>
+    <published>2026-11-25T17:18:00Z</published>
+    <updated>2026-11-25T17:18:00Z</updated>
+    <category term="golang"/>
+    <category term="tips"/>
+    <summary>In lazydeck, I gave serve one 30 second deadline for the HTTP drain and for reaping in-flight jobs. http.Server.Shutdown waits until handlers return. It leaves their request contexts alone. An open GET /v1/jobs/{id}/events stream sat in that wait long enough to expire the deadline, so the job reap cancelled the job and returned without waiting. execute was still blocked in cmd.Run. The uv, python, ssh, and rsync children are in their own process group, so they kept running after the process exited.</summary>
+    <content type="html">&lt;p&gt;In &lt;a href=&quot;https://github.com/KevinTCoughlin/lazydeck&quot;&gt;lazydeck&lt;/a&gt;, I gave &lt;code&gt;serve&lt;/code&gt; one 30 second deadline for the HTTP drain and for reaping in-flight jobs. &lt;a href=&quot;https://pkg.go.dev/net/http#Server.Shutdown&quot;&gt;&lt;code&gt;http.Server.Shutdown&lt;/code&gt;&lt;/a&gt; waits until handlers return. It leaves their request contexts alone. An open &lt;code&gt;GET /v1/jobs/{id}/events&lt;/code&gt; stream sat in that wait long enough to expire the deadline, so the job reap cancelled the job and returned without waiting. &lt;code&gt;execute&lt;/code&gt; was still blocked in &lt;code&gt;cmd.Run&lt;/code&gt;. The uv, python, ssh, and rsync children are in their own process group, so they kept running after the process exited.&lt;/p&gt;
+&lt;h2 id=&quot;one-deadline-two-waits&quot;&gt;One deadline, two waits&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;shutdownBudget&lt;/code&gt; was the whole shutdown, drain and then reap:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;// shutdownBudget bounds how long Run waits, in total, for the HTTP server's
+// graceful shutdown and then for in-flight jobs to actually cancel their
+// SSH/rsync subprocess (see internal/client/process_unix.go's own 10s
+// WaitDelay backstop) before Run returns anyway.
+const shutdownBudget = 30 * time.Second
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;Run&lt;/code&gt; built one context from it and passed that context to both steps:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;case &amp;lt;-ctx.Done():
+    shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownBudget)
+    defer cancel()
+    for _, srv := range servers {
+        if err := srv.Shutdown(shutdownCtx); err != nil {
+            log.Printf(&amp;quot;lazydeck serve: graceful HTTP shutdown failed: %v&amp;quot;, err)
+        }
+    }
+    // Cancel and wait for in-flight jobs even if HTTP shutdown above
+    // didn't finish cleanly: otherwise a deploy's rsync/ssh could keep
+    // running detached after this process has already returned/exited.
+    if err := apiServer.jobs.Shutdown(shutdownCtx); err != nil {
+        log.Printf(&amp;quot;lazydeck serve: in-flight job(s) did not finish before shutdown timed out: %v&amp;quot;, err)
+        return err
+    }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The reap does cancel every tracked job. Then it waits for the goroutines, or for the context, whichever comes first:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;for _, j := range jobs {
+    j.cancel()
+}
+
+done := make(chan struct{})
+go func() {
+    m.wg.Wait()
+    close(done)
+}()
+select {
+case &amp;lt;-done:
+    return nil
+case &amp;lt;-ctx.Done():
+    return ctx.Err()
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;When the stream holds the drain for the whole 30 seconds, that shared context is already expired. The &lt;code&gt;select&lt;/code&gt; takes &lt;code&gt;ctx.Done()&lt;/code&gt; and returns &lt;code&gt;ctx.Err()&lt;/code&gt; while &lt;code&gt;execute&lt;/code&gt; is still inside &lt;code&gt;cmd.Run&lt;/code&gt;. The cancel has been signaled. The wait never runs, and the process is free to exit.&lt;/p&gt;
+&lt;h2 id=&quot;the-stream-that-held-the-drain&quot;&gt;The stream that held the drain&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://pkg.go.dev/net/http#Server.Shutdown&quot;&gt;Shutdown&lt;/a&gt; closes listeners, closes idle connections, and waits for the rest to return to idle. A job event stream is in the middle of a response. Its handler returns when the request context ends.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://pkg.go.dev/net/http#Server.BaseContext&quot;&gt;&lt;code&gt;BaseContext&lt;/code&gt;&lt;/a&gt; is the parent of incoming request contexts. Left nil, that parent is &lt;code&gt;context.Background()&lt;/code&gt;. Cancelling the serve context does not reach the stream, so the stream holds &lt;code&gt;Shutdown&lt;/code&gt; until the 30 second context expires. The reap then runs on that same context.&lt;/p&gt;
+&lt;p&gt;Both servers now derive request contexts from the serve context:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;// Parent every request context on the serve context.
+// http.Server.Shutdown does not cancel handlers; it only waits for them
+// to return. Job SSE streams block in that wait until the request
+// context ends, so without this they hold Shutdown until the deadline.
+requestBase := func(net.Listener) context.Context { return ctx }
+loopbackSrv := &amp;amp;http.Server{
+    Handler:           apiServer.Handler(),
+    ReadHeaderTimeout: 10 * time.Second,
+    BaseContext:       requestBase,
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The network server sets the same &lt;code&gt;BaseContext&lt;/code&gt;. Cancelling serve cancels the stream's request context, the handler returns, and the connection can go idle.&lt;/p&gt;
+&lt;p&gt;HTTP still drains first, on its own 30 second budget, so a handler inside &lt;code&gt;Submit&lt;/code&gt; publishes the job before &lt;code&gt;jobs.Shutdown&lt;/code&gt; waits. A handler that ignores cancellation can still consume that whole budget. The reap gets a new one, and it waits:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;httpCtx, httpCancel := context.WithTimeout(context.Background(), shutdownBudget)
+defer httpCancel()
+for _, srv := range servers {
+    if err := srv.Shutdown(httpCtx); err != nil {
+        log.Printf(&amp;quot;lazydeck serve: graceful HTTP shutdown failed: %v&amp;quot;, err)
+    }
+}
+jobCtx, jobCancel := context.WithTimeout(context.Background(), shutdownBudget)
+defer jobCancel()
+if err := apiServer.jobs.Shutdown(jobCtx); err != nil {
+    log.Printf(&amp;quot;lazydeck serve: in-flight job(s) did not finish before shutdown timed out: %v&amp;quot;, err)
+    return err
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;That wait is what lets the process-group kill finish before exit. &lt;code&gt;configureCancellation&lt;/code&gt; in &lt;code&gt;internal/client/process_unix.go&lt;/code&gt; starts the child in its own group and, on cancel, signals the group:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;func configureCancellation(cmd *exec.Cmd) {
+    if cmd.SysProcAttr == nil {
+        cmd.SysProcAttr = &amp;amp;syscall.SysProcAttr{}
+    }
+    cmd.SysProcAttr.Setpgid = true
+    cmd.WaitDelay = cancelWaitDelay
+    cmd.Cancel = func() error {
+        return killProcessGroup(cmd)
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;cancelWaitDelay&lt;/code&gt; is 10 seconds. &lt;code&gt;killProcessGroup&lt;/code&gt; is &lt;code&gt;syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)&lt;/code&gt;, the group. &lt;code&gt;uv&lt;/code&gt; execs Python, which shells out to &lt;code&gt;ssh&lt;/code&gt; and &lt;code&gt;rsync&lt;/code&gt;. Those grandchildren survive the serve process exiting, because they are not in its group. Waiting until &lt;code&gt;cmd.Run&lt;/code&gt; returns is what reaps them.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;TestRunShutdownWaitsForInFlightJobWithEventStreamOpen&lt;/code&gt; holds &lt;code&gt;GET /v1/jobs/{id}/events&lt;/code&gt; open. Its client blocks in &lt;code&gt;Deploy&lt;/code&gt; until the job context is cancelled, then sleeps 200 milliseconds. &lt;code&gt;Run&lt;/code&gt; has to return within 5 seconds, and only after that sleep. The old path can sit in &lt;code&gt;Shutdown&lt;/code&gt; for the full 30 seconds while the stream is open, so the test fails on the previous shutdown code and passes with this change. The pull request's &lt;code&gt;go test -race ./...&lt;/code&gt; was clean with a stub &lt;code&gt;uv&lt;/code&gt; on &lt;code&gt;PATH&lt;/code&gt;. That environment has no &lt;code&gt;uv&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The fix is &lt;a href=&quot;https://github.com/KevinTCoughlin/lazydeck/pull/125&quot;&gt;lazydeck#125&lt;/a&gt; (&lt;a href=&quot;https://github.com/KevinTCoughlin/lazydeck/commit/408c5cacdb8df8292426b45cd9ba5312a3ee3606&quot;&gt;&lt;code&gt;408c5ca&lt;/code&gt;&lt;/a&gt;).&lt;/p&gt;
+&lt;h2 id=&quot;quitting-the-tui-leaked-the-same-way&quot;&gt;Quitting the TUI leaked the same way&lt;/h2&gt;
+&lt;p&gt;I started the TUI's device commands from &lt;code&gt;context.Background()&lt;/code&gt;: status, register, deploy, sync-logs, delete, list-games, discover, connection info, and custom commands. Deploy looked like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+defer cancel()
+err := cli.Deploy(ctx, dev.Machine, dev.Login, name, dir, false, nil)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;q&lt;/code&gt; and Ctrl+C returned from Bubble Tea's &lt;code&gt;Run&lt;/code&gt; without cancelling those contexts and without waiting. The children sit in their own process group, so they outlived the process too.&lt;/p&gt;
+&lt;p&gt;They now share one context, created with &lt;code&gt;context.WithCancel&lt;/code&gt; and stored on the model. Each command's timeout is a child of that context. &lt;code&gt;q&lt;/code&gt; and Ctrl+C cancel it, then quit:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;case &amp;quot;ctrl+c&amp;quot;, &amp;quot;q&amp;quot;:
+    if m.gate != nil {
+        m.gate.cancel()
+    }
+    return m, tea.Quit
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Bubble Tea still returns without joining the command goroutines. &lt;code&gt;main&lt;/code&gt; waits after &lt;code&gt;Run&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;_, err = p.Run()
+// Bubble Tea returns without joining command goroutines. Cancel any
+// still in flight and wait until their process groups exit.
+m.Shutdown()
+return err
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;Shutdown&lt;/code&gt; cancels that context again and waits. Spinner and auto-refresh ticks are not in the wait, or it would sit on a timer. The cap is 15 seconds, past the client's 10 second &lt;code&gt;WaitDelay&lt;/code&gt; after &lt;code&gt;SIGKILL&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;// commandShutdownBudget outlasts the client's 10s WaitDelay after SIGKILL,
+// so a descendant holding a pipe open is reaped before the process exits.
+const commandShutdownBudget = 15 * time.Second
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Custom commands already set &lt;code&gt;Setpgid&lt;/code&gt; and &lt;code&gt;SIGKILL&lt;/code&gt; the group on cancel, same as the client. Their &lt;code&gt;WaitDelay&lt;/code&gt; is 2 seconds.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;TestQuitTerminatesCustomCommandProcessGroup&lt;/code&gt; runs a shell that backgrounds &lt;code&gt;sleep 120&lt;/code&gt; and checks the grandchild is gone after quit and &lt;code&gt;Shutdown&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;a-panic-skipped-finish&quot;&gt;A panic skipped finish&lt;/h2&gt;
+&lt;p&gt;In the same change, a panic inside a job's run function skipped &lt;code&gt;finish&lt;/code&gt;. The job stayed &lt;code&gt;running&lt;/code&gt;, so it was never pruned, and a client watching its event stream waited. The device lock was still released, because &lt;code&gt;releaseDevice&lt;/code&gt; is deferred.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;execute&lt;/code&gt; now recovers, logs the panic value, and finishes the job as failed. The job error is a fixed internal message. The panic text stays in the log. &lt;code&gt;finish&lt;/code&gt; still runs the completion hook:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;defer func() {
+    rec := recover()
+    if rec == nil {
+        return
+    }
+    log.Printf(&amp;quot;lazydeck: job %s panicked: %v&amp;quot;, job.ID, rec)
+    m.finish(job, Failed, &amp;quot;failed&amp;quot;, &amp;amp;Error{
+        Kind:    &amp;quot;internal&amp;quot;,
+        Message: &amp;quot;the devkit operation failed unexpectedly; see the lazydeck serve process log for details&amp;quot;,
+    })
+}()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;finish&lt;/code&gt; also prunes terminal jobs. Queued and running jobs cannot be evicted, so a burst past the cap used to sit until some later &lt;code&gt;Submit&lt;/code&gt;. The cap is still 500.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;TestRunPanicFinishesAndReleasesTheDevice&lt;/code&gt; panics with &lt;code&gt;boom secret&lt;/code&gt;, checks the job is failed with kind &lt;code&gt;internal&lt;/code&gt;, and checks that neither word is in the job error. &lt;code&gt;TestPruneOnFinishDropsTerminalJobsWithoutAnotherSubmit&lt;/code&gt; fills the manager past the cap, lets the jobs finish, and expects only 500 to remain with no further submit.&lt;/p&gt;
+&lt;p&gt;This is &lt;a href=&quot;https://github.com/KevinTCoughlin/lazydeck/pull/126&quot;&gt;lazydeck#126&lt;/a&gt; (&lt;a href=&quot;https://github.com/KevinTCoughlin/lazydeck/commit/c8a1fab2c3257681ad5ecf9b1c63cc24bdd8bb6e&quot;&gt;&lt;code&gt;c8a1fab&lt;/code&gt;&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;If a handler can outlive the deadline you also use to reap subprocesses, give the reap its own context and wait until the goroutine that owns the process has returned. Parent long-lived request contexts on a context you cancel when those handlers should leave. &lt;code&gt;Shutdown&lt;/code&gt; will keep waiting until they do.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>Bad publisher feeds were opening the circuit breaker for iTunes</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/circuit-breaker-publisher-feeds-one-probe/"/>

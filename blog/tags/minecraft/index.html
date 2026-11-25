@@ -177,8 +177,18 @@
     </header>
     <main class="shell">
       <h1>minecraft</h1>
-      <p class="meta">1 post · <a href="/blog/tags/">All tags</a></p>
+      <p class="meta">2 posts · <a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
+        <li>
+          <time datetime="2026-11-25T17:20:00Z">November 25, 2026</time>
+          <h2><a href="/blog/dont-flip-the-jvm-flag/">Don't flip the JVM flag, measure it on a copy of the world</a></h2>
+          <p>JDK 25 can shrink object headers with -XX:+UseCompactObjectHeaders. On the Paper server that can cut the heap, and it can also move GC pauses and tick time. I built a harness that copies the world twice and compares the two runs. I have not measured the world yet. The numbers come later.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/homelab/">homelab</a></li>
+            <li><a href="/blog/tags/minecraft/" aria-current="page">minecraft</a></li>
+            <li><a href="/blog/tags/performance/">performance</a></li>
+          </ul>
+        </li>
         <li>
           <time datetime="2026-01-18T18:15:54Z">January 18, 2026</time>
           <h2><a href="/blog/network-aware-minecraft-server-macos/">Network-Aware Minecraft Server on macOS</a></h2>

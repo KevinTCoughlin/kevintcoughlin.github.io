@@ -177,8 +177,47 @@
     </header>
     <main class="shell">
       <h1>tips</h1>
-      <p class="meta">6 posts · <a href="/blog/tags/">All tags</a></p>
+      <p class="meta">10 posts · <a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
+        <li>
+          <time datetime="2026-11-25T17:25:00Z">November 25, 2026</time>
+          <h2><a href="/blog/shipped-11105-icons-to-use-17/">I shipped 11,105 icons to use 17</a></h2>
+          <p>Shoutkit's phone app draws 31 Material icons, and the watch app draws three: PlayArrow, Pause, and Stop. Fourteen of the phone's icons come from material-icons-core. The other seventeen came from material-icons-extended. The 1.7.8 Android archive of that library is 11,105 icon classes. Release builds shrink the unused ones away. Debug builds dex every class, and that step is where CI ran out of heap. Copying the seventeen and dropping the dependency took the FOSS debug APK from 29,397,070 bytes to 22,728,773.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/android/">android</a></li>
+            <li><a href="/blog/tags/performance/">performance</a></li>
+            <li><a href="/blog/tags/tips/" aria-current="page">tips</a></li>
+          </ul>
+        </li>
+        <li>
+          <time datetime="2026-11-25T17:22:00Z">November 25, 2026</time>
+          <h2><a href="/blog/scorecard-safe-test-comment/">Getting the test-results comment back without checks: write</a></h2>
+          <p>deathban-pro#83 removed EnricoMi/publish-unit-test-result-action from CI. The workflow had granted checks: write at the top, and OpenSSF Scorecard's Token-Permissions check warns on that scope, including when only a job sets it. The pull-request comment went away with the action. deathban-pro#87 puts a comment back from a later job whose write scope is pull-requests: write.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/github-actions/">github-actions</a></li>
+            <li><a href="/blog/tags/tips/" aria-current="page">tips</a></li>
+          </ul>
+        </li>
+        <li>
+          <time datetime="2026-11-25T17:21:00Z">November 25, 2026</time>
+          <h2><a href="/blog/saltline-button-and-overflow/">The third draft card was pause, and the shell reserve could wrap</a></h2>
+          <p>Two bugs in Salt Line, both reachable from ordinary play and both fixed in saltline#167 (d5d720c). On a controller the third draft card shared B with pause, and pause is the first thing play asks for, so the press opened the pause screen. The shell reserve is an i32 with no cap unless Forced March imposes one, and a Standing Orders streak pays a bonus that grows on every one-shot clear. Past i32::MAX that add panics in a debug build and wraps negative in a release build. A negative reserve is out of shells.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/gamedev/">gamedev</a></li>
+            <li><a href="/blog/tags/github-actions/">github-actions</a></li>
+            <li><a href="/blog/tags/rust/">rust</a></li>
+            <li><a href="/blog/tags/tips/" aria-current="page">tips</a></li>
+          </ul>
+        </li>
+        <li>
+          <time datetime="2026-11-25T17:18:00Z">November 25, 2026</time>
+          <h2><a href="/blog/http-server-shutdown-request-contexts/">http.Server.Shutdown doesn't cancel request contexts</a></h2>
+          <p>In lazydeck, I gave serve one 30 second deadline for the HTTP drain and for reaping in-flight jobs. http.Server.Shutdown waits until handlers return. It leaves their request contexts alone. An open GET /v1/jobs/{id}/events stream sat in that wait long enough to expire the deadline, so the job reap cancelled the job and returned without waiting. execute was still blocked in cmd.Run. The uv, python, ssh, and rsync children are in their own process group, so they kept running after the process exited.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/golang/">golang</a></li>
+            <li><a href="/blog/tags/tips/" aria-current="page">tips</a></li>
+          </ul>
+        </li>
         <li>
           <time datetime="2026-11-25T16:10:00Z">November 25, 2026</time>
           <h2><a href="/blog/circuit-breaker-publisher-feeds-one-probe/">Bad publisher feeds were opening the circuit breaker for iTunes</a></h2>

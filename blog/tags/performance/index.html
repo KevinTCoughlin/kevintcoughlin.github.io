@@ -177,8 +177,28 @@
     </header>
     <main class="shell">
       <h1>performance</h1>
-      <p class="meta">3 posts · <a href="/blog/tags/">All tags</a></p>
+      <p class="meta">5 posts · <a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
+        <li>
+          <time datetime="2026-11-25T17:25:00Z">November 25, 2026</time>
+          <h2><a href="/blog/shipped-11105-icons-to-use-17/">I shipped 11,105 icons to use 17</a></h2>
+          <p>Shoutkit's phone app draws 31 Material icons, and the watch app draws three: PlayArrow, Pause, and Stop. Fourteen of the phone's icons come from material-icons-core. The other seventeen came from material-icons-extended. The 1.7.8 Android archive of that library is 11,105 icon classes. Release builds shrink the unused ones away. Debug builds dex every class, and that step is where CI ran out of heap. Copying the seventeen and dropping the dependency took the FOSS debug APK from 29,397,070 bytes to 22,728,773.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/android/">android</a></li>
+            <li><a href="/blog/tags/performance/" aria-current="page">performance</a></li>
+            <li><a href="/blog/tags/tips/">tips</a></li>
+          </ul>
+        </li>
+        <li>
+          <time datetime="2026-11-25T17:20:00Z">November 25, 2026</time>
+          <h2><a href="/blog/dont-flip-the-jvm-flag/">Don't flip the JVM flag, measure it on a copy of the world</a></h2>
+          <p>JDK 25 can shrink object headers with -XX:+UseCompactObjectHeaders. On the Paper server that can cut the heap, and it can also move GC pauses and tick time. I built a harness that copies the world twice and compares the two runs. I have not measured the world yet. The numbers come later.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/homelab/">homelab</a></li>
+            <li><a href="/blog/tags/minecraft/">minecraft</a></li>
+            <li><a href="/blog/tags/performance/" aria-current="page">performance</a></li>
+          </ul>
+        </li>
         <li>
           <time datetime="2026-11-25T07:00:00Z">November 25, 2026</time>
           <h2><a href="/blog/track-solver-a-third-faster-same-answers/">I Made My Track Solver a Third Faster Without Changing One Answer</a></h2>

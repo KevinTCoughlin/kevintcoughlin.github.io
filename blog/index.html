@@ -180,6 +180,65 @@
       <p class="meta"><a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
         <li>
+          <time datetime="2026-11-25T17:25:00Z">November 25, 2026</time>
+          <h2><a href="/blog/shipped-11105-icons-to-use-17/">I shipped 11,105 icons to use 17</a></h2>
+          <p>Shoutkit's phone app draws 31 Material icons, and the watch app draws three: PlayArrow, Pause, and Stop. Fourteen of the phone's icons come from material-icons-core. The other seventeen came from material-icons-extended. The 1.7.8 Android archive of that library is 11,105 icon classes. Release builds shrink the unused ones away. Debug builds dex every class, and that step is where CI ran out of heap. Copying the seventeen and dropping the dependency took the FOSS debug APK from 29,397,070 bytes to 22,728,773.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/android/">android</a></li>
+            <li><a href="/blog/tags/performance/">performance</a></li>
+            <li><a href="/blog/tags/tips/">tips</a></li>
+          </ul>
+        </li>
+        <li>
+          <time datetime="2026-11-25T17:22:00Z">November 25, 2026</time>
+          <h2><a href="/blog/scorecard-safe-test-comment/">Getting the test-results comment back without checks: write</a></h2>
+          <p>deathban-pro#83 removed EnricoMi/publish-unit-test-result-action from CI. The workflow had granted checks: write at the top, and OpenSSF Scorecard's Token-Permissions check warns on that scope, including when only a job sets it. The pull-request comment went away with the action. deathban-pro#87 puts a comment back from a later job whose write scope is pull-requests: write.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/github-actions/">github-actions</a></li>
+            <li><a href="/blog/tags/tips/">tips</a></li>
+          </ul>
+        </li>
+        <li>
+          <time datetime="2026-11-25T17:21:00Z">November 25, 2026</time>
+          <h2><a href="/blog/saltline-button-and-overflow/">The third draft card was pause, and the shell reserve could wrap</a></h2>
+          <p>Two bugs in Salt Line, both reachable from ordinary play and both fixed in saltline#167 (d5d720c). On a controller the third draft card shared B with pause, and pause is the first thing play asks for, so the press opened the pause screen. The shell reserve is an i32 with no cap unless Forced March imposes one, and a Standing Orders streak pays a bonus that grows on every one-shot clear. Past i32::MAX that add panics in a debug build and wraps negative in a release build. A negative reserve is out of shells.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/gamedev/">gamedev</a></li>
+            <li><a href="/blog/tags/github-actions/">github-actions</a></li>
+            <li><a href="/blog/tags/rust/">rust</a></li>
+            <li><a href="/blog/tags/tips/">tips</a></li>
+          </ul>
+        </li>
+        <li>
+          <time datetime="2026-11-25T17:20:00Z">November 25, 2026</time>
+          <h2><a href="/blog/dont-flip-the-jvm-flag/">Don't flip the JVM flag, measure it on a copy of the world</a></h2>
+          <p>JDK 25 can shrink object headers with -XX:+UseCompactObjectHeaders. On the Paper server that can cut the heap, and it can also move GC pauses and tick time. I built a harness that copies the world twice and compares the two runs. I have not measured the world yet. The numbers come later.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/homelab/">homelab</a></li>
+            <li><a href="/blog/tags/minecraft/">minecraft</a></li>
+            <li><a href="/blog/tags/performance/">performance</a></li>
+          </ul>
+        </li>
+        <li>
+          <time datetime="2026-11-25T17:19:00Z">November 25, 2026</time>
+          <h2><a href="/blog/shoutkit-underrun-volume-dip/">Why my radio app dipped to 1/14 volume on every network blip</a></h2>
+          <p>In ShoutKit I fade player.volume in from silence when a station rejoins, so the live edge does not arrive as a click. A buffer underrun reports .playing again, and the rejoin fade treated that as a fresh start. The stream came back at full volume, the fade waited one step, then set the volume to 1/14 and swelled back to full. shoutkit#274 runs the fade only after the player was silenced.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/audio/">audio</a></li>
+            <li><a href="/blog/tags/ios/">ios</a></li>
+            <li><a href="/blog/tags/swift/">swift</a></li>
+          </ul>
+        </li>
+        <li>
+          <time datetime="2026-11-25T17:18:00Z">November 25, 2026</time>
+          <h2><a href="/blog/http-server-shutdown-request-contexts/">http.Server.Shutdown doesn't cancel request contexts</a></h2>
+          <p>In lazydeck, I gave serve one 30 second deadline for the HTTP drain and for reaping in-flight jobs. http.Server.Shutdown waits until handlers return. It leaves their request contexts alone. An open GET /v1/jobs/{id}/events stream sat in that wait long enough to expire the deadline, so the job reap cancelled the job and returned without waiting. execute was still blocked in cmd.Run. The uv, python, ssh, and rsync children are in their own process group, so they kept running after the process exited.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/golang/">golang</a></li>
+            <li><a href="/blog/tags/tips/">tips</a></li>
+          </ul>
+        </li>
+        <li>
           <time datetime="2026-11-25T16:10:00Z">November 25, 2026</time>
           <h2><a href="/blog/circuit-breaker-publisher-feeds-one-probe/">Bad publisher feeds were opening the circuit breaker for iTunes</a></h2>
           <p>Five broken publisher feeds in a row used to open the circuit breaker in podr-service for 30 seconds. Search (/?q=), top podcasts (/?q=toppodcasts), and /podcast/{id} share that breaker with iTunes and Podcast Index, so they returned 500, or a cached entry still inside ttl + STALE_SECONDS. The log called the publisher failure an iTunes API error.</p>
