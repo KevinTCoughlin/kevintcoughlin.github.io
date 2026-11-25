@@ -10,6 +10,16 @@ tags:
 
 [Shoutkit](https://github.com/cascadiacollections/shoutkit-android)'s phone app draws 31 Material icons, and the watch app draws three: PlayArrow, Pause, and Stop. Fourteen of the phone's icons come from `material-icons-core`. The other seventeen came from `material-icons-extended`. The 1.7.8 Android archive of that library is 11,105 icon classes. Release builds shrink the unused ones away. Debug builds dex every class, and that step is where CI ran out of heap. Copying the seventeen and dropping the dependency took the FOSS debug APK from 29,397,070 bytes to 22,728,773.
 
+The phone app turns minify and resource shrinking on for the release build type only:
+
+```kotlin
+release {
+    isMinifyEnabled = true
+    isShrinkResources = true
+```
+
+Debug leaves both at the Android Gradle Plugin default, so the dex step sees every icon in the dependency.
+
 ## Where the heap went
 
 A push on [#342](https://github.com/cascadiacollections/shoutkit-android/pull/342) failed two jobs. The build died with `Error while dexing` on `material-icons-extended`, in `:app:mergeExtDexPlayDebug` and `:cast:mergeExtDexPlayDebug`. CodeQL's autobuild died with `java.lang.OutOfMemoryError: Java heap space`. Both passed on a rerun. The Gradle heap was 4 GB. [#343](https://github.com/cascadiacollections/shoutkit-android/pull/343) raised `org.gradle.jvmargs` to `-Xmx6g` and set `kotlin.daemon.jvmargs=-Xmx3g`, so the Kotlin compile daemon, a second JVM, fits a 16 GB runner alongside Gradle. The icon library stayed. That write-up called it about 11,000 icons, of which the app used 32, and left the replacement for a later change.
@@ -18,7 +28,11 @@ The removal counted 31 on the phone and 3 on the watch. `material-icons-extended
 
 ## The seventeen copies
 
-[#345](https://github.com/cascadiacollections/shoutkit-android/pull/345) ([`9703448`](https://github.com/cascadiacollections/shoutkit-android/commit/9703448ed60085b7e56b69adc762e9ceb554346f)) removes `material-icons-extended` from the phone app, the watch app, and the version catalog. The watch module depends on `material-icons-core` on its own. The seventeen icons are copied from the 1.7.8 sources into `com.cascadiacollections.sir.ui.icons`: Backup, Bedtime, ContentCopy, DragHandle, FileDownload, FileUpload, FilterList, GraphicEq, History, LibraryMusic, MusicNote, Pause, PlayCircle, QueueMusic, Radio, Stop, and WifiOff. Sixteen are `Icons.Filled`. QueueMusic is `Icons.AutoMirrored.Filled`, the variant the library screen already used. Pause and Stop are copied again into `com.cascadiacollections.sir.wear.icons`, because the two apps share no Compose code. Call sites keep writing `Icons.Default` (an alias for `Icons.Filled`) and `Icons.AutoMirrored.Filled`, and change the import.
+[#345](https://github.com/cascadiacollections/shoutkit-android/pull/345) ([`9703448`](https://github.com/cascadiacollections/shoutkit-android/commit/9703448ed60085b7e56b69adc762e9ceb554346f)) removes `material-icons-extended` from the phone app, the watch app, and the version catalog. The watch module depends on `material-icons-core` on its own. The seventeen icons are copied from the 1.7.8 sources into `com.cascadiacollections.sir.ui.icons`: Backup, Bedtime, ContentCopy, DragHandle, FileDownload, FileUpload, FilterList, GraphicEq, History, LibraryMusic, MusicNote, Pause, PlayCircle, QueueMusic, Radio, Stop, and WifiOff. Sixteen are `Icons.Filled`. QueueMusic is `Icons.AutoMirrored.Filled`, the variant the library screen already used. Pause and Stop are copied again into `com.cascadiacollections.sir.wear.icons`, because the two apps share no Compose code. The watch's third icon, PlayArrow, stays on core. Call sites keep writing `Icons.Default` (an alias for `Icons.Filled`) and `Icons.AutoMirrored.Filled`, and change the import. The phone app drops the extended dependency and keeps core:
+
+```kotlin
+implementation(libs.androidx.compose.material.icons.core)
+```
 
 The fourteen that stay on core are Add, ArrowBack (automirrored), Check, Clear, Close, Delete, Favorite, FavoriteBorder, MoreVert, PlayArrow, Refresh, Search, Settings, and Share.
 
@@ -66,4 +80,4 @@ The release APK is the same 4,278,226 bytes. R8 was already removing the unused 
 
 `detekt`, `:app:lintPlayDebug`, `:wear:lintDebug`, `:app:testFossDebugUnitTest`, `:wear:testDebugUnitTest`, `:app:assembleFossDebug`, and `:wear:assembleDebug` passed locally, and so did `reuse lint` and `.github/scripts/check-license-boundary.sh`. The vectors are the 1.7.8 paths. A side-by-side look on a device is still open, and the watch app was only compiled.
 
-If a debug build is dexing `material-icons-extended` to draw a handful of icons, copy those icons and keep `material-icons-core`.
+The 6 GB heap from #343 is still in `gradle.properties`. The dex that ran out of memory was this library. If a debug build is dexing `material-icons-extended` to draw a handful of icons, copy those icons and keep `material-icons-core`.
