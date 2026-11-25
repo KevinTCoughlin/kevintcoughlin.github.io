@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Two bugs in Salt Line were reachable from ordinary play. On a controller the third draft card was bound to B, which is also pause, and pause is read first, so the press opened the pause screen and the card was never taken. A very long Standing Orders streak could push the shell reserve past i32::MAX: a debug build panics onto the crash screen and writes no save, and a release build wraps the count negative, which the run reads as out of shells. I fixed both in saltline#167. Grants saturate. The golden-run digest is unchanged, so SIM_EPOCH stays 6." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/saltline-shared-button-and-wrapping-reserve/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>A draft button that paused, and a shell count that wrapped — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>A draft button that paused, and a shell count that wrapped</h1>
+        <time datetime="2026-11-25T17:18:00Z">November 25, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/gamedev/">gamedev</a></li>
+          <li><a href="/blog/tags/github-actions/">github-actions</a></li>
+          <li><a href="/blog/tags/rust/">rust</a></li>
+        </ul>
+<p>Two bugs in <a href="https://github.com/cascadiacollections/saltline">Salt Line</a> were reachable from ordinary play. On a controller the third draft card was bound to B, which is also pause, and pause is read first, so the press opened the pause screen and the card was never taken. A very long Standing Orders streak could push the shell reserve past <code>i32::MAX</code>: a debug build panics onto the crash screen and writes no save, and a release build wraps the count negative, which the run reads as out of shells. I fixed both in <a href="https://github.com/cascadiacollections/saltline/pull/167">saltline#167</a>. Grants saturate. The golden-run digest is unchanged, so <code>SIM_EPOCH</code> stays 6.</p>
+<h2 id="the-third-card-was-pause">The third card was pause</h2>
+<p>A draft offers three modifiers. The controller defaults were X, A, and B. Keyboard is 1, 2, and 3, and touch taps the card. Keyboard and touch already took the third card.</p>
+<p>B is also pause. Play input asks for pause before it asks for a draft pick, and key and pad presses are taken by the action that asks, so the order is the binding:</p>
+<pre><code class="language-rust">/// A run in play: pause, draft picks, then aim, fuse, reposition and fire.
+/// Nothing but pause is read while a shot is being replayed or a clear
+/// held.
+pub(super) fn handle_play_input(&amp;mut self, delta: f64) {
+    if self.action_pressed(Action::Back) {
+        self.input.touch.cancel_drag();
+        self.mode = Mode::Paused;
+        return;
+    }
+    let phase = self.play.run.as_ref().map(|r| r.phase);
+    let Some(phase) = phase else { return };
+
+    // A drag only aims on the screen it started on: drafting or a shot in
+    // the air forgets it, so it can never drop into a later shot.
+    if phase != Phase::Firing || self.play.anim.is_some() || self.play.clear_hold &gt; 0.0 {
+        self.input.touch.cancel_drag();
+    }
+
+    if phase == Phase::Drafting {
+        for (i, action) in [Action::Draft1, Action::Draft2, Action::Draft3]
+            .into_iter()
+            .enumerate()
+        {
+            if self.action_pressed(action) {
+                let taken = self.play.run.as_mut().and_then(|r| r.take_offer(i));
+</code></pre>
+<p><code>Draft3</code> was B, so the press opened pause, the third offer stayed untaken, and the draft stayed open. Y is free while a draft is open. Reposition, replay, and the star read Y on other screens, and the draft branch returns before any of that. The third card is now Y. B still pauses.</p>
+<p>The settings screen's DRAFT row lists all three buttons. With a controller in use the prompt is <code>X A Y  PICK A MODIFIER</code>.</p>
+<p>The test presses B during a draft and checks three things: the mode is paused, the phase is still drafting, and the third offer has no stacks. B again resumes. Y takes that card and leaves the draft.</p>
+<h2 id="the-reserve-stopped-at-the-top-of-an-i32">The reserve stopped at the top of an i32</h2>
+<p>Shells are an <code>i32</code>. The reserve has no cap unless Forced March imposes one. Taking Forced March drops a reserve of 40 to 15 on the spot. Standing Orders adds the one-shot streak to the shells paid for a clear, and the streak grows by one on every one-shot clear. The grant was a plain add, then the cap:</p>
+<pre><code class="language-rust">self.shells = (self.shells + n).min(self.loadout.cap());
+</code></pre>
+<p>Past <code>i32::MAX</code> that panics in debug. A panic is the crash screen, and nothing is written after one, so the run on disk stays as it was. In release the add wraps. A negative reserve is out of shells: <code>shells &lt;= 0</code> ends the run with <code>RunOver::OutOfShells</code>.</p>
+<p>The streak counter had the same shape. It was a <code>u32</code> incremented with <code>+= 1</code>. In debug that panics at <code>u32::MAX</code>. In release it wraps to 0. The bonus was <code>one_shot_streak as i32</code>, and a streak past <code>i32::MAX</code> casts negative in debug and in release.</p>
+<p>Grants, the supply screen's +6, and the streak bonus now saturate, and the cap still applies afterwards. With no cap imposed, the cap is <code>i32::MAX</code>.</p>
+<pre><code class="language-rust">fn grant(&amp;mut self, n: i32) {
+    // An uncapped reserve plus Standing Orders grows without a ceiling.
+    // A wrapping add would panic in debug and, in release, turn a huge
+    // reserve negative and end the run. Stop at `i32::MAX`, then apply
+    // the cap (`i32::MAX` when nothing has imposed one).
+    self.shells = self.shells.saturating_add(n).min(self.loadout.cap());
+}
+</code></pre>
+<pre><code class="language-rust">if shots &lt;= 1 {
+    // Saturating: a streak that has already reached `u32::MAX` must
+    // not wrap, and the bonus paid below must not wrap to a negative
+    // shell count.
+    self.one_shot_streak = self.one_shot_streak.saturating_add(1);
+    if self.loadout.standing_orders() {
+        let bonus = i32::try_from(self.one_shot_streak).unwrap_or(i32::MAX);
+        gain = gain.saturating_add(bonus);
+    }
+} else {
+    self.one_shot_streak = 0;
+}
+self.grant(gain);
+</code></pre>
+<p>A Depot taken at <code>i32::MAX - 1</code> stops at <code>i32::MAX</code>. Taking Depot once moves a reserve of 10 to 18, so that grant is 8 shells and the old add would have overflowed. A one-shot clear with Standing Orders and a streak of <code>u32::MAX</code>, starting from 20 shells and no cap, fills the reserve to <code>i32::MAX</code>, leaves the streak at <code>u32::MAX</code>, and the run is still going.</p>
+<p>Anything a real run has reached is the same, so the golden-run digest did not move and <code>SIM_EPOCH</code> stays 6.</p>
+<h2 id="ci-compares-the-drone-trial-digest-on-its-own">CI compares the Drone Trial digest on its own</h2>
+<p><a href="https://github.com/cascadiacollections/saltline/pull/173">saltline#173</a> adds a second digest to CI. Drone Trial is on the title, and <code>trial_determinism</code> already replays 200 seeded rounds and prints a digest. CI compared the artillery digest. A replay break that existed only in the trial would still pass the matrix.</p>
+<p>The sim job, the Android emulator job, and the iOS simulator job now run that binary beside the artillery one and upload a second file, <code>trial-digest-&lt;platform&gt;.txt</code>, in the same artifact. The determinism job compares the two sets separately. They are different numbers. Each set has to agree with itself: seven copies when the Apple jobs run, and fewer on a gameplay-only pull request, the same count the artillery set already uses.</p>
+<p><code>just android-digest</code> on a phone still runs the artillery binary. The emulator covers the trial on bionic.</p>
+<p>I ran <code>cargo run --release -q -p salt-line-sim --bin trial_determinism</code> locally: 200 replays, 139 hits, zero divergences, <code>digest: 0xff8e006571cf0da1</code>, about five seconds. The Android emulator and the iOS simulator steps were left to CI. They spawn the second binary the same way they spawn the artillery digest.</p>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>

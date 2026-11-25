@@ -177,8 +177,18 @@
     </header>
     <main class="shell">
       <h1>github-actions</h1>
-      <p class="meta">3 posts · <a href="/blog/tags/">All tags</a></p>
+      <p class="meta">4 posts · <a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
+        <li>
+          <time datetime="2026-11-25T17:18:00Z">November 25, 2026</time>
+          <h2><a href="/blog/saltline-shared-button-and-wrapping-reserve/">A draft button that paused, and a shell count that wrapped</a></h2>
+          <p>Two bugs in Salt Line were reachable from ordinary play. On a controller the third draft card was bound to B, which is also pause, and pause is read first, so the press opened the pause screen and the card was never taken. A very long Standing Orders streak could push the shell reserve past i32::MAX: a debug build panics onto the crash screen and writes no save, and a release build wraps the count negative, which the run reads as out of shells. I fixed both in saltline#167. Grants saturate. The golden-run digest is unchanged, so SIM_EPOCH stays 6.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/gamedev/">gamedev</a></li>
+            <li><a href="/blog/tags/github-actions/" aria-current="page">github-actions</a></li>
+            <li><a href="/blog/tags/rust/">rust</a></li>
+          </ul>
+        </li>
         <li>
           <time datetime="2026-11-25T04:02:00Z">November 25, 2026</time>
           <h2><a href="/blog/trivy-action-sarif-ignores-severity/">trivy-action ignored the severity I set when it uploaded SARIF</a></h2>

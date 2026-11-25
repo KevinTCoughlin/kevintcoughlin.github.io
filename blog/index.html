@@ -180,6 +180,16 @@
       <p class="meta"><a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
         <li>
+          <time datetime="2026-11-25T17:18:00Z">November 25, 2026</time>
+          <h2><a href="/blog/saltline-shared-button-and-wrapping-reserve/">A draft button that paused, and a shell count that wrapped</a></h2>
+          <p>Two bugs in Salt Line were reachable from ordinary play. On a controller the third draft card was bound to B, which is also pause, and pause is read first, so the press opened the pause screen and the card was never taken. A very long Standing Orders streak could push the shell reserve past i32::MAX: a debug build panics onto the crash screen and writes no save, and a release build wraps the count negative, which the run reads as out of shells. I fixed both in saltline#167. Grants saturate. The golden-run digest is unchanged, so SIM_EPOCH stays 6.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/gamedev/">gamedev</a></li>
+            <li><a href="/blog/tags/github-actions/">github-actions</a></li>
+            <li><a href="/blog/tags/rust/">rust</a></li>
+          </ul>
+        </li>
+        <li>
           <time datetime="2026-11-25T07:00:00Z">November 25, 2026</time>
           <h2><a href="/blog/track-solver-a-third-faster-same-answers/">I Made My Track Solver a Third Faster Without Changing One Answer</a></h2>
           <p>I'm building a racing game in Rust and Godot, a sibling to Salt Line. Every track in it is generated, and every generated track is proven drivable before a player sees it. Proving is slow: a late track costs about four million physics ticks, and a phone does that while the player looks at a menu.</p>

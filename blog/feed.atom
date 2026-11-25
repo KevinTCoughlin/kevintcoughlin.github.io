@@ -4,11 +4,92 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-25T07:00:00Z</updated>
+  <updated>2026-11-25T17:18:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>A draft button that paused, and a shell count that wrapped</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/saltline-shared-button-and-wrapping-reserve/"/>
+    <id>https://kevintcoughlin.com/blog/saltline-shared-button-and-wrapping-reserve/</id>
+    <published>2026-11-25T17:18:00Z</published>
+    <updated>2026-11-25T17:18:00Z</updated>
+    <category term="gamedev"/>
+    <category term="github-actions"/>
+    <category term="rust"/>
+    <summary>Two bugs in Salt Line were reachable from ordinary play. On a controller the third draft card was bound to B, which is also pause, and pause is read first, so the press opened the pause screen and the card was never taken. A very long Standing Orders streak could push the shell reserve past i32::MAX: a debug build panics onto the crash screen and writes no save, and a release build wraps the count negative, which the run reads as out of shells. I fixed both in saltline#167. Grants saturate. The golden-run digest is unchanged, so SIM_EPOCH stays 6.</summary>
+    <content type="html">&lt;p&gt;Two bugs in &lt;a href=&quot;https://github.com/cascadiacollections/saltline&quot;&gt;Salt Line&lt;/a&gt; were reachable from ordinary play. On a controller the third draft card was bound to B, which is also pause, and pause is read first, so the press opened the pause screen and the card was never taken. A very long Standing Orders streak could push the shell reserve past &lt;code&gt;i32::MAX&lt;/code&gt;: a debug build panics onto the crash screen and writes no save, and a release build wraps the count negative, which the run reads as out of shells. I fixed both in &lt;a href=&quot;https://github.com/cascadiacollections/saltline/pull/167&quot;&gt;saltline#167&lt;/a&gt;. Grants saturate. The golden-run digest is unchanged, so &lt;code&gt;SIM_EPOCH&lt;/code&gt; stays 6.&lt;/p&gt;
+&lt;h2 id=&quot;the-third-card-was-pause&quot;&gt;The third card was pause&lt;/h2&gt;
+&lt;p&gt;A draft offers three modifiers. The controller defaults were X, A, and B. Keyboard is 1, 2, and 3, and touch taps the card. Keyboard and touch already took the third card.&lt;/p&gt;
+&lt;p&gt;B is also pause. Play input asks for pause before it asks for a draft pick, and key and pad presses are taken by the action that asks, so the order is the binding:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;/// A run in play: pause, draft picks, then aim, fuse, reposition and fire.
+/// Nothing but pause is read while a shot is being replayed or a clear
+/// held.
+pub(super) fn handle_play_input(&amp;amp;mut self, delta: f64) {
+    if self.action_pressed(Action::Back) {
+        self.input.touch.cancel_drag();
+        self.mode = Mode::Paused;
+        return;
+    }
+    let phase = self.play.run.as_ref().map(|r| r.phase);
+    let Some(phase) = phase else { return };
+
+    // A drag only aims on the screen it started on: drafting or a shot in
+    // the air forgets it, so it can never drop into a later shot.
+    if phase != Phase::Firing || self.play.anim.is_some() || self.play.clear_hold &amp;gt; 0.0 {
+        self.input.touch.cancel_drag();
+    }
+
+    if phase == Phase::Drafting {
+        for (i, action) in [Action::Draft1, Action::Draft2, Action::Draft3]
+            .into_iter()
+            .enumerate()
+        {
+            if self.action_pressed(action) {
+                let taken = self.play.run.as_mut().and_then(|r| r.take_offer(i));
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;Draft3&lt;/code&gt; was B, so the press opened pause, the third offer stayed untaken, and the draft stayed open. Y is free while a draft is open. Reposition, replay, and the star read Y on other screens, and the draft branch returns before any of that. The third card is now Y. B still pauses.&lt;/p&gt;
+&lt;p&gt;The settings screen's DRAFT row lists all three buttons. With a controller in use the prompt is &lt;code&gt;X A Y  PICK A MODIFIER&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The test presses B during a draft and checks three things: the mode is paused, the phase is still drafting, and the third offer has no stacks. B again resumes. Y takes that card and leaves the draft.&lt;/p&gt;
+&lt;h2 id=&quot;the-reserve-stopped-at-the-top-of-an-i32&quot;&gt;The reserve stopped at the top of an i32&lt;/h2&gt;
+&lt;p&gt;Shells are an &lt;code&gt;i32&lt;/code&gt;. The reserve has no cap unless Forced March imposes one. Taking Forced March drops a reserve of 40 to 15 on the spot. Standing Orders adds the one-shot streak to the shells paid for a clear, and the streak grows by one on every one-shot clear. The grant was a plain add, then the cap:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;self.shells = (self.shells + n).min(self.loadout.cap());
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Past &lt;code&gt;i32::MAX&lt;/code&gt; that panics in debug. A panic is the crash screen, and nothing is written after one, so the run on disk stays as it was. In release the add wraps. A negative reserve is out of shells: &lt;code&gt;shells &amp;lt;= 0&lt;/code&gt; ends the run with &lt;code&gt;RunOver::OutOfShells&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The streak counter had the same shape. It was a &lt;code&gt;u32&lt;/code&gt; incremented with &lt;code&gt;+= 1&lt;/code&gt;. In debug that panics at &lt;code&gt;u32::MAX&lt;/code&gt;. In release it wraps to 0. The bonus was &lt;code&gt;one_shot_streak as i32&lt;/code&gt;, and a streak past &lt;code&gt;i32::MAX&lt;/code&gt; casts negative in debug and in release.&lt;/p&gt;
+&lt;p&gt;Grants, the supply screen's +6, and the streak bonus now saturate, and the cap still applies afterwards. With no cap imposed, the cap is &lt;code&gt;i32::MAX&lt;/code&gt;.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;fn grant(&amp;amp;mut self, n: i32) {
+    // An uncapped reserve plus Standing Orders grows without a ceiling.
+    // A wrapping add would panic in debug and, in release, turn a huge
+    // reserve negative and end the run. Stop at `i32::MAX`, then apply
+    // the cap (`i32::MAX` when nothing has imposed one).
+    self.shells = self.shells.saturating_add(n).min(self.loadout.cap());
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;if shots &amp;lt;= 1 {
+    // Saturating: a streak that has already reached `u32::MAX` must
+    // not wrap, and the bonus paid below must not wrap to a negative
+    // shell count.
+    self.one_shot_streak = self.one_shot_streak.saturating_add(1);
+    if self.loadout.standing_orders() {
+        let bonus = i32::try_from(self.one_shot_streak).unwrap_or(i32::MAX);
+        gain = gain.saturating_add(bonus);
+    }
+} else {
+    self.one_shot_streak = 0;
+}
+self.grant(gain);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A Depot taken at &lt;code&gt;i32::MAX - 1&lt;/code&gt; stops at &lt;code&gt;i32::MAX&lt;/code&gt;. Taking Depot once moves a reserve of 10 to 18, so that grant is 8 shells and the old add would have overflowed. A one-shot clear with Standing Orders and a streak of &lt;code&gt;u32::MAX&lt;/code&gt;, starting from 20 shells and no cap, fills the reserve to &lt;code&gt;i32::MAX&lt;/code&gt;, leaves the streak at &lt;code&gt;u32::MAX&lt;/code&gt;, and the run is still going.&lt;/p&gt;
+&lt;p&gt;Anything a real run has reached is the same, so the golden-run digest did not move and &lt;code&gt;SIM_EPOCH&lt;/code&gt; stays 6.&lt;/p&gt;
+&lt;h2 id=&quot;ci-compares-the-drone-trial-digest-on-its-own&quot;&gt;CI compares the Drone Trial digest on its own&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/cascadiacollections/saltline/pull/173&quot;&gt;saltline#173&lt;/a&gt; adds a second digest to CI. Drone Trial is on the title, and &lt;code&gt;trial_determinism&lt;/code&gt; already replays 200 seeded rounds and prints a digest. CI compared the artillery digest. A replay break that existed only in the trial would still pass the matrix.&lt;/p&gt;
+&lt;p&gt;The sim job, the Android emulator job, and the iOS simulator job now run that binary beside the artillery one and upload a second file, &lt;code&gt;trial-digest-&amp;lt;platform&amp;gt;.txt&lt;/code&gt;, in the same artifact. The determinism job compares the two sets separately. They are different numbers. Each set has to agree with itself: seven copies when the Apple jobs run, and fewer on a gameplay-only pull request, the same count the artillery set already uses.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;just android-digest&lt;/code&gt; on a phone still runs the artillery binary. The emulator covers the trial on bionic.&lt;/p&gt;
+&lt;p&gt;I ran &lt;code&gt;cargo run --release -q -p salt-line-sim --bin trial_determinism&lt;/code&gt; locally: 200 replays, 139 hits, zero divergences, &lt;code&gt;digest: 0xff8e006571cf0da1&lt;/code&gt;, about five seconds. The Android emulator and the iOS simulator steps were left to CI. They spawn the second binary the same way they spawn the artillery digest.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>I Made My Track Solver a Third Faster Without Changing One Answer</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/track-solver-a-third-faster-same-answers/"/>
