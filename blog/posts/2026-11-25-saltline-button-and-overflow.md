@@ -1,13 +1,15 @@
 ---
-published: 2026-11-25T17:20:00Z
+published: 2026-11-25T17:21:00Z
 tags:
+  - gamedev
+  - github-actions
   - rust
   - tips
 ---
 
 # The third draft card was pause, and the shell reserve could wrap
 
-Two bugs in [Salt Line](https://github.com/cascadiacollections/saltline), both fixed in [saltline#167](https://github.com/cascadiacollections/saltline/pull/167) ([`d5d720c`](https://github.com/cascadiacollections/saltline/commit/d5d720c0e9566cb01c568ed3b6332ba7501657db)). On a controller the third draft card shared B with pause, and pause is the first thing play asks for, so the press opened the pause screen. The shell reserve is an `i32` with no cap unless Forced March imposes one, and a Standing Orders streak pays a bonus that grows on every one-shot clear. Past `i32::MAX` that add panics in a debug build and wraps negative in a release build. A negative reserve is out of shells.
+Two bugs in [Salt Line](https://github.com/cascadiacollections/saltline), both reachable from ordinary play and both fixed in [saltline#167](https://github.com/cascadiacollections/saltline/pull/167) ([`d5d720c`](https://github.com/cascadiacollections/saltline/commit/d5d720c0e9566cb01c568ed3b6332ba7501657db)). On a controller the third draft card shared B with pause, and pause is the first thing play asks for, so the press opened the pause screen. The shell reserve is an `i32` with no cap unless Forced March imposes one, and a Standing Orders streak pays a bonus that grows on every one-shot clear. Past `i32::MAX` that add panics in a debug build and wraps negative in a release build. A negative reserve is out of shells.
 
 ## The press was taken by pause
 
@@ -52,7 +54,7 @@ B still pauses. The settings screen used to show a draft as two buttons, one row
 
 ## The reserve stopped at the top of an `i32`
 
-`Loadout::cap` is `i32::MAX` unless a modifier imposes one. Forced March drops it to 15. The comment on `cap` keeps the default open on purpose: a 40-shell ceiling would eat most of a Depot on the first draft, and Depot, Storm Front and Quartermaster would stop being worth taking. Standing Orders reads "One-shot clears grant +1 per consecutive streak." The streak is a `u32`. A one-shot clear increments it and adds that count to the shells paid for the screen.
+`Loadout::cap` is `i32::MAX` unless a modifier imposes one. Taking Forced March drops a reserve of 40 to 15 on the spot. The comment on `cap` keeps the default open on purpose: a 40-shell ceiling would eat most of a Depot on the first draft, and Depot, Storm Front and Quartermaster would stop being worth taking. Standing Orders reads "One-shot clears grant +1 per consecutive streak." The streak is a `u32`. A one-shot clear increments it and adds that count to the shells paid for the screen.
 
 The old grant was a plain add, then the cap:
 
@@ -86,14 +88,22 @@ fn grant(&mut self, n: i32) {
 ```
 
 ```rust
-self.one_shot_streak = self.one_shot_streak.saturating_add(1);
-if self.loadout.standing_orders() {
-    let bonus = i32::try_from(self.one_shot_streak).unwrap_or(i32::MAX);
-    gain = gain.saturating_add(bonus);
+if shots <= 1 {
+    // Saturating: a streak that has already reached `u32::MAX` must
+    // not wrap, and the bonus paid below must not wrap to a negative
+    // shell count.
+    self.one_shot_streak = self.one_shot_streak.saturating_add(1);
+    if self.loadout.standing_orders() {
+        let bonus = i32::try_from(self.one_shot_streak).unwrap_or(i32::MAX);
+        gain = gain.saturating_add(bonus);
+    }
+} else {
+    self.one_shot_streak = 0;
 }
+self.grant(gain);
 ```
 
-`the_reserve_stops_at_i32_max_instead_of_wrapping` takes a Depot, which grants 8 shells, at `i32::MAX - 1` and stops at `i32::MAX`. `a_huge_one_shot_streak_does_not_wrap_the_reserve` starts from 20 shells with Standing Orders and `one_shot_streak` already `u32::MAX`, clears the screen in one shot, and expects `i32::MAX` shells, the streak still at `u32::MAX`, and the run not over.
+`depot_grants_its_shells_once_on_take` moves a reserve of 10 to 18, so that grant is 8 shells. `the_reserve_stops_at_i32_max_instead_of_wrapping` takes a Depot at `i32::MAX - 1` and stops at `i32::MAX`. The old add would have overflowed there. `a_huge_one_shot_streak_does_not_wrap_the_reserve` starts from 20 shells with Standing Orders and `one_shot_streak` already `u32::MAX`, clears the screen in one shot, and expects `i32::MAX` shells, the streak still at `u32::MAX`, and the run not over.
 
 ## The golden-run digest stayed
 
@@ -101,4 +111,6 @@ if self.loadout.standing_orders() {
 
 Same standard as the [track solver](/blog/track-solver-a-third-faster-same-answers/) the same day. There, a faster proof was only allowed through if every timer and every failure stayed put, and a saved digest was the check.
 
-The artillery digest is a different number from the Drone Trial digest. [saltline#173](https://github.com/cascadiacollections/saltline/pull/173) runs `trial_determinism` in the sim job, the Android emulator job and the iOS simulator job, and uploads `trial-digest-<platform>.txt` beside the artillery file. Each set is compared with itself. The pull request records a local run of that bin: 200 replays, 139 hits, zero divergences, `digest: 0xff8e006571cf0da1`. `just android-digest` on a phone still runs the artillery binary only.
+The artillery digest is a different number from the Drone Trial digest. CI used to compare only the artillery one, so a replay break that existed only in the trial would still pass the matrix. [saltline#173](https://github.com/cascadiacollections/saltline/pull/173) runs `trial_determinism` in the sim job, the Android emulator job and the iOS simulator job, and uploads `trial-digest-<platform>.txt` beside the artillery file. The determinism job compares the two sets separately. Each set has to agree with itself: seven copies when the Apple jobs run, and fewer on a gameplay-only pull request, the same count the artillery set already uses.
+
+The pull request records a local run, `cargo run --release -q -p salt-line-sim --bin trial_determinism`: 200 replays, 139 hits, zero divergences, `digest: 0xff8e006571cf0da1`, about five seconds. The Android emulator and the iOS simulator steps were left to CI. They spawn the second binary the same way they spawn the artillery digest. `just android-digest` on a phone still runs the artillery binary only. The emulator covers the trial on bionic.
