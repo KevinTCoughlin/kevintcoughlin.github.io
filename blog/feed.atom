@@ -4,11 +4,158 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-25T07:00:00Z</updated>
+  <updated>2026-11-25T17:18:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>http.Server.Shutdown doesn't cancel request contexts</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/http-server-shutdown-request-contexts/"/>
+    <id>https://kevintcoughlin.com/blog/http-server-shutdown-request-contexts/</id>
+    <published>2026-11-25T17:18:00Z</published>
+    <updated>2026-11-25T17:18:00Z</updated>
+    <category term="go"/>
+    <category term="tips"/>
+    <summary>In lazydeck, I gave serve one 30 second deadline for the HTTP drain and for reaping in-flight jobs. http.Server.Shutdown waits until handlers return. It leaves their request contexts alone. An open GET /v1/jobs/{id}/events stream sat in that wait long enough to expire the deadline, so the job reap cancelled the job and returned without waiting. execute was still blocked in cmd.Run. The uv, python, ssh, and rsync children are in their own process group, so they kept running after the process exited.</summary>
+    <content type="html">&lt;p&gt;In &lt;a href=&quot;https://github.com/KevinTCoughlin/lazydeck&quot;&gt;lazydeck&lt;/a&gt;, I gave &lt;code&gt;serve&lt;/code&gt; one 30 second deadline for the HTTP drain and for reaping in-flight jobs. &lt;a href=&quot;https://pkg.go.dev/net/http#Server.Shutdown&quot;&gt;&lt;code&gt;http.Server.Shutdown&lt;/code&gt;&lt;/a&gt; waits until handlers return. It leaves their request contexts alone. An open &lt;code&gt;GET /v1/jobs/{id}/events&lt;/code&gt; stream sat in that wait long enough to expire the deadline, so the job reap cancelled the job and returned without waiting. &lt;code&gt;execute&lt;/code&gt; was still blocked in &lt;code&gt;cmd.Run&lt;/code&gt;. The uv, python, ssh, and rsync children are in their own process group, so they kept running after the process exited.&lt;/p&gt;
+&lt;h2 id=&quot;one-deadline-two-waits&quot;&gt;One deadline, two waits&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;shutdownBudget&lt;/code&gt; was the whole shutdown, drain and then reap:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;// shutdownBudget bounds how long Run waits, in total, for the HTTP server's
+// graceful shutdown and then for in-flight jobs to actually cancel their
+// SSH/rsync subprocess (see internal/client/process_unix.go's own 10s
+// WaitDelay backstop) before Run returns anyway.
+const shutdownBudget = 30 * time.Second
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;Run&lt;/code&gt; built one context from it and passed that context to both steps:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;case &amp;lt;-ctx.Done():
+    shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownBudget)
+    defer cancel()
+    for _, srv := range servers {
+        if err := srv.Shutdown(shutdownCtx); err != nil {
+            log.Printf(&amp;quot;lazydeck serve: graceful HTTP shutdown failed: %v&amp;quot;, err)
+        }
+    }
+    // Cancel and wait for in-flight jobs even if HTTP shutdown above
+    // didn't finish cleanly: otherwise a deploy's rsync/ssh could keep
+    // running detached after this process has already returned/exited.
+    if err := apiServer.jobs.Shutdown(shutdownCtx); err != nil {
+        log.Printf(&amp;quot;lazydeck serve: in-flight job(s) did not finish before shutdown timed out: %v&amp;quot;, err)
+        return err
+    }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The reap does cancel every tracked job. Then it waits for the goroutines, or for the context, whichever comes first:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;for _, j := range jobs {
+    j.cancel()
+}
+
+done := make(chan struct{})
+go func() {
+    m.wg.Wait()
+    close(done)
+}()
+select {
+case &amp;lt;-done:
+    return nil
+case &amp;lt;-ctx.Done():
+    return ctx.Err()
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;When that context is already expired, the &lt;code&gt;select&lt;/code&gt; takes &lt;code&gt;ctx.Done()&lt;/code&gt; while &lt;code&gt;execute&lt;/code&gt; is still inside &lt;code&gt;cmd.Run&lt;/code&gt;. The cancel has been signaled. The process is free to exit.&lt;/p&gt;
+&lt;h2 id=&quot;the-stream-that-held-the-drain&quot;&gt;The stream that held the drain&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://pkg.go.dev/net/http#Server.Shutdown&quot;&gt;Shutdown&lt;/a&gt; closes listeners, closes idle connections, and waits for the rest to return to idle. A job event stream is in the middle of a response. Its handler returns when the request context ends.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://pkg.go.dev/net/http#Server.BaseContext&quot;&gt;&lt;code&gt;BaseContext&lt;/code&gt;&lt;/a&gt; is the parent of incoming request contexts. Left nil, that parent is &lt;code&gt;context.Background()&lt;/code&gt;. Cancelling the serve context does not reach the stream, so the stream holds &lt;code&gt;Shutdown&lt;/code&gt; until the 30 second context expires. The reap then runs on that same context.&lt;/p&gt;
+&lt;p&gt;Both servers now derive request contexts from the serve context:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;// Parent every request context on the serve context.
+// http.Server.Shutdown does not cancel handlers; it only waits for them
+// to return. Job SSE streams block in that wait until the request
+// context ends, so without this they hold Shutdown until the deadline.
+requestBase := func(net.Listener) context.Context { return ctx }
+loopbackSrv := &amp;amp;http.Server{
+    Handler:           apiServer.Handler(),
+    ReadHeaderTimeout: 10 * time.Second,
+    BaseContext:       requestBase,
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The network server sets the same &lt;code&gt;BaseContext&lt;/code&gt;. Cancelling serve cancels the stream's request context, the handler returns, and the connection can go idle.&lt;/p&gt;
+&lt;p&gt;HTTP still drains first, on its own 30 second budget, so a handler inside &lt;code&gt;Submit&lt;/code&gt; publishes the job before &lt;code&gt;jobs.Shutdown&lt;/code&gt; waits. A handler that ignores cancellation can still consume that whole budget. The reap gets a new one, and it waits:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;httpCtx, httpCancel := context.WithTimeout(context.Background(), shutdownBudget)
+defer httpCancel()
+for _, srv := range servers {
+    if err := srv.Shutdown(httpCtx); err != nil {
+        log.Printf(&amp;quot;lazydeck serve: graceful HTTP shutdown failed: %v&amp;quot;, err)
+    }
+}
+jobCtx, jobCancel := context.WithTimeout(context.Background(), shutdownBudget)
+defer jobCancel()
+if err := apiServer.jobs.Shutdown(jobCtx); err != nil {
+    log.Printf(&amp;quot;lazydeck serve: in-flight job(s) did not finish before shutdown timed out: %v&amp;quot;, err)
+    return err
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;That wait is what lets the process-group kill finish before exit. &lt;code&gt;configureCancellation&lt;/code&gt; in &lt;code&gt;internal/client/process_unix.go&lt;/code&gt; starts the child in its own group and, on cancel, signals the group:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;func configureCancellation(cmd *exec.Cmd) {
+    if cmd.SysProcAttr == nil {
+        cmd.SysProcAttr = &amp;amp;syscall.SysProcAttr{}
+    }
+    cmd.SysProcAttr.Setpgid = true
+    cmd.WaitDelay = cancelWaitDelay
+    cmd.Cancel = func() error {
+        return killProcessGroup(cmd)
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;cancelWaitDelay&lt;/code&gt; is 10 seconds. &lt;code&gt;killProcessGroup&lt;/code&gt; sends &lt;code&gt;SIGKILL&lt;/code&gt; to &lt;code&gt;-pid&lt;/code&gt;, the group. &lt;code&gt;uv&lt;/code&gt; execs Python, which shells out to &lt;code&gt;ssh&lt;/code&gt; and &lt;code&gt;rsync&lt;/code&gt;. Those grandchildren survive the serve process exiting, because they are not in its group. Waiting until &lt;code&gt;cmd.Run&lt;/code&gt; returns is what reaps them.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;TestRunShutdownWaitsForInFlightJobWithEventStreamOpen&lt;/code&gt; holds the event stream open, cancels serve, and fails if &lt;code&gt;Run&lt;/code&gt; returns while deploy is still unwinding. The fake deploy sleeps 200 milliseconds after its context is cancelled, so a shutdown that only signals cancel is visible.&lt;/p&gt;
+&lt;p&gt;The fix is &lt;a href=&quot;https://github.com/KevinTCoughlin/lazydeck/pull/125&quot;&gt;lazydeck#125&lt;/a&gt; (&lt;a href=&quot;https://github.com/KevinTCoughlin/lazydeck/commit/408c5cacdb8df8292426b45cd9ba5312a3ee3606&quot;&gt;&lt;code&gt;408c5ca&lt;/code&gt;&lt;/a&gt;).&lt;/p&gt;
+&lt;h2 id=&quot;quitting-the-tui-leaked-the-same-way&quot;&gt;Quitting the TUI leaked the same way&lt;/h2&gt;
+&lt;p&gt;I started the TUI's device commands from &lt;code&gt;context.Background()&lt;/code&gt;: status, register, deploy, sync-logs, delete, list-games, discover, connection info, and custom commands. Deploy looked like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+defer cancel()
+err := cli.Deploy(ctx, dev.Machine, dev.Login, name, dir, false, nil)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;q&lt;/code&gt; and Ctrl+C returned from Bubble Tea's &lt;code&gt;Run&lt;/code&gt; without cancelling those contexts and without waiting. The children sit in their own process group, so they outlived the process too.&lt;/p&gt;
+&lt;p&gt;They now share one context, created with &lt;code&gt;context.WithCancel&lt;/code&gt; and stored on the model. &lt;code&gt;q&lt;/code&gt; and Ctrl+C cancel it, then quit:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;case &amp;quot;ctrl+c&amp;quot;, &amp;quot;q&amp;quot;:
+    if m.gate != nil {
+        m.gate.cancel()
+    }
+    return m, tea.Quit
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Bubble Tea still returns without joining the command goroutines. &lt;code&gt;main&lt;/code&gt; waits after &lt;code&gt;Run&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;_, err = p.Run()
+// Bubble Tea returns without joining command goroutines. Cancel any
+// still in flight and wait until their process groups exit.
+m.Shutdown()
+return err
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;Shutdown&lt;/code&gt; cancels that context again and waits. Spinner and auto-refresh ticks are not in the wait, or it would sit on a timer. The cap is 15 seconds, past the client's 10 second &lt;code&gt;WaitDelay&lt;/code&gt; after &lt;code&gt;SIGKILL&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;// commandShutdownBudget outlasts the client's 10s WaitDelay after SIGKILL,
+// so a descendant holding a pipe open is reaped before the process exits.
+const commandShutdownBudget = 15 * time.Second
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;TestQuitTerminatesCustomCommandProcessGroup&lt;/code&gt; runs a shell that backgrounds &lt;code&gt;sleep&lt;/code&gt; and checks the grandchild is gone after quit and &lt;code&gt;Shutdown&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;a-panic-skipped-finish&quot;&gt;A panic skipped finish&lt;/h2&gt;
+&lt;p&gt;In the same change, a panic inside a job's run function skipped &lt;code&gt;finish&lt;/code&gt;. The job stayed &lt;code&gt;running&lt;/code&gt;, so it was never pruned, and a client watching its event stream waited. The device lock was still released, because &lt;code&gt;releaseDevice&lt;/code&gt; is deferred.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;execute&lt;/code&gt; now recovers, logs the panic value, and finishes the job as failed. The job error is a fixed internal message. The panic text stays in the log:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-go&quot;&gt;defer func() {
+    rec := recover()
+    if rec == nil {
+        return
+    }
+    log.Printf(&amp;quot;lazydeck: job %s panicked: %v&amp;quot;, job.ID, rec)
+    m.finish(job, Failed, &amp;quot;failed&amp;quot;, &amp;amp;Error{
+        Kind:    &amp;quot;internal&amp;quot;,
+        Message: &amp;quot;the devkit operation failed unexpectedly; see the lazydeck serve process log for details&amp;quot;,
+    })
+}()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;finish&lt;/code&gt; also prunes terminal jobs. Queued and running jobs cannot be evicted, so a burst past the cap used to sit until some later &lt;code&gt;Submit&lt;/code&gt;. The cap is still 500.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;TestRunPanicFinishesAndReleasesTheDevice&lt;/code&gt; panics, checks the job is failed with kind &lt;code&gt;internal&lt;/code&gt;, and checks the panic text is absent from the job error. &lt;code&gt;TestPruneOnFinishDropsTerminalJobsWithoutAnotherSubmit&lt;/code&gt; fills the manager past the cap, lets the jobs finish, and expects only 500 to remain with no further submit.&lt;/p&gt;
+&lt;p&gt;This is &lt;a href=&quot;https://github.com/KevinTCoughlin/lazydeck/pull/126&quot;&gt;lazydeck#126&lt;/a&gt; (&lt;a href=&quot;https://github.com/KevinTCoughlin/lazydeck/commit/c8a1fab2c3257681ad5ecf9b1c63cc24bdd8bb6e&quot;&gt;&lt;code&gt;c8a1fab&lt;/code&gt;&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;If a handler can outlive the deadline you also use to reap subprocesses, give the reap its own context and wait until the goroutine that owns the process has returned. Parent long-lived request contexts on a context you cancel when those handlers should leave. &lt;code&gt;Shutdown&lt;/code&gt; will keep waiting until they do.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>I Made My Track Solver a Third Faster Without Changing One Answer</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/track-solver-a-third-faster-same-answers/"/>
