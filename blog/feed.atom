@@ -4,11 +4,69 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-25T07:00:00Z</updated>
+  <updated>2026-11-25T17:25:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>I shipped 11,105 icons to use 17</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/shipped-11105-icons-to-use-17/"/>
+    <id>https://kevintcoughlin.com/blog/shipped-11105-icons-to-use-17/</id>
+    <published>2026-11-25T17:25:00Z</published>
+    <updated>2026-11-25T17:25:00Z</updated>
+    <category term="android"/>
+    <category term="performance"/>
+    <category term="tips"/>
+    <summary>Shoutkit's phone app draws 31 Material icons, and the watch app draws three: PlayArrow, Pause, and Stop. Fourteen of the phone's icons come from material-icons-core. The other seventeen came from material-icons-extended. The 1.7.8 Android archive of that library is 11,105 icon classes. Release builds shrink the unused ones away. Debug builds dex every class, and that step is where CI ran out of heap. Copying the seventeen and dropping the dependency took the FOSS debug APK from 29,397,070 bytes to 22,728,773.</summary>
+    <content type="html">&lt;p&gt;&lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android&quot;&gt;Shoutkit&lt;/a&gt;'s phone app draws 31 Material icons, and the watch app draws three: PlayArrow, Pause, and Stop. Fourteen of the phone's icons come from &lt;code&gt;material-icons-core&lt;/code&gt;. The other seventeen came from &lt;code&gt;material-icons-extended&lt;/code&gt;. The 1.7.8 Android archive of that library is 11,105 icon classes. Release builds shrink the unused ones away. Debug builds dex every class, and that step is where CI ran out of heap. Copying the seventeen and dropping the dependency took the FOSS debug APK from 29,397,070 bytes to 22,728,773.&lt;/p&gt;
+&lt;h2 id=&quot;where-the-heap-went&quot;&gt;Where the heap went&lt;/h2&gt;
+&lt;p&gt;A push on &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/pull/342&quot;&gt;#342&lt;/a&gt; failed two jobs. The build died with &lt;code&gt;Error while dexing&lt;/code&gt; on &lt;code&gt;material-icons-extended&lt;/code&gt;, in &lt;code&gt;:app:mergeExtDexPlayDebug&lt;/code&gt; and &lt;code&gt;:cast:mergeExtDexPlayDebug&lt;/code&gt;. CodeQL's autobuild died with &lt;code&gt;java.lang.OutOfMemoryError: Java heap space&lt;/code&gt;. Both passed on a rerun. The Gradle heap was 4 GB. &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/pull/343&quot;&gt;#343&lt;/a&gt; raised &lt;code&gt;org.gradle.jvmargs&lt;/code&gt; to &lt;code&gt;-Xmx6g&lt;/code&gt; and set &lt;code&gt;kotlin.daemon.jvmargs=-Xmx3g&lt;/code&gt;, so the Kotlin compile daemon, a second JVM, fits a 16 GB runner alongside Gradle. The icon library stayed. That write-up called it about 11,000 icons, of which the app used 32, and left the replacement for a later change.&lt;/p&gt;
+&lt;p&gt;The removal counted 31 on the phone and 3 on the watch. &lt;code&gt;material-icons-extended-android&lt;/code&gt; 1.7.8 contains 11,105 classes, one &lt;code&gt;val Icons&lt;/code&gt; property each: 2,083 names in each of filled, outlined, rounded, sharp, and twotone, and 138 automirrored icons in each of those styles. None of those names are the fourteen the phone imports from core. Compose BOM &lt;code&gt;2026.09.00&lt;/code&gt;, the version in the &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/blob/9703448ed60085b7e56b69adc762e9ceb554346f/gradle/libs.versions.toml&quot;&gt;catalog&lt;/a&gt;, still resolves both icon artifacts to 1.7.8, and 1.7.8 is the latest release on Google's Maven repository. The metadata was last updated on 2025-02-12. The &lt;a href=&quot;https://dl.google.com/dl/android/maven2/androidx/compose/material/material-icons-extended-android/1.7.8/material-icons-extended-android-1.7.8.pom&quot;&gt;POM&lt;/a&gt; says the module is a very large dependency and should not be included directly.&lt;/p&gt;
+&lt;h2 id=&quot;the-seventeen-copies&quot;&gt;The seventeen copies&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/pull/345&quot;&gt;#345&lt;/a&gt; (&lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/commit/9703448ed60085b7e56b69adc762e9ceb554346f&quot;&gt;&lt;code&gt;9703448&lt;/code&gt;&lt;/a&gt;) removes &lt;code&gt;material-icons-extended&lt;/code&gt; from the phone app, the watch app, and the version catalog. The watch module depends on &lt;code&gt;material-icons-core&lt;/code&gt; on its own. The seventeen icons are copied from the 1.7.8 sources into &lt;code&gt;com.cascadiacollections.sir.ui.icons&lt;/code&gt;: Backup, Bedtime, ContentCopy, DragHandle, FileDownload, FileUpload, FilterList, GraphicEq, History, LibraryMusic, MusicNote, Pause, PlayCircle, QueueMusic, Radio, Stop, and WifiOff. Sixteen are &lt;code&gt;Icons.Filled&lt;/code&gt;. QueueMusic is &lt;code&gt;Icons.AutoMirrored.Filled&lt;/code&gt;, the variant the library screen already used. Pause and Stop are copied again into &lt;code&gt;com.cascadiacollections.sir.wear.icons&lt;/code&gt;, because the two apps share no Compose code. Call sites keep writing &lt;code&gt;Icons.Default&lt;/code&gt; (an alias for &lt;code&gt;Icons.Filled&lt;/code&gt;) and &lt;code&gt;Icons.AutoMirrored.Filled&lt;/code&gt;, and change the import.&lt;/p&gt;
+&lt;p&gt;The fourteen that stay on core are Add, ArrowBack (automirrored), Check, Clear, Close, Delete, Favorite, FavoriteBorder, MoreVert, PlayArrow, Refresh, Search, Settings, and Share.&lt;/p&gt;
+&lt;p&gt;Under the Apache-2.0 header, &lt;code&gt;Pause&lt;/code&gt; says where it came from and what changed:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-kotlin&quot;&gt;// Copied from androidx.compose.material:material-icons-extended 1.7.8, package
+// androidx.compose.material.icons.filled, so the app can use this icon without depending
+// on the whole library. Changes from the original: the package, no explicit `public`,
+// and the lint suppression below (the cache field's name is upstream's).
+@file:Suppress(&amp;quot;BackingPropertyNaming&amp;quot;)
+
+val Icons.Filled.Pause: ImageVector
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;REUSE.toml&lt;/code&gt; marks both directories Apache-2.0, so those terms stay on the copies inside the GPL-3.0 apps:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-toml&quot;&gt;# Material icons copied from androidx.compose.material:material-icons-extended 1.7.8, so the
+# apps ship the 17 icons they use instead of the whole library. Apache-2.0, as each file's
+# header says; they keep those terms inside the GPL-3.0 apps.
+[[annotations]]
+path = [
+    &amp;quot;app/src/main/java/com/cascadiacollections/sir/ui/icons/**&amp;quot;,
+    &amp;quot;wear/src/main/java/com/cascadiacollections/sir/wear/icons/**&amp;quot;,
+]
+precedence = &amp;quot;override&amp;quot;
+SPDX-FileCopyrightText = &amp;quot;The Android Open Source Project&amp;quot;
+SPDX-License-Identifier = &amp;quot;Apache-2.0&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&quot;what-the-clean-build-measured&quot;&gt;What the clean build measured&lt;/h2&gt;
+&lt;p&gt;The commit message says the FOSS debug APK went from 35.1 MB to 22.7 MB. &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/pull/345&quot;&gt;#345&lt;/a&gt; measured both sides clean, &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit-android/commit/ff30d27ddb907631e54f8e0adf8fced2c393fdee&quot;&gt;&lt;code&gt;ff30d27&lt;/code&gt;&lt;/a&gt; on &lt;code&gt;main&lt;/code&gt; against the branch, each with &lt;code&gt;--rerun-tasks --no-build-cache&lt;/code&gt;. The before size in that run is 29,397,070 bytes. The 35.1 MB figure came from an incremental build.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;&lt;/th&gt;&lt;th align=&quot;right&quot;&gt;Before&lt;/th&gt;&lt;th align=&quot;right&quot;&gt;After&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;FOSS debug APK&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;29,397,070 B&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;22,728,773 B&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Debug dex, uncompressed&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;85.2 MB&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;54.0 MB&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Methods defined in the debug APK&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;236,017&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;213,150&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;androidx.compose.material.icons&lt;/code&gt; methods&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;23,529 (13.7 MB of dex)&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;628 (0.25 MB)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Release APK&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;4,278,226 B&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;4,278,226 B&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;The release APK is the same 4,278,226 bytes. R8 was already removing the unused icons, so the bytes that moved are in the debug APK, which is what CI dexes. The debug APK is 6,668,297 bytes smaller, 22.7%. One clean debug build was a little faster, 78.7 s to 71.0 s with a cold daemon and 21.4 s to 19.6 s warm. Those are one run each.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;detekt&lt;/code&gt;, &lt;code&gt;:app:lintPlayDebug&lt;/code&gt;, &lt;code&gt;:wear:lintDebug&lt;/code&gt;, &lt;code&gt;:app:testFossDebugUnitTest&lt;/code&gt;, &lt;code&gt;:wear:testDebugUnitTest&lt;/code&gt;, &lt;code&gt;:app:assembleFossDebug&lt;/code&gt;, and &lt;code&gt;:wear:assembleDebug&lt;/code&gt; passed locally, and so did &lt;code&gt;reuse lint&lt;/code&gt; and &lt;code&gt;.github/scripts/check-license-boundary.sh&lt;/code&gt;. The vectors are the 1.7.8 paths. A side-by-side look on a device is still open, and the watch app was only compiled.&lt;/p&gt;
+&lt;p&gt;If a debug build is dexing &lt;code&gt;material-icons-extended&lt;/code&gt; to draw a handful of icons, copy those icons and keep &lt;code&gt;material-icons-core&lt;/code&gt;.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>I Made My Track Solver a Third Faster Without Changing One Answer</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/track-solver-a-third-faster-same-answers/"/>
