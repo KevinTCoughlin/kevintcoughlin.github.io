@@ -4,11 +4,83 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-25T07:00:00Z</updated>
+  <updated>2026-11-25T17:20:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>The third draft card was pause, and the shell reserve could wrap</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/saltline-button-and-overflow/"/>
+    <id>https://kevintcoughlin.com/blog/saltline-button-and-overflow/</id>
+    <published>2026-11-25T17:20:00Z</published>
+    <updated>2026-11-25T17:20:00Z</updated>
+    <category term="rust"/>
+    <category term="tips"/>
+    <summary>Two bugs in Salt Line, both fixed in saltline#167 (d5d720c). On a controller the third draft card shared B with pause, and pause is the first thing play asks for, so the press opened the pause screen. The shell reserve is an i32 with no cap unless Forced March imposes one, and a Standing Orders streak pays a bonus that grows on every one-shot clear. Past i32::MAX that add panics in a debug build and wraps negative in a release build. A negative reserve is out of shells.</summary>
+    <content type="html">&lt;p&gt;Two bugs in &lt;a href=&quot;https://github.com/cascadiacollections/saltline&quot;&gt;Salt Line&lt;/a&gt;, both fixed in &lt;a href=&quot;https://github.com/cascadiacollections/saltline/pull/167&quot;&gt;saltline#167&lt;/a&gt; (&lt;a href=&quot;https://github.com/cascadiacollections/saltline/commit/d5d720c0e9566cb01c568ed3b6332ba7501657db&quot;&gt;&lt;code&gt;d5d720c&lt;/code&gt;&lt;/a&gt;). On a controller the third draft card shared B with pause, and pause is the first thing play asks for, so the press opened the pause screen. The shell reserve is an &lt;code&gt;i32&lt;/code&gt; with no cap unless Forced March imposes one, and a Standing Orders streak pays a bonus that grows on every one-shot clear. Past &lt;code&gt;i32::MAX&lt;/code&gt; that add panics in a debug build and wraps negative in a release build. A negative reserve is out of shells.&lt;/p&gt;
+&lt;h2 id=&quot;the-press-was-taken-by-pause&quot;&gt;The press was taken by pause&lt;/h2&gt;
+&lt;p&gt;A press is taken by the first action that asks for it. Two actions bound to the same button in the same mode never both fire. &lt;code&gt;input.rs&lt;/code&gt; says the order the core asks in is part of the behaviour, and &lt;code&gt;take_pad&lt;/code&gt; removes the press it reports.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;handle_play_input&lt;/code&gt; asks for pause, then for a draft pick, then for aim and fire. Pause wins, and the function returns:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;/// A run in play: pause, draft picks, then aim, fuse, reposition and fire.
+pub(super) fn handle_play_input(&amp;amp;mut self, delta: f64) {
+    if self.action_pressed(Action::Back) {
+        self.input.touch.cancel_drag();
+        self.mode = Mode::Paused;
+        return;
+    }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The draft ask is the next block, over &lt;code&gt;Draft1&lt;/code&gt;, &lt;code&gt;Draft2&lt;/code&gt; and &lt;code&gt;Draft3&lt;/code&gt;, and it returns too. Back's default pad button is B. Draft 3's was B too. Keys 1, 2 and 3, and a tap on the card, never went through that button.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;Action::Draft1 =&amp;gt; (&amp;quot;1&amp;quot;, &amp;quot;X&amp;quot;),
+Action::Draft2 =&amp;gt; (&amp;quot;2&amp;quot;, &amp;quot;A&amp;quot;),
+Action::Draft3 =&amp;gt; (&amp;quot;3&amp;quot;, &amp;quot;B&amp;quot;),
+Action::Back =&amp;gt; (&amp;quot;ESCAPE&amp;quot;, &amp;quot;B&amp;quot;),
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Pad A is also fire. That one works: the draft is asked before fire, the pick is taken, and the function returns. Pad B lost, because pause is asked before the draft and the function returns there. The third offer stayed on the table, and the pause screen opened over a draft that was still open.&lt;/p&gt;
+&lt;p&gt;Draft 3 is now Y. The comment on the binding is the reason Y is free while a draft is up:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;// Y, not B. Pause is B and is read before a draft pick, so a third
+// offer bound to B never took: the press opened the pause screen.
+// Y is free on the draft (reposition, replay and star read it on
+// other screens).
+Action::Draft3 =&amp;gt; (&amp;quot;3&amp;quot;, &amp;quot;Y&amp;quot;),
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;B still pauses. The settings screen used to show a draft as two buttons, one row of an action plus an optional second, so it listed X and A and left the third off. The draft row now carries all three actions, which with the defaults reads X/A/Y. With a controller in use, before the draft has been learned, the prompt is &lt;code&gt;X A Y  PICK A MODIFIER&lt;/code&gt;. A touchscreen still says &lt;code&gt;TAP A CARD  PICK A MODIFIER&lt;/code&gt;. The README row is &lt;code&gt;1 / 2 / 3&lt;/code&gt;, &lt;code&gt;X / A / Y&lt;/code&gt;, tap a card, and B still pauses.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;in_a_draft_pad_b_pauses_and_y_takes_the_third_card&lt;/code&gt; presses B, sees &lt;code&gt;Mode::Paused&lt;/code&gt; with the phase still &lt;code&gt;Drafting&lt;/code&gt; and zero stacks of the third offer, presses B again to resume, then presses Y. The loadout has that offer and the phase has left the draft.&lt;/p&gt;
+&lt;h2 id=&quot;the-reserve-stopped-at-the-top-of-an-i32&quot;&gt;The reserve stopped at the top of an &lt;code&gt;i32&lt;/code&gt;&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;Loadout::cap&lt;/code&gt; is &lt;code&gt;i32::MAX&lt;/code&gt; unless a modifier imposes one. Forced March drops it to 15. The comment on &lt;code&gt;cap&lt;/code&gt; keeps the default open on purpose: a 40-shell ceiling would eat most of a Depot on the first draft, and Depot, Storm Front and Quartermaster would stop being worth taking. Standing Orders reads &amp;quot;One-shot clears grant +1 per consecutive streak.&amp;quot; The streak is a &lt;code&gt;u32&lt;/code&gt;. A one-shot clear increments it and adds that count to the shells paid for the screen.&lt;/p&gt;
+&lt;p&gt;The old grant was a plain add, then the cap:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;self.shells = (self.shells + n).min(self.loadout.cap());
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;and the streak was a plain increment, then a cast:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;self.one_shot_streak += 1;
+if self.loadout.standing_orders() {
+    gain += self.one_shot_streak as i32;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;i32&lt;/code&gt; addition panics on overflow in debug and wraps in release. A reserve at or below zero is &lt;code&gt;Phase::Over(RunOver::OutOfShells)&lt;/code&gt;, checked when a shot fails to clear and again when the run advances after a clear. That is the only way a run ends. Casting a streak above &lt;code&gt;i32::MAX&lt;/code&gt; wraps too, so the bonus itself could arrive negative. A streak already at &lt;code&gt;u32::MAX&lt;/code&gt; wraps to 0 on &lt;code&gt;+= 1&lt;/code&gt; in release, and panics in debug.&lt;/p&gt;
+&lt;p&gt;A debug panic is the error screen. The hook writes &lt;code&gt;user://crash.txt&lt;/code&gt;, and the next frame draws &lt;code&gt;SOMETHING BROKE&lt;/code&gt; / &lt;code&gt;THE GAME STOPPED RATHER THAN CARRY ON WRONG.&lt;/code&gt; Anything that writes, moves or deletes a file is dropped after a panic, so the half-updated run is not saved over the last good one. The report is the last file that session writes.&lt;/p&gt;
+&lt;p&gt;Grants now saturate, then the cap still applies. The supply screen's +6 goes through &lt;code&gt;grant&lt;/code&gt; too, instead of its own &lt;code&gt;shells + 6&lt;/code&gt;. The streak saturates at &lt;code&gt;u32::MAX&lt;/code&gt;, and the bonus is the streak as an &lt;code&gt;i32&lt;/code&gt;, or &lt;code&gt;i32::MAX&lt;/code&gt; when it does not fit:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;fn grant(&amp;amp;mut self, n: i32) {
+    // An uncapped reserve plus Standing Orders grows without a ceiling.
+    // A wrapping add would panic in debug and, in release, turn a huge
+    // reserve negative and end the run. Stop at `i32::MAX`, then apply
+    // the cap (`i32::MAX` when nothing has imposed one).
+    self.shells = self.shells.saturating_add(n).min(self.loadout.cap());
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class=&quot;language-rust&quot;&gt;self.one_shot_streak = self.one_shot_streak.saturating_add(1);
+if self.loadout.standing_orders() {
+    let bonus = i32::try_from(self.one_shot_streak).unwrap_or(i32::MAX);
+    gain = gain.saturating_add(bonus);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;the_reserve_stops_at_i32_max_instead_of_wrapping&lt;/code&gt; takes a Depot, which grants 8 shells, at &lt;code&gt;i32::MAX - 1&lt;/code&gt; and stops at &lt;code&gt;i32::MAX&lt;/code&gt;. &lt;code&gt;a_huge_one_shot_streak_does_not_wrap_the_reserve&lt;/code&gt; starts from 20 shells with Standing Orders and &lt;code&gt;one_shot_streak&lt;/code&gt; already &lt;code&gt;u32::MAX&lt;/code&gt;, clears the screen in one shot, and expects &lt;code&gt;i32::MAX&lt;/code&gt; shells, the streak still at &lt;code&gt;u32::MAX&lt;/code&gt;, and the run not over.&lt;/p&gt;
+&lt;h2 id=&quot;the-golden-run-digest-stayed&quot;&gt;The golden-run digest stayed&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;SIM_EPOCH&lt;/code&gt; versions the sim's outcomes. A change that alters a replay bumps it. &lt;code&gt;tests/golden_runs.rs&lt;/code&gt; hashes the golden-run corpus and requires that epoch's digest. Epoch 6's is &lt;code&gt;0x0e22_2e08_a33e_af8a&lt;/code&gt;. This fix leaves the epoch at 6. Adds that stay inside the type are the same values as before, and the pull request records that the golden-run digest did not move.&lt;/p&gt;
+&lt;p&gt;Same standard as the &lt;a href=&quot;https://kevintcoughlin.com/blog/track-solver-a-third-faster-same-answers/&quot;&gt;track solver&lt;/a&gt; the same day. There, a faster proof was only allowed through if every timer and every failure stayed put, and a saved digest was the check.&lt;/p&gt;
+&lt;p&gt;The artillery digest is a different number from the Drone Trial digest. &lt;a href=&quot;https://github.com/cascadiacollections/saltline/pull/173&quot;&gt;saltline#173&lt;/a&gt; runs &lt;code&gt;trial_determinism&lt;/code&gt; in the sim job, the Android emulator job and the iOS simulator job, and uploads &lt;code&gt;trial-digest-&amp;lt;platform&amp;gt;.txt&lt;/code&gt; beside the artillery file. Each set is compared with itself. The pull request records a local run of that bin: 200 replays, 139 hits, zero divergences, &lt;code&gt;digest: 0xff8e006571cf0da1&lt;/code&gt;. &lt;code&gt;just android-digest&lt;/code&gt; on a phone still runs the artillery binary only.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>I Made My Track Solver a Third Faster Without Changing One Answer</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/track-solver-a-third-faster-same-answers/"/>
