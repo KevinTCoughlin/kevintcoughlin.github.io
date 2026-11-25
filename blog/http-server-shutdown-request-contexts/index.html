@@ -180,7 +180,7 @@
         <h1>http.Server.Shutdown doesn't cancel request contexts</h1>
         <time datetime="2026-11-25T17:18:00Z">November 25, 2026</time>
         <ul class="tags" aria-label="Tags">
-          <li><a href="/blog/tags/go/">go</a></li>
+          <li><a href="/blog/tags/golang/">golang</a></li>
           <li><a href="/blog/tags/tips/">tips</a></li>
         </ul>
 <p>In <a href="https://github.com/KevinTCoughlin/lazydeck">lazydeck</a>, I gave <code>serve</code> one 30 second deadline for the HTTP drain and for reaping in-flight jobs. <a href="https://pkg.go.dev/net/http#Server.Shutdown"><code>http.Server.Shutdown</code></a> waits until handlers return. It leaves their request contexts alone. An open <code>GET /v1/jobs/{id}/events</code> stream sat in that wait long enough to expire the deadline, so the job reap cancelled the job and returned without waiting. <code>execute</code> was still blocked in <code>cmd.Run</code>. The uv, python, ssh, and rsync children are in their own process group, so they kept running after the process exited.</p>

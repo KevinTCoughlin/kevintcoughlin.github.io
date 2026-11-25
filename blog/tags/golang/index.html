@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Posts tagged go." />
+    <meta name="description" content="Posts tagged golang." />
     <meta name="author" content="Kevin T. Coughlin" />
     <meta name="theme-color" content="#14211d" />
-    <link rel="canonical" href="https://kevintcoughlin.com/blog/tags/go/" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/tags/golang/" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
     <meta
@@ -14,7 +14,7 @@
       content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <title>go — Kevin Coughlin</title>
+    <title>golang — Kevin Coughlin</title>
     <style>
       :root {
         color-scheme: dark;
@@ -176,7 +176,7 @@
       <a href="/blog/">Blog</a>
     </header>
     <main class="shell">
-      <h1>go</h1>
+      <h1>golang</h1>
       <p class="meta">1 post · <a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
         <li>
@@ -184,7 +184,7 @@
           <h2><a href="/blog/http-server-shutdown-request-contexts/">http.Server.Shutdown doesn't cancel request contexts</a></h2>
           <p>In lazydeck, I gave serve one 30 second deadline for the HTTP drain and for reaping in-flight jobs. http.Server.Shutdown waits until handlers return. It leaves their request contexts alone. An open GET /v1/jobs/{id}/events stream sat in that wait long enough to expire the deadline, so the job reap cancelled the job and returned without waiting. execute was still blocked in cmd.Run. The uv, python, ssh, and rsync children are in their own process group, so they kept running after the process exited.</p>
           <ul class="tags" aria-label="Tags">
-            <li><a href="/blog/tags/go/" aria-current="page">go</a></li>
+            <li><a href="/blog/tags/golang/" aria-current="page">golang</a></li>
             <li><a href="/blog/tags/tips/">tips</a></li>
           </ul>
         </li>

@@ -15,7 +15,7 @@
     <id>https://kevintcoughlin.com/blog/http-server-shutdown-request-contexts/</id>
     <published>2026-11-25T17:18:00Z</published>
     <updated>2026-11-25T17:18:00Z</updated>
-    <category term="go"/>
+    <category term="golang"/>
     <category term="tips"/>
     <summary>In lazydeck, I gave serve one 30 second deadline for the HTTP drain and for reaping in-flight jobs. http.Server.Shutdown waits until handlers return. It leaves their request contexts alone. An open GET /v1/jobs/{id}/events stream sat in that wait long enough to expire the deadline, so the job reap cancelled the job and returned without waiting. execute was still blocked in cmd.Run. The uv, python, ssh, and rsync children are in their own process group, so they kept running after the process exited.</summary>
     <content type="html">&lt;p&gt;In &lt;a href=&quot;https://github.com/KevinTCoughlin/lazydeck&quot;&gt;lazydeck&lt;/a&gt;, I gave &lt;code&gt;serve&lt;/code&gt; one 30 second deadline for the HTTP drain and for reaping in-flight jobs. &lt;a href=&quot;https://pkg.go.dev/net/http#Server.Shutdown&quot;&gt;&lt;code&gt;http.Server.Shutdown&lt;/code&gt;&lt;/a&gt; waits until handlers return. It leaves their request contexts alone. An open &lt;code&gt;GET /v1/jobs/{id}/events&lt;/code&gt; stream sat in that wait long enough to expire the deadline, so the job reap cancelled the job and returned without waiting. &lt;code&gt;execute&lt;/code&gt; was still blocked in &lt;code&gt;cmd.Run&lt;/code&gt;. The uv, python, ssh, and rsync children are in their own process group, so they kept running after the process exited.&lt;/p&gt;
