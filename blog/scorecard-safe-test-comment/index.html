@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="deathban-pro#83 removed EnricoMi/publish-unit-test-result-action from CI. The workflow had granted checks: write at the top, and OpenSSF Scorecard's Token-Permissions check warns on that scope, including when only a job sets it. The pull-request comment went away with the action. deathban-pro#87 puts a comment back from a later job whose write scope is pull-requests: write." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/scorecard-safe-test-comment/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Getting the test-results comment back without checks: write — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>Getting the test-results comment back without checks: write</h1>
+        <time datetime="2026-11-25T17:20:00Z">November 25, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/github-actions/">github-actions</a></li>
+          <li><a href="/blog/tags/tips/">tips</a></li>
+        </ul>
+<p><a href="https://github.com/KevinTCoughlin/deathban-pro/pull/83">deathban-pro#83</a> removed <code>EnricoMi/publish-unit-test-result-action</code> from CI. The workflow had granted <code>checks: write</code> at the top, and OpenSSF Scorecard's Token-Permissions check warns on that scope, including when only a job sets it. The pull-request comment went away with the action. <a href="https://github.com/KevinTCoughlin/deathban-pro/pull/87">deathban-pro#87</a> puts a comment back from a later job whose write scope is <code>pull-requests: write</code>.</p>
+<h2 id="what-the-publish-step-needed">What the publish step needed</h2>
+<p>The build job used to publish results itself:</p>
+<pre><code class="language-yaml">- name: Publish test results
+  uses: EnricoMi/publish-unit-test-result-action@v2
+  if: always()
+  with:
+    files: build/test-results/test/*.xml
+    check_name: Test Results
+    comment_mode: always
+</code></pre>
+<p>Above that job the workflow permissions were <code>contents: read</code>, <code>checks: write</code>, and <code>pull-requests: write</code>. The step sets <code>check_name: Test Results</code>, so the token has to create a check run. After #83 the top of <code>.github/workflows/ci.yml</code> is <code>contents: read</code>, and that step is gone.</p>
+<h2 id="a-separate-job">A separate job</h2>
+<p>The build job still runs Gradle, on that read-only token. After the tests it uploads <code>build/test-results/test/*.xml</code> as an artifact named <code>junit-xml</code>, and it appends the same counts to the job summary. The summary is <code>GITHUB_STEP_SUMMARY</code>. It needs no extra scope, so a fork, Dependabot, and a push to <code>main</code> still show the counts on the run.</p>
+<p>The comment is the <code>test-results</code> job, as merged in <a href="https://github.com/KevinTCoughlin/deathban-pro/commit/d174f0565f6a4afd327bf8307809d46c325b8d95"><code>d174f05</code></a>. It waits for <code>build</code>. It runs for a same-repo pull request that is not from Dependabot, when the build succeeded or failed:</p>
+<pre><code class="language-yaml"># One comment for same-repo pull requests. The build job stays read-only.
+# Scorecard v5.7 (scorecard-action v2.6.0) warns when the checks scope is
+# write, including at job level, and does not treat pull-requests write as
+# one of those scopes. Fork and Dependabot tokens cannot write from this
+# event; pr-test-results.yml comments for those after CI completes.
+test-results:
+  name: Test result comment
+  needs: build
+  if: &gt;-
+    always() &amp;&amp;
+    github.event_name == 'pull_request' &amp;&amp;
+    github.event.pull_request.head.repo.full_name == github.repository &amp;&amp;
+    github.actor != 'dependabot[bot]' &amp;&amp;
+    (needs.build.result == 'success' || needs.build.result == 'failure')
+  runs-on: ubuntu-24.04
+  timeout-minutes: 5
+  permissions:
+    actions: read
+    contents: read
+    pull-requests: write
+  steps:
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+
+    - name: Download JUnit XML
+      continue-on-error: true
+      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+      with:
+        name: junit-xml
+        path: junit-xml
+
+    - name: Publish pull request comment
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        RESULTS_DIR: junit-xml
+        BUILD_RESULT: ${{ needs.build.result }}
+      run: python3 scripts/test_results_comment.py post
+</code></pre>
+<p><code>actions: read</code> is the artifact download. <code>contents: read</code> is the checkout. <code>pull-requests: write</code> is the comment.</p>
+<h2 id="what-scorecard-v57-counts">What Scorecard v5.7 counts</h2>
+<p><code>.github/workflows/scorecard.yml</code> pins <code>ossf/scorecard-action</code> to <code>23f22cd43608bae7a1f1fa2603d7314dee9538a5</code> (<code>v2.6.0</code>). That tag's <code>go.mod</code> requires <code>github.com/ossf/scorecard/v5 v5.7.0</code>.</p>
+<p>In <code>checks/raw/permissions.go</code> the writes that count are <code>statuses</code>, <code>checks</code>, <code>security-events</code>, <code>deployments</code>, <code>contents</code>, <code>packages</code>, and <code>actions</code>. A write of one of those is recorded at the top of the file and on a job. <code>checks/evaluation/permissions.go</code> warns when a job sets one of them to write. <code>checks: write</code> on the job that creates the check run is still that warning, so the publish action does not fit there either.</p>
+<p><code>pull-requests</code> is absent from that list. The raw check stores the write as a non-dangerous write, and the score does not drop for it.</p>
+<p><a href="https://github.com/KevinTCoughlin/deathban-pro/actions/runs/45500072078">Run 45500072078</a> is Scorecard v5.7.0 on the merge commit. Token-Permissions logged the comment job as <code>Info: jobLevel 'actions' permission set to 'read': .github/workflows/ci.yml:199</code> and the same for <code>contents</code> on line 200, then <code>Info: no jobLevel write permissions found</code>. Line 201 is <code>pull-requests: write</code>, and it is absent from that log. The check still scored 0, on a warning that was already there: <code>Warn: topLevel 'contents' permission set to 'write': .github/workflows/release.yml:14</code>. #87 leaves <code>release.yml</code> alone.</p>
+<p>The Scorecard job on the pull request head never printed a score. <a href="https://github.com/KevinTCoughlin/deathban-pro/actions/runs/45453315532">Run 45453315532</a> failed pulling <code>ghcr.io/ossf/scorecard-action:v2.6.0</code> with <code>manifest unknown</code>.</p>
+<h2 id="the-checkout-and-the-one-comment">The checkout and the one comment</h2>
+<p>The comment job runs on its own runner. Its checkout leaves <code>ref</code> unset, so the files are the commit that the workflow run is executing, and it sets <code>persist-credentials: false</code>. The XML it reads is the <code>junit-xml</code> artifact uploaded by <code>build</code>. The Gradle job keeps the read-only token.</p>
+<p><code>scripts/test_results_comment.py</code> starts the body with <code>&lt;!-- deathban-pro-test-results --&gt;</code>. A later CI run edits the earliest <code>github-actions[bot]</code> comment that contains that marker, and deletes later bot copies of it. Comments from any other author stay put.</p>
+<p>On #87 that is <a href="https://github.com/KevinTCoughlin/deathban-pro/pull/87#issuecomment-7139774177">one comment</a>. GitHub created it at 17:50 UTC and updated it at 17:54 UTC. The body shows <code>6f01d55cc66e</code>, the second commit on the pull request, and links <a href="https://github.com/KevinTCoughlin/deathban-pro/actions/runs/45453315718">run 45453315718</a>. CI ignores <code>**/*.md</code>, so a docs-only push does not run the job. The comment says it is updated when CI finishes.</p>
+<p>Fork <code>pull_request</code> tokens stay read-only, and Dependabot tokens do too, even when the workflow file asks for write. The <code>test-results</code> job is skipped for them. <code>.github/workflows/pr-test-results.yml</code> runs on <code>workflow_run</code> after CI completes, from the default-branch copy of the workflow. It downloads the artifact, and its checkout also leaves <code>ref</code> unset. Same-repo runs that are not from Dependabot are skipped there, so those pull requests get the one comment from <code>ci.yml</code>. Dangerous-Workflow on the merge run scored 10: <code>no dangerous workflow patterns detected</code>.</p>
+<p>A test report that can live as a pull-request comment can use <code>pull-requests: write</code> on its own job. <code>checks: write</code> is the scope Scorecard warns on, at the top of the workflow and on the job.</p>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>

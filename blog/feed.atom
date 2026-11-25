@@ -4,11 +4,94 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-25T07:00:00Z</updated>
+  <updated>2026-11-25T17:20:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>Getting the test-results comment back without checks: write</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/scorecard-safe-test-comment/"/>
+    <id>https://kevintcoughlin.com/blog/scorecard-safe-test-comment/</id>
+    <published>2026-11-25T17:20:00Z</published>
+    <updated>2026-11-25T17:20:00Z</updated>
+    <category term="github-actions"/>
+    <category term="tips"/>
+    <summary>deathban-pro#83 removed EnricoMi/publish-unit-test-result-action from CI. The workflow had granted checks: write at the top, and OpenSSF Scorecard's Token-Permissions check warns on that scope, including when only a job sets it. The pull-request comment went away with the action. deathban-pro#87 puts a comment back from a later job whose write scope is pull-requests: write.</summary>
+    <content type="html">&lt;p&gt;&lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/pull/83&quot;&gt;deathban-pro#83&lt;/a&gt; removed &lt;code&gt;EnricoMi/publish-unit-test-result-action&lt;/code&gt; from CI. The workflow had granted &lt;code&gt;checks: write&lt;/code&gt; at the top, and OpenSSF Scorecard's Token-Permissions check warns on that scope, including when only a job sets it. The pull-request comment went away with the action. &lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/pull/87&quot;&gt;deathban-pro#87&lt;/a&gt; puts a comment back from a later job whose write scope is &lt;code&gt;pull-requests: write&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;what-the-publish-step-needed&quot;&gt;What the publish step needed&lt;/h2&gt;
+&lt;p&gt;The build job used to publish results itself:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-yaml&quot;&gt;- name: Publish test results
+  uses: EnricoMi/publish-unit-test-result-action@v2
+  if: always()
+  with:
+    files: build/test-results/test/*.xml
+    check_name: Test Results
+    comment_mode: always
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Above that job the workflow permissions were &lt;code&gt;contents: read&lt;/code&gt;, &lt;code&gt;checks: write&lt;/code&gt;, and &lt;code&gt;pull-requests: write&lt;/code&gt;. The step sets &lt;code&gt;check_name: Test Results&lt;/code&gt;, so the token has to create a check run. After #83 the top of &lt;code&gt;.github/workflows/ci.yml&lt;/code&gt; is &lt;code&gt;contents: read&lt;/code&gt;, and that step is gone.&lt;/p&gt;
+&lt;h2 id=&quot;a-separate-job&quot;&gt;A separate job&lt;/h2&gt;
+&lt;p&gt;The build job still runs Gradle, on that read-only token. After the tests it uploads &lt;code&gt;build/test-results/test/*.xml&lt;/code&gt; as an artifact named &lt;code&gt;junit-xml&lt;/code&gt;, and it appends the same counts to the job summary. The summary is &lt;code&gt;GITHUB_STEP_SUMMARY&lt;/code&gt;. It needs no extra scope, so a fork, Dependabot, and a push to &lt;code&gt;main&lt;/code&gt; still show the counts on the run.&lt;/p&gt;
+&lt;p&gt;The comment is the &lt;code&gt;test-results&lt;/code&gt; job, as merged in &lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/commit/d174f0565f6a4afd327bf8307809d46c325b8d95&quot;&gt;&lt;code&gt;d174f05&lt;/code&gt;&lt;/a&gt;. It waits for &lt;code&gt;build&lt;/code&gt;. It runs for a same-repo pull request that is not from Dependabot, when the build succeeded or failed:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-yaml&quot;&gt;# One comment for same-repo pull requests. The build job stays read-only.
+# Scorecard v5.7 (scorecard-action v2.6.0) warns when the checks scope is
+# write, including at job level, and does not treat pull-requests write as
+# one of those scopes. Fork and Dependabot tokens cannot write from this
+# event; pr-test-results.yml comments for those after CI completes.
+test-results:
+  name: Test result comment
+  needs: build
+  if: &amp;gt;-
+    always() &amp;amp;&amp;amp;
+    github.event_name == 'pull_request' &amp;amp;&amp;amp;
+    github.event.pull_request.head.repo.full_name == github.repository &amp;amp;&amp;amp;
+    github.actor != 'dependabot[bot]' &amp;amp;&amp;amp;
+    (needs.build.result == 'success' || needs.build.result == 'failure')
+  runs-on: ubuntu-24.04
+  timeout-minutes: 5
+  permissions:
+    actions: read
+    contents: read
+    pull-requests: write
+  steps:
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+
+    - name: Download JUnit XML
+      continue-on-error: true
+      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+      with:
+        name: junit-xml
+        path: junit-xml
+
+    - name: Publish pull request comment
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        RESULTS_DIR: junit-xml
+        BUILD_RESULT: ${{ needs.build.result }}
+      run: python3 scripts/test_results_comment.py post
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;actions: read&lt;/code&gt; is the artifact download. &lt;code&gt;contents: read&lt;/code&gt; is the checkout. &lt;code&gt;pull-requests: write&lt;/code&gt; is the comment.&lt;/p&gt;
+&lt;h2 id=&quot;what-scorecard-v57-counts&quot;&gt;What Scorecard v5.7 counts&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;.github/workflows/scorecard.yml&lt;/code&gt; pins &lt;code&gt;ossf/scorecard-action&lt;/code&gt; to &lt;code&gt;23f22cd43608bae7a1f1fa2603d7314dee9538a5&lt;/code&gt; (&lt;code&gt;v2.6.0&lt;/code&gt;). That tag's &lt;code&gt;go.mod&lt;/code&gt; requires &lt;code&gt;github.com/ossf/scorecard/v5 v5.7.0&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;In &lt;code&gt;checks/raw/permissions.go&lt;/code&gt; the writes that count are &lt;code&gt;statuses&lt;/code&gt;, &lt;code&gt;checks&lt;/code&gt;, &lt;code&gt;security-events&lt;/code&gt;, &lt;code&gt;deployments&lt;/code&gt;, &lt;code&gt;contents&lt;/code&gt;, &lt;code&gt;packages&lt;/code&gt;, and &lt;code&gt;actions&lt;/code&gt;. A write of one of those is recorded at the top of the file and on a job. &lt;code&gt;checks/evaluation/permissions.go&lt;/code&gt; warns when a job sets one of them to write. &lt;code&gt;checks: write&lt;/code&gt; on the job that creates the check run is still that warning, so the publish action does not fit there either.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;pull-requests&lt;/code&gt; is absent from that list. The raw check stores the write as a non-dangerous write, and the score does not drop for it.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/actions/runs/45500072078&quot;&gt;Run 45500072078&lt;/a&gt; is Scorecard v5.7.0 on the merge commit. Token-Permissions logged the comment job as &lt;code&gt;Info: jobLevel 'actions' permission set to 'read': .github/workflows/ci.yml:199&lt;/code&gt; and the same for &lt;code&gt;contents&lt;/code&gt; on line 200, then &lt;code&gt;Info: no jobLevel write permissions found&lt;/code&gt;. Line 201 is &lt;code&gt;pull-requests: write&lt;/code&gt;, and it is absent from that log. The check still scored 0, on a warning that was already there: &lt;code&gt;Warn: topLevel 'contents' permission set to 'write': .github/workflows/release.yml:14&lt;/code&gt;. #87 leaves &lt;code&gt;release.yml&lt;/code&gt; alone.&lt;/p&gt;
+&lt;p&gt;The Scorecard job on the pull request head never printed a score. &lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/actions/runs/45453315532&quot;&gt;Run 45453315532&lt;/a&gt; failed pulling &lt;code&gt;ghcr.io/ossf/scorecard-action:v2.6.0&lt;/code&gt; with &lt;code&gt;manifest unknown&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;the-checkout-and-the-one-comment&quot;&gt;The checkout and the one comment&lt;/h2&gt;
+&lt;p&gt;The comment job runs on its own runner. Its checkout leaves &lt;code&gt;ref&lt;/code&gt; unset, so the files are the commit that the workflow run is executing, and it sets &lt;code&gt;persist-credentials: false&lt;/code&gt;. The XML it reads is the &lt;code&gt;junit-xml&lt;/code&gt; artifact uploaded by &lt;code&gt;build&lt;/code&gt;. The Gradle job keeps the read-only token.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;scripts/test_results_comment.py&lt;/code&gt; starts the body with &lt;code&gt;&amp;lt;!-- deathban-pro-test-results --&amp;gt;&lt;/code&gt;. A later CI run edits the earliest &lt;code&gt;github-actions[bot]&lt;/code&gt; comment that contains that marker, and deletes later bot copies of it. Comments from any other author stay put.&lt;/p&gt;
+&lt;p&gt;On #87 that is &lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/pull/87#issuecomment-7139774177&quot;&gt;one comment&lt;/a&gt;. GitHub created it at 17:50 UTC and updated it at 17:54 UTC. The body shows &lt;code&gt;6f01d55cc66e&lt;/code&gt;, the second commit on the pull request, and links &lt;a href=&quot;https://github.com/KevinTCoughlin/deathban-pro/actions/runs/45453315718&quot;&gt;run 45453315718&lt;/a&gt;. CI ignores &lt;code&gt;**/*.md&lt;/code&gt;, so a docs-only push does not run the job. The comment says it is updated when CI finishes.&lt;/p&gt;
+&lt;p&gt;Fork &lt;code&gt;pull_request&lt;/code&gt; tokens stay read-only, and Dependabot tokens do too, even when the workflow file asks for write. The &lt;code&gt;test-results&lt;/code&gt; job is skipped for them. &lt;code&gt;.github/workflows/pr-test-results.yml&lt;/code&gt; runs on &lt;code&gt;workflow_run&lt;/code&gt; after CI completes, from the default-branch copy of the workflow. It downloads the artifact, and its checkout also leaves &lt;code&gt;ref&lt;/code&gt; unset. Same-repo runs that are not from Dependabot are skipped there, so those pull requests get the one comment from &lt;code&gt;ci.yml&lt;/code&gt;. Dangerous-Workflow on the merge run scored 10: &lt;code&gt;no dangerous workflow patterns detected&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;A test report that can live as a pull-request comment can use &lt;code&gt;pull-requests: write&lt;/code&gt; on its own job. &lt;code&gt;checks: write&lt;/code&gt; is the scope Scorecard warns on, at the top of the workflow and on the job.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>I Made My Track Solver a Third Faster Without Changing One Answer</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/track-solver-a-third-faster-same-answers/"/>
