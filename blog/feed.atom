@@ -4,11 +4,65 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-24T16:18:32Z</updated>
+  <updated>2026-11-25T04:02:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>trivy-action ignored the severity I set when it uploaded SARIF</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/trivy-action-sarif-ignores-severity/"/>
+    <id>https://kevintcoughlin.com/blog/trivy-action-sarif-ignores-severity/</id>
+    <published>2026-11-25T04:02:00Z</published>
+    <updated>2026-11-25T04:02:00Z</updated>
+    <category term="containers"/>
+    <category term="github-actions"/>
+    <category term="tips"/>
+    <summary>The Security tab for cs-server showed about 560 open Trivy alerts, and none of them could be acted on. That count is from the write-up for cs-server#131, as of before the merge.</summary>
+    <content type="html">&lt;p&gt;The Security tab for &lt;a href=&quot;https://github.com/KevinTCoughlin/cs-server&quot;&gt;cs-server&lt;/a&gt; showed about 560 open Trivy alerts, and none of them could be acted on. That count is from the write-up for &lt;a href=&quot;https://github.com/KevinTCoughlin/cs-server/pull/131&quot;&gt;cs-server#131&lt;/a&gt;, as of before the merge.&lt;/p&gt;
+&lt;p&gt;I had already set &lt;code&gt;severity: 'CRITICAL,HIGH'&lt;/code&gt; on the SARIF step. It was not enough.&lt;/p&gt;
+&lt;p&gt;There were two causes, both as of that write-up. First, &lt;code&gt;aquasecurity/trivy-action&lt;/code&gt; ignores &lt;code&gt;severity&lt;/code&gt; for SARIF unless &lt;code&gt;limit-severities-for-sarif&lt;/code&gt; is set, so medium, low, and unknown findings were uploaded along with critical and high. Second, every open finding was a Debian CVE with no fixed package yet. About 270 of the alerts, from the same write-up, belong to two categories from earlier job names, &lt;code&gt;.github/workflows/docker.yml:build-and-scan&lt;/code&gt; and &lt;code&gt;.github/workflows/nightly.yml:nightly&lt;/code&gt;. Nothing uploads to those any more, so they can never close on their own. The pull request does not touch them. Their old analyses have to be deleted by hand.&lt;/p&gt;
+&lt;p&gt;The current upload category is &lt;code&gt;trivy-${{ matrix.arch }}&lt;/code&gt; on the matrix image job. The &lt;code&gt;build-and-scan&lt;/code&gt; job still exists. It only aggregates results, and it does not upload SARIF, which is why that old category is stale.&lt;/p&gt;
+&lt;h2 id=&quot;the-sarif-step-before-and-after&quot;&gt;The SARIF step before and after&lt;/h2&gt;
+&lt;p&gt;Before, the SARIF step in &lt;code&gt;.github/workflows/docker.yml&lt;/code&gt; and &lt;code&gt;nightly.yml&lt;/code&gt; used &lt;code&gt;aquasecurity/trivy-action@v0.36.0&lt;/code&gt; with &lt;code&gt;severity&lt;/code&gt; and neither of the two options:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-yaml&quot;&gt;- name: Run Trivy vulnerability scanner
+  id: trivy
+  uses: aquasecurity/trivy-action@v0.36.0
+  with:
+    image-ref: ${{ env.LOCAL_IMAGE }}
+    format: 'sarif'
+    output: 'trivy-results.sarif'
+    severity: 'CRITICAL,HIGH'
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;After, in &lt;a href=&quot;https://github.com/KevinTCoughlin/cs-server/pull/131&quot;&gt;cs-server#131&lt;/a&gt; (&lt;a href=&quot;https://github.com/KevinTCoughlin/cs-server/commit/153b301ba00152a35dd4fc2c9613f3137ccac15a&quot;&gt;&lt;code&gt;153b301&lt;/code&gt;&lt;/a&gt;). &lt;code&gt;nightly.yml&lt;/code&gt; mirrors it. The same commit pins &lt;code&gt;trivy-action&lt;/code&gt; to the commit behind &lt;code&gt;v0.36.0&lt;/code&gt;.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-yaml&quot;&gt;- name: Run Trivy vulnerability scanner
+  id: trivy
+  uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+  with:
+    image-ref: ${{ env.LOCAL_IMAGE }}
+    format: 'sarif'
+    output: 'trivy-results.sarif'
+    severity: 'CRITICAL,HIGH'
+    # The Security tab gets what can be acted on: critical and high
+    # findings that have a fixed package to move to. Without the first
+    # option the action ignores `severity` for SARIF and uploads every
+    # level. The table below still lists unfixed findings in the log.
+    limit-severities-for-sarif: true
+    ignore-unfixed: true
+
+- name: Upload Trivy results to GitHub Security
+  uses: github/codeql-action/upload-sarif@v4
+  if: always() &amp;amp;&amp;amp; steps.trivy.outcome == 'success'
+  with:
+    sarif_file: 'trivy-results.sarif'
+    category: trivy-${{ matrix.arch }}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The Security tab should then hold only critical and high findings that have a fix. The table step is unchanged. It still uses format &lt;code&gt;table&lt;/code&gt; and severity &lt;code&gt;CRITICAL,HIGH,MEDIUM&lt;/code&gt;, so the job log still lists critical, high, and medium findings, fixed or not.&lt;/p&gt;
+&lt;p&gt;An unfixed critical or high CVE no longer raises an alert and only appears in the job log. When Debian ships a fix, the next scan raises it. If you'd rather see unfixed criticals in the Security tab, drop &lt;code&gt;ignore-unfixed&lt;/code&gt; and keep the severity limit.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;actionlint&lt;/code&gt; passed, and the pull request's own &lt;code&gt;docker.yml&lt;/code&gt; run exercised the new options on both architectures.&lt;/p&gt;
+&lt;p&gt;If you upload Trivy SARIF to code scanning, set &lt;code&gt;limit-severities-for-sarif&lt;/code&gt; or &lt;code&gt;severity&lt;/code&gt; won't apply. Add &lt;code&gt;ignore-unfixed&lt;/code&gt; only if you accept unfixed criticals staying in the log. Leftover analyses under old job-name categories must be deleted by hand.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>The ReGameDLL nav crash was an uninitialized open-list marker</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/regamedll-nav-open-list-fix/"/>
