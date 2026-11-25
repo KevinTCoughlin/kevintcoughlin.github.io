@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Posts tagged go." />
+    <meta name="description" content="Posts tagged golang." />
     <meta name="author" content="Kevin T. Coughlin" />
     <meta name="theme-color" content="#14211d" />
-    <link rel="canonical" href="https://kevintcoughlin.com/blog/tags/go/" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/tags/golang/" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
     <meta
@@ -14,7 +14,7 @@
       content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <title>go — Kevin Coughlin</title>
+    <title>golang — Kevin Coughlin</title>
     <style>
       :root {
         color-scheme: dark;
@@ -176,7 +176,7 @@
       <a href="/blog/">Blog</a>
     </header>
     <main class="shell">
-      <h1>go</h1>
+      <h1>golang</h1>
       <p class="meta">1 post · <a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
         <li>
@@ -184,7 +184,7 @@
           <h2><a href="/blog/http-server-shutdown-leaked-subprocesses/">http.Server.Shutdown doesn't cancel request contexts, so my graceful quit leaked subprocesses</a></h2>
           <p>I shut down lazydeck serve and the uv, python, ssh, and rsync children were still running. One 30s deadline covered both the HTTP drain and the job reap. http.Server.Shutdown does not cancel request contexts. It only waits for handlers to return. An open GET /v1/jobs/{id}/events stream held that wait, the reap saw an already-expired context, and it cancelled the job without waiting for execute to leave cmd.Run. Those children are in their own process group, so they outlived the server.</p>
           <ul class="tags" aria-label="Tags">
-            <li><a href="/blog/tags/go/" aria-current="page">go</a></li>
+            <li><a href="/blog/tags/golang/" aria-current="page">golang</a></li>
             <li><a href="/blog/tags/tips/">tips</a></li>
           </ul>
         </li>

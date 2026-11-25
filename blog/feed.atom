@@ -15,7 +15,7 @@
     <id>https://kevintcoughlin.com/blog/http-server-shutdown-leaked-subprocesses/</id>
     <published>2026-11-25T17:18:00Z</published>
     <updated>2026-11-25T17:18:00Z</updated>
-    <category term="go"/>
+    <category term="golang"/>
     <category term="tips"/>
     <summary>I shut down lazydeck serve and the uv, python, ssh, and rsync children were still running. One 30s deadline covered both the HTTP drain and the job reap. http.Server.Shutdown does not cancel request contexts. It only waits for handlers to return. An open GET /v1/jobs/{id}/events stream held that wait, the reap saw an already-expired context, and it cancelled the job without waiting for execute to leave cmd.Run. Those children are in their own process group, so they outlived the server.</summary>
     <content type="html">&lt;p&gt;I shut down &lt;a href=&quot;https://github.com/KevinTCoughlin/lazydeck&quot;&gt;lazydeck&lt;/a&gt; &lt;code&gt;serve&lt;/code&gt; and the uv, python, ssh, and rsync children were still running. One 30s deadline covered both the HTTP drain and the job reap. &lt;a href=&quot;https://pkg.go.dev/net/http#Server.Shutdown&quot;&gt;&lt;code&gt;http.Server.Shutdown&lt;/code&gt;&lt;/a&gt; does not cancel request contexts. It only waits for handlers to return. An open &lt;code&gt;GET /v1/jobs/{id}/events&lt;/code&gt; stream held that wait, the reap saw an already-expired context, and it cancelled the job without waiting for &lt;code&gt;execute&lt;/code&gt; to leave &lt;code&gt;cmd.Run&lt;/code&gt;. Those children are in their own process group, so they outlived the server.&lt;/p&gt;

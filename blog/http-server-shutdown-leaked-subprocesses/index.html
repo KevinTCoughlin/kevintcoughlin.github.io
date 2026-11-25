@@ -180,7 +180,7 @@
         <h1>http.Server.Shutdown doesn't cancel request contexts, so my graceful quit leaked subprocesses</h1>
         <time datetime="2026-11-25T17:18:00Z">November 25, 2026</time>
         <ul class="tags" aria-label="Tags">
-          <li><a href="/blog/tags/go/">go</a></li>
+          <li><a href="/blog/tags/golang/">golang</a></li>
           <li><a href="/blog/tags/tips/">tips</a></li>
         </ul>
 <p>I shut down <a href="https://github.com/KevinTCoughlin/lazydeck">lazydeck</a> <code>serve</code> and the uv, python, ssh, and rsync children were still running. One 30s deadline covered both the HTTP drain and the job reap. <a href="https://pkg.go.dev/net/http#Server.Shutdown"><code>http.Server.Shutdown</code></a> does not cancel request contexts. It only waits for handlers to return. An open <code>GET /v1/jobs/{id}/events</code> stream held that wait, the reap saw an already-expired context, and it cancelled the job without waiting for <code>execute</code> to leave <code>cmd.Run</code>. Those children are in their own process group, so they outlived the server.</p>

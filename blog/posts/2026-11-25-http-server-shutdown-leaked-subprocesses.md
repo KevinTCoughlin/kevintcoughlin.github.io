@@ -1,7 +1,7 @@
 ---
 published: 2026-11-25T17:18:00Z
 tags:
-  - go
+  - golang
   - tips
 ---
 
