@@ -517,6 +517,86 @@ const commandShutdownBudget = 15 * time.Second
 </content>
   </entry>
   <entry>
+    <title>Bad publisher feeds were opening the circuit breaker for iTunes</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/circuit-breaker-publisher-feeds-one-probe/"/>
+    <id>https://kevintcoughlin.com/blog/circuit-breaker-publisher-feeds-one-probe/</id>
+    <published>2026-11-25T16:10:00Z</published>
+    <updated>2026-11-25T16:10:00Z</updated>
+    <category term="python"/>
+    <category term="tips"/>
+    <summary>Five broken publisher feeds in a row used to open the circuit breaker in podr-service for 30 seconds. Search (/?q=), top podcasts (/?q=toppodcasts), and /podcast/{id} share that breaker with iTunes and Podcast Index, so they returned 500, or a cached entry still inside ttl + STALE_SECONDS. The log called the publisher failure an iTunes API error.</summary>
+    <content type="html">&lt;p&gt;Five broken publisher feeds in a row used to open the circuit breaker in &lt;a href=&quot;https://github.com/cascadiacollections/podr-service&quot;&gt;podr-service&lt;/a&gt; for 30 seconds. Search (&lt;code&gt;/?q=&lt;/code&gt;), top podcasts (&lt;code&gt;/?q=toppodcasts&lt;/code&gt;), and &lt;code&gt;/podcast/{id}&lt;/code&gt; share that breaker with iTunes and Podcast Index, so they returned 500, or a cached entry still inside &lt;code&gt;ttl + STALE_SECONDS&lt;/code&gt;. The log called the publisher failure an iTunes API error.&lt;/p&gt;
+&lt;p&gt;One &lt;code&gt;CircuitBreaker&lt;/code&gt; lives on the Worker isolate. &lt;code&gt;/health&lt;/code&gt; reports it as &lt;code&gt;circuitBreaker&lt;/code&gt;. &lt;code&gt;failure()&lt;/code&gt; opens it at &lt;code&gt;failures &amp;gt;= 5&lt;/code&gt;, and the open state rests for 30 seconds. With &lt;code&gt;podcastSummaries&lt;/code&gt; on, detail also fetches the iTunes &lt;code&gt;feedUrl&lt;/code&gt; through &lt;code&gt;rss_description()&lt;/code&gt;, on the same cached upstream as search, top, and detail. &lt;code&gt;get()&lt;/code&gt; defaults &lt;code&gt;proxy&lt;/code&gt; to &lt;code&gt;True&lt;/code&gt;, so a status of 400 or more was raised as &lt;code&gt;iTunes API error&lt;/code&gt;. &lt;code&gt;rss_description()&lt;/code&gt; logs that and returns no summary. &lt;code&gt;except Exception&lt;/code&gt; still called &lt;code&gt;failure()&lt;/code&gt;, and a 200 called &lt;code&gt;success()&lt;/code&gt;, which cleared the counter and closed the breaker. &lt;code&gt;feed()&lt;/code&gt; already skipped &lt;code&gt;CachedUpstream&lt;/code&gt;. Its docstring says a caller-supplied URL must not take iTunes down with it.&lt;/p&gt;
+&lt;h2 id=&quot;only-count-failures-of-the-dependency-the-breaker-protects&quot;&gt;Only count failures of the dependency the breaker protects&lt;/h2&gt;
+&lt;p&gt;I stopped counting those fetches in &lt;a href=&quot;https://github.com/cascadiacollections/podr-service/pull/719&quot;&gt;podr-service#719&lt;/a&gt; (&lt;a href=&quot;https://github.com/cascadiacollections/podr-service/commit/bed0cd30dd4dcecbb7927c44db0f20dabc5b2c6a&quot;&gt;&lt;code&gt;bed0cd3&lt;/code&gt;&lt;/a&gt;). They still use the cache. &lt;code&gt;breaker=False&lt;/code&gt; skips &lt;code&gt;failure()&lt;/code&gt; and &lt;code&gt;success()&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Before:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;response, _ = await self.upstream.get(url, TTL_DETAIL, header_only=True)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;provider = &amp;quot;iTunes&amp;quot; if proxy else &amp;quot;Podcast Index&amp;quot;
+raise UpstreamError(f&amp;quot;{provider} API error: {response.status} {response.reason}&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;except Exception:
+    self.circuit.failure()
+    raise
+self.circuit.success()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;After, same commit. The comment is on the call in &lt;code&gt;rss_description()&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# The URL belongs to the publisher. Counting it on the shared breaker
+# would let a few broken feeds rest iTunes and Podcast Index, and the
+# failure is not an error from either API.
+response, _ = await self.upstream.get(url, TTL_DETAIL, header_only=True, breaker=False)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;if breaker:
+    provider = &amp;quot;iTunes&amp;quot; if proxy else &amp;quot;Podcast Index&amp;quot;
+    label = f&amp;quot;{provider} API error&amp;quot;
+else:
+    label = &amp;quot;Feed error&amp;quot;
+raise UpstreamError(f&amp;quot;{label}: {response.status} {response.reason}&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;except asyncio.CancelledError:
+    if probe:
+        self.circuit.cancel_probe()
+    raise
+except Exception:
+    if breaker:
+        self.circuit.failure()
+    raise
+if breaker:
+    self.circuit.success()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;breaker&lt;/code&gt; defaults to &lt;code&gt;True&lt;/code&gt;, so search, top, and detail still move it. A publisher 404 is now &lt;code&gt;Feed error: 404&lt;/code&gt;. A connect error or a read timeout raises as itself, and &lt;code&gt;rss_description()&lt;/code&gt; still logs &lt;code&gt;RSS description unavailable&lt;/code&gt;. The new test sends 404, 500, 503, a connect error, a read timeout, and 502, then checks the breaker is &lt;code&gt;&amp;quot;closed&amp;quot;&lt;/code&gt;, &lt;code&gt;failures&lt;/code&gt; is 0, and &lt;code&gt;/?q=python&lt;/code&gt; returns 200. A successful fetch leaves a count of 4 where it was, and leaves an open breaker open. iTunes and Podcast Index still share the field &lt;code&gt;/health&lt;/code&gt; reports, so an outage on either side can still rest the other.&lt;/p&gt;
+&lt;h2 id=&quot;half-open-should-admit-one-probe&quot;&gt;Half-open should admit one probe&lt;/h2&gt;
+&lt;p&gt;The old &lt;code&gt;is_open()&lt;/code&gt; checked the rest and let callers through. &lt;code&gt;get()&lt;/code&gt; fetches when it returns false:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def is_open(self):
+    if self.state == &amp;quot;open&amp;quot; and time.time() - self.last_failure &amp;gt;= 30:
+        self.state = &amp;quot;half-open&amp;quot;
+    return self.state == &amp;quot;open&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The call that ends the 30 seconds sets &lt;code&gt;&amp;quot;half-open&amp;quot;&lt;/code&gt; and gets false back. Every later caller does too, because the return is &lt;code&gt;self.state == &amp;quot;open&amp;quot;&lt;/code&gt;. They hit upstream together.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;is_open()&lt;/code&gt; now only answers. &lt;code&gt;&amp;quot;half-open&amp;quot;&lt;/code&gt; stays off upstream, and so does &lt;code&gt;&amp;quot;open&amp;quot;&lt;/code&gt; while &lt;code&gt;time.time() - self.last_failure &amp;lt; 30&lt;/code&gt;. A fresh cache hit returns from &lt;code&gt;get()&lt;/code&gt; before &lt;code&gt;_fetch&lt;/code&gt;, so the probe stays available. The test uses a fresh entry with &lt;code&gt;last_failure&lt;/code&gt; 31 seconds ago and checks the state is still &lt;code&gt;&amp;quot;open&amp;quot;&lt;/code&gt; with no upstream call. The next miss is the probe.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;admit()&lt;/code&gt; reserves that one attempt, and it does not await:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def admit(self):
+    &amp;quot;&amp;quot;&amp;quot;Reserve one upstream attempt. Half-open keeps the rest waiting.&amp;quot;&amp;quot;&amp;quot;
+    if self.state == &amp;quot;closed&amp;quot;:
+        return True
+    if self.state == &amp;quot;open&amp;quot; and time.time() - self.last_failure &amp;gt;= 30:
+        self.state = &amp;quot;half-open&amp;quot;
+        return True
+    return False
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A second request during the probe gets 500 and &lt;code&gt;Service temporarily unavailable&lt;/code&gt;, with one upstream call. &lt;code&gt;failure()&lt;/code&gt; on a failed probe sets &lt;code&gt;last_failure&lt;/code&gt; to now and opens the breaker again, because the state is &lt;code&gt;&amp;quot;half-open&amp;quot;&lt;/code&gt;. The following request does not call upstream. The pull request's 503 case checks that.&lt;/p&gt;
+&lt;p&gt;A cancelled probe has no result to count. &lt;code&gt;cancel_probe()&lt;/code&gt; returns the state to &lt;code&gt;&amp;quot;open&amp;quot;&lt;/code&gt; and leaves &lt;code&gt;last_failure&lt;/code&gt; where it was:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def cancel_probe(self):
+    &amp;quot;&amp;quot;&amp;quot;The probe ended without a result. Leave the rest window where it was.&amp;quot;&amp;quot;&amp;quot;
+    if self.state == &amp;quot;half-open&amp;quot;:
+        self.state = &amp;quot;open&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Otherwise the breaker would sit in &lt;code&gt;&amp;quot;half-open&amp;quot;&lt;/code&gt;. &lt;code&gt;is_open()&lt;/code&gt; keeps later callers off upstream there, and &lt;code&gt;admit()&lt;/code&gt; only starts a probe from &lt;code&gt;&amp;quot;open&amp;quot;&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The docstring on &lt;code&gt;is_open()&lt;/code&gt; says this needs no lock. &lt;code&gt;admit()&lt;/code&gt; does not await, and a Worker isolate has one event loop, so a second caller cannot pass &lt;code&gt;admit()&lt;/code&gt; before the state is &lt;code&gt;&amp;quot;half-open&amp;quot;&lt;/code&gt;. On a cache miss, &lt;code&gt;get()&lt;/code&gt; calls &lt;code&gt;admit()&lt;/code&gt; before it awaits the fetch. While the breaker is &lt;code&gt;&amp;quot;closed&amp;quot;&lt;/code&gt;, &lt;code&gt;admit()&lt;/code&gt; returns immediately and concurrent misses each still fetch. &lt;code&gt;refreshing&lt;/code&gt; de-duplicates revalidation only on the &lt;code&gt;Podcasts&lt;/code&gt; object &lt;code&gt;fetch()&lt;/code&gt; builds per request.&lt;/p&gt;
+&lt;p&gt;Only count failures of the dependency the breaker protects. Half-open should admit one probe.&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
     <title>I Made My Track Solver a Third Faster Without Changing One Answer</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/track-solver-a-third-faster-same-answers/"/>
     <id>https://kevintcoughlin.com/blog/track-solver-a-third-faster-same-answers/</id>
