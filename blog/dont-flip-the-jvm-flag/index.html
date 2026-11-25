@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="JDK 25 can shrink object headers with -XX:+UseCompactObjectHeaders. On the Paper server that can cut the heap, and it can also move GC pauses and tick time. I built a harness that copies the world twice and compares the two runs. I have not measured the world yet. The numbers come later." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/dont-flip-the-jvm-flag/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Don't flip the JVM flag, measure it on a copy of the world — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>Don't flip the JVM flag, measure it on a copy of the world</h1>
+        <time datetime="2026-11-25T17:20:00Z">November 25, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/homelab/">homelab</a></li>
+          <li><a href="/blog/tags/minecraft/">minecraft</a></li>
+          <li><a href="/blog/tags/performance/">performance</a></li>
+        </ul>
+<p>JDK 25 can shrink object headers with <code>-XX:+UseCompactObjectHeaders</code>. On the Paper server that can cut the heap, and it can also move GC pauses and tick time. I built a harness that copies the world twice and compares the two runs. I have not measured the world yet. The numbers come later.</p>
+<h2 id="the-flag-stays-off">The flag stays off</h2>
+<p><a href="https://github.com/KevinTCoughlin/minecraft-server/commit/cdb170bb10ba08c3f212321bf0bec4428f619d6d"><code>cdb170b</code></a> made <code>scripts/jvm-opts.sh</code> the flag list for a host start and for the container image. With no container memory limit, that script boots on a safe default heap, about a quarter of host memory clamped between 1G and 4G, or 2G when host memory cannot be read. Compact headers stay out of that list. They sit outside <a href="https://docs.papermc.io/paper/aikars-flags">Aikar's flags</a>.</p>
+<p><a href="https://github.com/KevinTCoughlin/minecraft-server/pull/133">minecraft-server#133</a> (<a href="https://github.com/KevinTCoughlin/minecraft-server/commit/b15e3533f59f6ea24fba6a7f915c09979e3374a0"><code>b15e353</code></a>) adds the opt-in on top of that script, and the harness that has to pass before the flag is turned on for a server people play. <code>scripts/jvm-opts.sh</code> appends <code>-XX:+UseCompactObjectHeaders</code> only when <code>COMPACT_OBJECT_HEADERS</code> is <code>true</code>, <code>1</code>, <code>yes</code>, or <code>on</code>. Any other value is an error. Unset, <code>false</code>, <code>0</code>, <code>no</code>, and <code>off</code> leave it off. G1 already passes <code>-XX:+UnlockExperimentalVMOptions</code>. ZGC does not, so the opt-in adds that unlock only for ZGC. JDK 25 still treats the flag as experimental.</p>
+<p>Compose <code>JVM_XX_OPTS</code> leaves the flag out. The custom image uses <code>scripts/jvm-opts.sh</code>, so the same variable is the opt-in there. The live server keeps the current flags. An <code>ACCEPT</code> from the harness is evidence for a follow-up. It leaves the default off.</p>
+<h2 id="two-copies-one-difference">Two copies, one difference</h2>
+<p><code>scripts/measure-compact-headers.sh</code> copies the world with <code>cp -a</code>, once into <code>baseline/world</code> and once into <code>compact/world</code>, both from the original. The second run starts from the same files as the first. The server directory is always one of those copies, and <code>server.properties</code> sets <code>level-name=world</code> there.</p>
+<p>Both runs call <code>scripts/jvm-opts.sh</code> with <code>MEMORY_MODE=fixed</code> and the same heap, GC, and dump settings. The compact run is the only one with <code>COMPACT_OBJECT_HEADERS=true</code>. Before Java starts, the script stops if the baseline flags mention <code>UseCompactObjectHeaders</code>, and it stops if the compact flags are missing the line <code>-XX:+UseCompactObjectHeaders</code>. Each run adds the same <code>-Xlog:gc*</code> options, with a different log path. <code>HeapDumpPath</code> differs by run directory.</p>
+<p>Defaults match a host start: G1, <code>-Xms4G -Xmx4G</code>, view distance 10, simulation distance 10. The measurement server listens on <code>127.0.0.1:25566</code>, with an empty plugins directory, peaceful difficulty, mob spawning off, and <code>pause-when-empty-seconds=-1</code>. After Paper prints <code>Done</code>, it waits 120 seconds, then samples for 180 seconds. The runs are sequential, so one heap is touched at a time, and <code>AlwaysPreTouch</code> touches that whole heap. Leave disk for two full copies.</p>
+<pre><code class="language-bash">./scripts/stop.sh
+./scripts/measure-compact-headers.sh --world server/parkour-spiral
+</code></pre>
+<p>The argument is the world directory, the folder that contains <code>level.dat</code>. <code>server/parkour-spiral</code> is the usual map. Java 25 and <code>server/paper.jar</code> have to be on the host. Paper 26.3 will not start on an older JDK.</p>
+<h2 id="what-it-refuses">What it refuses</h2>
+<p>A copy taken while the world is open, or a server whose level is the original, is not a before and after. The harness checks the copy after <code>cp</code> and again immediately before Java starts. It refuses when:</p>
+<ul>
+<li>the work directory is the original world, sits inside it, or contains it, including a symlink whose target is the world</li>
+<li>the work directory is the live <code>server/</code> directory</li>
+<li>the copy's <code>level.dat</code> is missing, is a symlink, or is the same inode as the original</li>
+<li>any symlink inside the copy points at the original world</li>
+<li>any hardlink inside the copy is a file in the original world</li>
+<li>Paper is still running from <code>server/server.pid</code> and the world sits inside that server directory</li>
+<li>the original <code>level.dat</code> checksum changes during the two runs</li>
+</ul>
+<p>A <code>session.lock</code> in the original world prints a warning. The same check is available for a copy made by hand:</p>
+<pre><code class="language-bash">./scripts/measure-compact-headers.sh check-copy \
+    --source server/parkour-spiral \
+    --dest /tmp/parkour-copy
+</code></pre>
+<p>Exit 1 means the harness refused to run, or a server did not finish. Exit 0 means a comparison was written, including a rejection.</p>
+<h2 id="what-a-passing-run-has-to-show">What a passing run has to show</h2>
+<p>After warmup the harness samples used heap with <code>jcmd &lt;pid&gt; GC.heap_info</code>, falling back to <code>jstat -gc</code>, every 15 seconds through the soak. Pauses before the warmup mark are ignored, so startup GC stays out of the comparison. Then it sends <code>tps</code> and <code>mspt</code> on the console and stops the server.</p>
+<p>The 1 minute TPS figure is the one that counts. A <code>*</code> from Paper means that window is not full yet, and the verdict is inconclusive. MSPT is the 1 minute average. TPS is capped at 20, so a slower tick can sit behind a perfect TPS number. MSPT is part of &quot;TPS no worse&quot;.</p>
+<p>The summary lands in <code>.compact-headers-measure/&lt;timestamp&gt;/summary.md</code>. <code>latest</code> points at that directory when the default work directory is used. <code>verdict.txt</code> is one word: <code>ACCEPT</code>, <code>REJECT</code>, or <code>INCONCLUSIVE</code>.</p>
+<p>Enable the flag in <code>scripts/jvm-opts.sh</code> and in Compose <code>JVM_XX_OPTS</code> only when the copy shows a smaller heap and pauses and TPS are no worse:</p>
+<ul>
+<li><strong>Heap.</strong> The first sample after warmup and the high-water mark during the soak are both strictly lower with the flag.</li>
+<li><strong>GC pauses.</strong> Soak max and p99 are less than or equal to the baseline. Zero pauses on both sides counts as equal. G1's target in the current flags is <code>-XX:MaxGCPauseMillis=200</code>.</li>
+<li><strong>TPS.</strong> The 1 minute TPS is greater than or equal to the baseline, with a 0.05 tolerance so one decimal place from Paper is not a false failure.</li>
+<li><strong>MSPT.</strong> The 1 minute average is less than or equal to the baseline, with the same 0.05 ms tolerance.</li>
+</ul>
+<p><code>ACCEPT</code> means those gates passed. If the high-water drop is under 1%, the summary says to repeat the run before treating it as a real win. <code>REJECT</code> means leave the flag out. <code>INCONCLUSIVE</code> means a heap sample, a pause log, TPS, or MSPT was missing. One pair of idle soaks is noisy. A few milliseconds of pause jitter is a reason to run it again.</p>
+<h2 id="the-numbers-are-still-to-come">The numbers are still to come</h2>
+<p>I have not run this on <code>parkour-spiral</code>. That soak needs Java 25 and the world on the host, with the live server stopped, and it has not happened. <code>tests/jvm-opts.sh</code> checks the flag is absent by default and present when <code>COMPACT_OBJECT_HEADERS</code> is set, and that an unknown value fails. <code>tests/compact-headers.sh</code> checks the copy refusals (same path, symlink, hardlink, path overlap, and a live <code>server.pid</code>) and the <code>ACCEPT</code> / <code>REJECT</code> / <code>INCONCLUSIVE</code> parser, including a stubbed two-run measurement that never uses the original directory as the server world. Heap, pause, TPS, and MSPT numbers come from a real soak, and that soak has not been run.</p>
+<p>The comparison is tracked on <a href="https://github.com/KevinTCoughlin/minecraft-server/issues/129">minecraft-server#129</a>. When <code>summary.md</code> exists I will put it there. Until then the flag stays off.</p>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>
