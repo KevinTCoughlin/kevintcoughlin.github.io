@@ -4,11 +4,68 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-25T07:00:00Z</updated>
+  <updated>2026-11-25T17:20:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>Don't flip the JVM flag, measure it on a copy of the world</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/dont-flip-the-jvm-flag/"/>
+    <id>https://kevintcoughlin.com/blog/dont-flip-the-jvm-flag/</id>
+    <published>2026-11-25T17:20:00Z</published>
+    <updated>2026-11-25T17:20:00Z</updated>
+    <category term="homelab"/>
+    <category term="minecraft"/>
+    <category term="performance"/>
+    <summary>JDK 25 can shrink object headers with -XX:+UseCompactObjectHeaders. On the Paper server that can cut the heap, and it can also move GC pauses and tick time. I built a harness that copies the world twice and compares the two runs. I have not measured the world yet. The numbers come later.</summary>
+    <content type="html">&lt;p&gt;JDK 25 can shrink object headers with &lt;code&gt;-XX:+UseCompactObjectHeaders&lt;/code&gt;. On the Paper server that can cut the heap, and it can also move GC pauses and tick time. I built a harness that copies the world twice and compares the two runs. I have not measured the world yet. The numbers come later.&lt;/p&gt;
+&lt;h2 id=&quot;the-flag-stays-off&quot;&gt;The flag stays off&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/KevinTCoughlin/minecraft-server/commit/cdb170bb10ba08c3f212321bf0bec4428f619d6d&quot;&gt;&lt;code&gt;cdb170b&lt;/code&gt;&lt;/a&gt; made &lt;code&gt;scripts/jvm-opts.sh&lt;/code&gt; the flag list for a host start and for the container image. With no container memory limit, that script boots on a safe default heap, about a quarter of host memory clamped between 1G and 4G, or 2G when host memory cannot be read. Compact headers stay out of that list. They sit outside &lt;a href=&quot;https://docs.papermc.io/paper/aikars-flags&quot;&gt;Aikar's flags&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/KevinTCoughlin/minecraft-server/pull/133&quot;&gt;minecraft-server#133&lt;/a&gt; (&lt;a href=&quot;https://github.com/KevinTCoughlin/minecraft-server/commit/b15e3533f59f6ea24fba6a7f915c09979e3374a0&quot;&gt;&lt;code&gt;b15e353&lt;/code&gt;&lt;/a&gt;) adds the opt-in on top of that script, and the harness that has to pass before the flag is turned on for a server people play. &lt;code&gt;scripts/jvm-opts.sh&lt;/code&gt; appends &lt;code&gt;-XX:+UseCompactObjectHeaders&lt;/code&gt; only when &lt;code&gt;COMPACT_OBJECT_HEADERS&lt;/code&gt; is &lt;code&gt;true&lt;/code&gt;, &lt;code&gt;1&lt;/code&gt;, &lt;code&gt;yes&lt;/code&gt;, or &lt;code&gt;on&lt;/code&gt;. Any other value is an error. Unset, &lt;code&gt;false&lt;/code&gt;, &lt;code&gt;0&lt;/code&gt;, &lt;code&gt;no&lt;/code&gt;, and &lt;code&gt;off&lt;/code&gt; leave it off. G1 already passes &lt;code&gt;-XX:+UnlockExperimentalVMOptions&lt;/code&gt;. ZGC does not, so the opt-in adds that unlock only for ZGC. JDK 25 still treats the flag as experimental.&lt;/p&gt;
+&lt;p&gt;Compose &lt;code&gt;JVM_XX_OPTS&lt;/code&gt; leaves the flag out. The custom image uses &lt;code&gt;scripts/jvm-opts.sh&lt;/code&gt;, so the same variable is the opt-in there. The live server keeps the current flags. An &lt;code&gt;ACCEPT&lt;/code&gt; from the harness is evidence for a follow-up. It leaves the default off.&lt;/p&gt;
+&lt;h2 id=&quot;two-copies-one-difference&quot;&gt;Two copies, one difference&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;scripts/measure-compact-headers.sh&lt;/code&gt; copies the world with &lt;code&gt;cp -a&lt;/code&gt;, once into &lt;code&gt;baseline/world&lt;/code&gt; and once into &lt;code&gt;compact/world&lt;/code&gt;, both from the original. The second run starts from the same files as the first. The server directory is always one of those copies, and &lt;code&gt;server.properties&lt;/code&gt; sets &lt;code&gt;level-name=world&lt;/code&gt; there.&lt;/p&gt;
+&lt;p&gt;Both runs call &lt;code&gt;scripts/jvm-opts.sh&lt;/code&gt; with &lt;code&gt;MEMORY_MODE=fixed&lt;/code&gt; and the same heap, GC, and dump settings. The compact run is the only one with &lt;code&gt;COMPACT_OBJECT_HEADERS=true&lt;/code&gt;. Before Java starts, the script stops if the baseline flags mention &lt;code&gt;UseCompactObjectHeaders&lt;/code&gt;, and it stops if the compact flags are missing the line &lt;code&gt;-XX:+UseCompactObjectHeaders&lt;/code&gt;. Each run adds the same &lt;code&gt;-Xlog:gc*&lt;/code&gt; options, with a different log path. &lt;code&gt;HeapDumpPath&lt;/code&gt; differs by run directory.&lt;/p&gt;
+&lt;p&gt;Defaults match a host start: G1, &lt;code&gt;-Xms4G -Xmx4G&lt;/code&gt;, view distance 10, simulation distance 10. The measurement server listens on &lt;code&gt;127.0.0.1:25566&lt;/code&gt;, with an empty plugins directory, peaceful difficulty, mob spawning off, and &lt;code&gt;pause-when-empty-seconds=-1&lt;/code&gt;. After Paper prints &lt;code&gt;Done&lt;/code&gt;, it waits 120 seconds, then samples for 180 seconds. The runs are sequential, so one heap is touched at a time, and &lt;code&gt;AlwaysPreTouch&lt;/code&gt; touches that whole heap. Leave disk for two full copies.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;./scripts/stop.sh
+./scripts/measure-compact-headers.sh --world server/parkour-spiral
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The argument is the world directory, the folder that contains &lt;code&gt;level.dat&lt;/code&gt;. &lt;code&gt;server/parkour-spiral&lt;/code&gt; is the usual map. Java 25 and &lt;code&gt;server/paper.jar&lt;/code&gt; have to be on the host. Paper 26.3 will not start on an older JDK.&lt;/p&gt;
+&lt;h2 id=&quot;what-it-refuses&quot;&gt;What it refuses&lt;/h2&gt;
+&lt;p&gt;A copy taken while the world is open, or a server whose level is the original, is not a before and after. The harness checks the copy after &lt;code&gt;cp&lt;/code&gt; and again immediately before Java starts. It refuses when:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;the work directory is the original world, sits inside it, or contains it, including a symlink whose target is the world&lt;/li&gt;
+&lt;li&gt;the work directory is the live &lt;code&gt;server/&lt;/code&gt; directory&lt;/li&gt;
+&lt;li&gt;the copy's &lt;code&gt;level.dat&lt;/code&gt; is missing, is a symlink, or is the same inode as the original&lt;/li&gt;
+&lt;li&gt;any symlink inside the copy points at the original world&lt;/li&gt;
+&lt;li&gt;any hardlink inside the copy is a file in the original world&lt;/li&gt;
+&lt;li&gt;Paper is still running from &lt;code&gt;server/server.pid&lt;/code&gt; and the world sits inside that server directory&lt;/li&gt;
+&lt;li&gt;the original &lt;code&gt;level.dat&lt;/code&gt; checksum changes during the two runs&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;A &lt;code&gt;session.lock&lt;/code&gt; in the original world prints a warning. The same check is available for a copy made by hand:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;./scripts/measure-compact-headers.sh check-copy \
+    --source server/parkour-spiral \
+    --dest /tmp/parkour-copy
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Exit 1 means the harness refused to run, or a server did not finish. Exit 0 means a comparison was written, including a rejection.&lt;/p&gt;
+&lt;h2 id=&quot;what-a-passing-run-has-to-show&quot;&gt;What a passing run has to show&lt;/h2&gt;
+&lt;p&gt;After warmup the harness samples used heap with &lt;code&gt;jcmd &amp;lt;pid&amp;gt; GC.heap_info&lt;/code&gt;, falling back to &lt;code&gt;jstat -gc&lt;/code&gt;, every 15 seconds through the soak. Pauses before the warmup mark are ignored, so startup GC stays out of the comparison. Then it sends &lt;code&gt;tps&lt;/code&gt; and &lt;code&gt;mspt&lt;/code&gt; on the console and stops the server.&lt;/p&gt;
+&lt;p&gt;The 1 minute TPS figure is the one that counts. A &lt;code&gt;*&lt;/code&gt; from Paper means that window is not full yet, and the verdict is inconclusive. MSPT is the 1 minute average. TPS is capped at 20, so a slower tick can sit behind a perfect TPS number. MSPT is part of &amp;quot;TPS no worse&amp;quot;.&lt;/p&gt;
+&lt;p&gt;The summary lands in &lt;code&gt;.compact-headers-measure/&amp;lt;timestamp&amp;gt;/summary.md&lt;/code&gt;. &lt;code&gt;latest&lt;/code&gt; points at that directory when the default work directory is used. &lt;code&gt;verdict.txt&lt;/code&gt; is one word: &lt;code&gt;ACCEPT&lt;/code&gt;, &lt;code&gt;REJECT&lt;/code&gt;, or &lt;code&gt;INCONCLUSIVE&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Enable the flag in &lt;code&gt;scripts/jvm-opts.sh&lt;/code&gt; and in Compose &lt;code&gt;JVM_XX_OPTS&lt;/code&gt; only when the copy shows a smaller heap and pauses and TPS are no worse:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Heap.&lt;/strong&gt; The first sample after warmup and the high-water mark during the soak are both strictly lower with the flag.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;GC pauses.&lt;/strong&gt; Soak max and p99 are less than or equal to the baseline. Zero pauses on both sides counts as equal. G1's target in the current flags is &lt;code&gt;-XX:MaxGCPauseMillis=200&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;TPS.&lt;/strong&gt; The 1 minute TPS is greater than or equal to the baseline, with a 0.05 tolerance so one decimal place from Paper is not a false failure.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;MSPT.&lt;/strong&gt; The 1 minute average is less than or equal to the baseline, with the same 0.05 ms tolerance.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;code&gt;ACCEPT&lt;/code&gt; means those gates passed. If the high-water drop is under 1%, the summary says to repeat the run before treating it as a real win. &lt;code&gt;REJECT&lt;/code&gt; means leave the flag out. &lt;code&gt;INCONCLUSIVE&lt;/code&gt; means a heap sample, a pause log, TPS, or MSPT was missing. One pair of idle soaks is noisy. A few milliseconds of pause jitter is a reason to run it again.&lt;/p&gt;
+&lt;h2 id=&quot;the-numbers-are-still-to-come&quot;&gt;The numbers are still to come&lt;/h2&gt;
+&lt;p&gt;I have not run this on &lt;code&gt;parkour-spiral&lt;/code&gt;. That soak needs Java 25 and the world on the host, with the live server stopped, and it has not happened. &lt;code&gt;tests/jvm-opts.sh&lt;/code&gt; checks the flag is absent by default and present when &lt;code&gt;COMPACT_OBJECT_HEADERS&lt;/code&gt; is set, and that an unknown value fails. &lt;code&gt;tests/compact-headers.sh&lt;/code&gt; checks the copy refusals (same path, symlink, hardlink, path overlap, and a live &lt;code&gt;server.pid&lt;/code&gt;) and the &lt;code&gt;ACCEPT&lt;/code&gt; / &lt;code&gt;REJECT&lt;/code&gt; / &lt;code&gt;INCONCLUSIVE&lt;/code&gt; parser, including a stubbed two-run measurement that never uses the original directory as the server world. Heap, pause, TPS, and MSPT numbers come from a real soak, and that soak has not been run.&lt;/p&gt;
+&lt;p&gt;The comparison is tracked on &lt;a href=&quot;https://github.com/KevinTCoughlin/minecraft-server/issues/129&quot;&gt;minecraft-server#129&lt;/a&gt;. When &lt;code&gt;summary.md&lt;/code&gt; exists I will put it there. Until then the flag stays off.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>I Made My Track Solver a Third Faster Without Changing One Answer</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/track-solver-a-third-faster-same-answers/"/>

@@ -180,6 +180,16 @@
       <p class="meta"><a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
         <li>
+          <time datetime="2026-11-25T17:20:00Z">November 25, 2026</time>
+          <h2><a href="/blog/dont-flip-the-jvm-flag/">Don't flip the JVM flag, measure it on a copy of the world</a></h2>
+          <p>JDK 25 can shrink object headers with -XX:+UseCompactObjectHeaders. On the Paper server that can cut the heap, and it can also move GC pauses and tick time. I built a harness that copies the world twice and compares the two runs. I have not measured the world yet. The numbers come later.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/homelab/">homelab</a></li>
+            <li><a href="/blog/tags/minecraft/">minecraft</a></li>
+            <li><a href="/blog/tags/performance/">performance</a></li>
+          </ul>
+        </li>
+        <li>
           <time datetime="2026-11-25T07:00:00Z">November 25, 2026</time>
           <h2><a href="/blog/track-solver-a-third-faster-same-answers/">I Made My Track Solver a Third Faster Without Changing One Answer</a></h2>
           <p>I'm building a racing game in Rust and Godot, a sibling to Salt Line. Every track in it is generated, and every generated track is proven drivable before a player sees it. Proving is slow: a late track costs about four million physics ticks, and a phone does that while the player looks at a menu.</p>
