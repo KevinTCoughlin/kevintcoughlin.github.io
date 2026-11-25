@@ -1,5 +1,5 @@
 ---
-published: 2026-11-25T17:20:00Z
+published: 2026-11-25T17:22:00Z
 tags:
   - github-actions
   - tips
