@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="I shut down lazydeck serve and the uv, python, ssh, and rsync children were still running. One 30s deadline covered both the HTTP drain and the job reap. http.Server.Shutdown does not cancel request contexts. It only waits for handlers to return. An open GET /v1/jobs/{id}/events stream held that wait, the reap saw an already-expired context, and it cancelled the job without waiting for execute to leave cmd.Run. Those children are in their own process group, so they outlived the server." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/http-server-shutdown-leaked-subprocesses/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>http.Server.Shutdown doesn't cancel request contexts, so my graceful quit leaked subprocesses — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>http.Server.Shutdown doesn't cancel request contexts, so my graceful quit leaked subprocesses</h1>
+        <time datetime="2026-11-25T17:18:00Z">November 25, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/go/">go</a></li>
+          <li><a href="/blog/tags/tips/">tips</a></li>
+        </ul>
+<p>I shut down <a href="https://github.com/KevinTCoughlin/lazydeck">lazydeck</a> <code>serve</code> and the uv, python, ssh, and rsync children were still running. One 30s deadline covered both the HTTP drain and the job reap. <a href="https://pkg.go.dev/net/http#Server.Shutdown"><code>http.Server.Shutdown</code></a> does not cancel request contexts. It only waits for handlers to return. An open <code>GET /v1/jobs/{id}/events</code> stream held that wait, the reap saw an already-expired context, and it cancelled the job without waiting for <code>execute</code> to leave <code>cmd.Run</code>. Those children are in their own process group, so they outlived the server.</p>
+<h2 id="the-stream-spends-the-shared-deadline">The stream spends the shared deadline</h2>
+<p><code>shutdownBudget</code> is 30 seconds. Before <a href="https://github.com/KevinTCoughlin/lazydeck/pull/125">lazydeck#125</a>, <code>Run</code> spent it on <code>Shutdown</code> and then passed the same context to <code>jobs.Shutdown</code>:</p>
+<pre><code class="language-go">case &lt;-ctx.Done():
+    shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownBudget)
+    defer cancel()
+    for _, srv := range servers {
+        if err := srv.Shutdown(shutdownCtx); err != nil {
+            log.Printf(&quot;lazydeck serve: graceful HTTP shutdown failed: %v&quot;, err)
+        }
+    }
+    // Cancel and wait for in-flight jobs even if HTTP shutdown above
+    // didn't finish cleanly: otherwise a deploy's rsync/ssh could keep
+    // running detached after this process has already returned/exited.
+    if err := apiServer.jobs.Shutdown(shutdownCtx); err != nil {
+        log.Printf(&quot;lazydeck serve: in-flight job(s) did not finish before shutdown timed out: %v&quot;, err)
+        return err
+    }
+</code></pre>
+<p>That comment is the wait I wanted, including after a dirty HTTP shutdown. When the stream holds the drain for the whole 30s, the shared context is already expired, so <code>jobs.Shutdown</code> returns <code>ctx.Err()</code> and the wait never runs.</p>
+<p><code>handleJobEvents</code> stays in the handler until the job is terminal or the request context ends:</p>
+<pre><code class="language-go">if wait == nil {
+    return // job is terminal and every event has been sent
+}
+select {
+case &lt;-wait:
+case &lt;-r.Context().Done():
+    return
+}
+</code></pre>
+<p>The servers did not set <code>BaseContext</code>. When it is nil, <a href="https://pkg.go.dev/net/http#Server.BaseContext">the default is <code>context.Background()</code></a>, so cancelling serve does not cancel <code>r.Context()</code>. <code>Shutdown</code> closes listeners and idle connections, then waits for active ones to finish. The client holding the event stream is still connected, so the handler does not return, and <code>Shutdown</code> sits until <code>shutdownCtx</code> expires.</p>
+<p><code>jobs.Shutdown</code> still cancels every tracked job. The wait is a <code>select</code> on the job goroutines and on <code>ctx</code>. An expired context takes the second branch and returns <code>ctx.Err()</code>:</p>
+<pre><code class="language-go">for _, j := range jobs {
+    j.cancel()
+}
+done := make(chan struct{})
+go func() {
+    m.wg.Wait()
+    close(done)
+}()
+select {
+case &lt;-done:
+    return nil
+case &lt;-ctx.Done():
+    return ctx.Err()
+}
+</code></pre>
+<p>That cancel is what kills the process group. <code>configureCancellation</code> in <code>internal/client/process_unix.go</code> starts <code>uv</code> in its own group. <code>uv</code> execs Python, which shells out to <code>ssh</code> and <code>rsync</code>. On cancel, the command <code>SIGKILL</code>s the group and then waits, with a 10s <code>WaitDelay</code> so a descendant holding a pipe cannot hang the call:</p>
+<pre><code class="language-go">cmd.SysProcAttr.Setpgid = true
+cmd.WaitDelay = cancelWaitDelay
+cmd.Cancel = func() error {
+    return killProcessGroup(cmd)
+}
+</code></pre>
+<p><code>killProcessGroup</code> is <code>syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)</code>. That runs inside <code>cmd.Run</code>. <code>execute</code> was still blocked there when the process exited, and a child in another process group is not reaped by that exit.</p>
+<h2 id="give-the-reap-its-own-30s-and-cancel-the-stream">Give the reap its own 30s, and cancel the stream</h2>
+<p><a href="https://github.com/KevinTCoughlin/lazydeck/pull/125">lazydeck#125</a> (<a href="https://github.com/KevinTCoughlin/lazydeck/commit/408c5cacdb8df8292426b45cd9ba5312a3ee3606"><code>408c5ca</code></a>) parents every request context on the serve context, on the loopback server and on the optional network server. Cancelling serve ends <code>r.Context()</code>, the event handler returns, and the drain is no longer stuck on the stream.</p>
+<pre><code class="language-go">// Parent every request context on the serve context.
+// http.Server.Shutdown does not cancel handlers; it only waits for them
+// to return. Job SSE streams block in that wait until the request
+// context ends, so without this they hold Shutdown until the deadline.
+requestBase := func(net.Listener) context.Context { return ctx }
+loopbackSrv := &amp;http.Server{
+    Handler:           apiServer.Handler(),
+    ReadHeaderTimeout: 10 * time.Second,
+    BaseContext:       requestBase,
+}
+</code></pre>
+<p>HTTP still drains first, on its own 30s context, so a handler inside <code>Submit</code> publishes the job before the reap waits. The reap then gets a new 30s context. A handler that ignores cancellation can still use up the HTTP budget. That budget is not the one passed to <code>jobs.Shutdown</code>, so the wait for <code>cmd.Run</code> still happens. The wait is what lets the process-group kill finish before exit.</p>
+<pre><code class="language-go">httpCtx, httpCancel := context.WithTimeout(context.Background(), shutdownBudget)
+defer httpCancel()
+for _, srv := range servers {
+    if err := srv.Shutdown(httpCtx); err != nil {
+        log.Printf(&quot;lazydeck serve: graceful HTTP shutdown failed: %v&quot;, err)
+    }
+}
+jobCtx, jobCancel := context.WithTimeout(context.Background(), shutdownBudget)
+defer jobCancel()
+if err := apiServer.jobs.Shutdown(jobCtx); err != nil {
+    log.Printf(&quot;lazydeck serve: in-flight job(s) did not finish before shutdown timed out: %v&quot;, err)
+    return err
+}
+</code></pre>
+<p><code>TestRunShutdownWaitsForInFlightJobWithEventStreamOpen</code> holds <code>GET /v1/jobs/{id}/events</code> open. Its client blocks in <code>Deploy</code> until the job context is cancelled, then sleeps 200ms. <code>Run</code> has to return within 5s, and only after that sleep. The old path can sit in <code>Shutdown</code> for the full 30s while the stream is open, so the test fails on the previous shutdown code and passes with this change. The pull request's <code>go test -race ./...</code> was clean with a stub <code>uv</code> on <code>PATH</code>. That environment has no <code>uv</code>.</p>
+<h2 id="quitting-the-tui-leaked-the-same-processes">Quitting the TUI leaked the same processes</h2>
+<p><a href="https://github.com/KevinTCoughlin/lazydeck/pull/126">lazydeck#126</a> (<a href="https://github.com/KevinTCoughlin/lazydeck/commit/c8a1fab2c3257681ad5ecf9b1c63cc24bdd8bb6e"><code>c8a1fab</code></a>) is the quit path. Status, register, deploy, sync-logs, delete, list-games, discover, connection info, and custom commands each used <code>context.WithTimeout(context.Background(), ...)</code>. Bubble Tea returns from <code>Run</code> without joining those goroutines. The children sit in their own process group, so they kept running after the process exited. Custom commands already set <code>Setpgid</code> and <code>SIGKILL</code> the group on cancel, same as the client. Their <code>WaitDelay</code> is 2s. The client's is 10s.</p>
+<p><code>q</code> and Ctrl+C cancel one shared context. Each command's timeout is now a child of it. After the program returns, <code>main</code> cancels again and waits:</p>
+<pre><code class="language-go">_, err = p.Run()
+// Bubble Tea returns without joining command goroutines. Cancel any
+// still in flight and wait until their process groups exit.
+m.Shutdown()
+return err
+</code></pre>
+<p><code>Shutdown</code> waits up to 15s, past the client's 10s <code>WaitDelay</code> after <code>SIGKILL</code>. Spinner ticks and auto-refresh ticks are not in that wait. <code>TestQuitTerminatesCustomCommandProcessGroup</code> runs a shell that backgrounds <code>sleep 120</code> and checks the grandchild is gone after quit and <code>Shutdown</code>.</p>
+<h2 id="a-panic-skipped-finish">A panic skipped finish</h2>
+<p>The same pull request covers a job whose run function panics. <code>finish</code> is the only path to a terminal state. The panic skipped it, so the job stayed <code>running</code>, prune never saw it, and a client on <code>GET /v1/jobs/{id}/events</code> waited forever. <code>releaseDevice</code> still ran, so the device lock was dropped.</p>
+<p><code>execute</code> recovers, logs the panic value, and finishes the job as failed. The job error is a generic internal message. The panic text stays in the serve log. <code>finish</code> still runs the completion hook, and it now prunes, so a burst that was still in flight when it was submitted does not sit in memory after it completes. The cap is still 500.</p>
+<pre><code class="language-go">log.Printf(&quot;lazydeck: job %s panicked: %v&quot;, job.ID, rec)
+m.finish(job, Failed, &quot;failed&quot;, &amp;Error{
+    Kind:    &quot;internal&quot;,
+    Message: &quot;the devkit operation failed unexpectedly; see the lazydeck serve process log for details&quot;,
+})
+</code></pre>
+<p><code>TestRunPanicFinishesAndReleasesTheDevice</code> panics with <code>boom secret</code> and checks that neither word is in the job error.</p>
+<p>The shutdown path has to wait until <code>cmd.Run</code> returns, on a clock the HTTP drain cannot expire. The children are in another process group, so exiting without that wait leaves them running.</p>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>

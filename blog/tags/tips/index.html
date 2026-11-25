@@ -177,8 +177,17 @@
     </header>
     <main class="shell">
       <h1>tips</h1>
-      <p class="meta">5 posts · <a href="/blog/tags/">All tags</a></p>
+      <p class="meta">6 posts · <a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
+        <li>
+          <time datetime="2026-11-25T17:18:00Z">November 25, 2026</time>
+          <h2><a href="/blog/http-server-shutdown-leaked-subprocesses/">http.Server.Shutdown doesn't cancel request contexts, so my graceful quit leaked subprocesses</a></h2>
+          <p>I shut down lazydeck serve and the uv, python, ssh, and rsync children were still running. One 30s deadline covered both the HTTP drain and the job reap. http.Server.Shutdown does not cancel request contexts. It only waits for handlers to return. An open GET /v1/jobs/{id}/events stream held that wait, the reap saw an already-expired context, and it cancelled the job without waiting for execute to leave cmd.Run. Those children are in their own process group, so they outlived the server.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/go/">go</a></li>
+            <li><a href="/blog/tags/tips/" aria-current="page">tips</a></li>
+          </ul>
+        </li>
         <li>
           <time datetime="2026-11-25T04:02:00Z">November 25, 2026</time>
           <h2><a href="/blog/trivy-action-sarif-ignores-severity/">trivy-action ignored the severity I set when it uploaded SARIF</a></h2>
