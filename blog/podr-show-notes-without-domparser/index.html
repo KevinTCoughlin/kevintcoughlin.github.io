@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Podr turned every episode and podcast description that contained &lt; or &amp; into plain text with DOMParser on the main thread, during feed load, before the episode list could update. Ordinary notes are a string scan now. The plain text is computed the first time something reads description, and cached. Laziness beat a worker: the scan needs no DOM, copying a multi-megabyte feed across threads costs more than the scan, and the fallback needs DOMParser, which workers do not have. The change is podr#188 (10c3607). podr#186 left this open. Large descriptions were still parsed in full on the main thread." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/podr-show-notes-without-domparser/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Don't parse show notes until something reads them — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>Don't parse show notes until something reads them</h1>
+        <time datetime="2026-11-26T16:20:00Z">November 26, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/performance/">performance</a></li>
+          <li><a href="/blog/tags/tips/">tips</a></li>
+        </ul>
+<p><a href="https://github.com/cascadiacollections/podr">Podr</a> turned every episode and podcast description that contained <code>&lt;</code> or <code>&amp;</code> into plain text with <code>DOMParser</code> on the main thread, during feed load, before the episode list could update. Ordinary notes are a string scan now. The plain text is computed the first time something reads <code>description</code>, and cached. Laziness beat a worker: the scan needs no DOM, copying a multi-megabyte feed across threads costs more than the scan, and the fallback needs <code>DOMParser</code>, which workers do not have. The change is <a href="https://github.com/cascadiacollections/podr/pull/188">podr#188</a> (<a href="https://github.com/cascadiacollections/podr/commit/10c36079365a2096fb251229a18be34d06fa25e8"><code>10c3607</code></a>). <a href="https://github.com/cascadiacollections/podr/pull/186">podr#186</a> left this open. Large descriptions were still parsed in full on the main thread.</p>
+<h2 id="what-i-measured">What I measured</h2>
+<p>The numbers are from jsdom, on show notes shaped like a CMS export: paragraphs, links, lists, WordPress comments, and the character references those tools emit (<code>&amp;amp;</code>, <code>&amp;#8217;</code>, <code>&amp;mdash;</code>, <code>&amp;ldquo;</code>, <code>&amp;eacute;</code>). The scanner's text matched <code>DOMParser</code>. The 300-episode run produced the same 1,502,260 characters.</p>
+<table>
+<thead>
+<tr><th></th><th>Before (<code>DOMParser</code>)</th><th>After</th></tr>
+</thead>
+<tbody>
+<tr><td>One 12,767-byte description</td><td>6.9 ms</td><td>0.32 ms</td></tr>
+<tr><td>One 128,381-byte description</td><td>42.4 ms</td><td>1.7 ms</td></tr>
+<tr><td>300 descriptions, 10,923 bytes each (3.31 MB)</td><td>890 ms, during feed parse</td><td>0.9 ms to parse the feed, then 4.0 ms for the first 30</td></tr>
+</tbody>
+</table>
+<p>The list mounts 30 rows. Those are the notes that used to be waited on along with the other 270. Reading all 300 with the scanner, for a case that does walk every episode, took 41 ms.</p>
+<p>App JS is 17KB gzip. The previous review measured about 15KB, so the reader and its character-reference table are about 2KB.</p>
+<h2 id="read-it-when-something-asks">Read it when something asks</h2>
+<p>A feed can carry hundreds of episodes. Scanning every show-notes string before the list paints blocks the main thread for notes the listener has not asked to see. <code>description</code> is a getter. Spread would read that getter immediately, so the property is defined on the object:</p>
+<pre><code class="language-ts">function defineLazyDescription&lt;T extends object&gt;(
+  target: T,
+  raw: string
+): T &amp; { readonly description: string } {
+  return Object.defineProperty(target, 'description', {
+    enumerable: true,
+    get(): string {
+      return raw ? toPlainText(raw) : '';
+    },
+  }) as T &amp; { readonly description: string };
+}
+</code></pre>
+<p>The list mounts a page of rows, and saving keeps a short prefix of the first sixty. Both read <code>description</code> and pay for those only. The value is the same plain text <code>toPlainText</code> has always returned.</p>
+<p><code>toPlainText</code> remembers 64 recent plain-text results. Opening a podcast reads each visible description once for the row and again when the trimmed copy is saved. The second read is the stored string:</p>
+<pre><code class="language-ts">const cached = plainTextCache.get(value);
+
+if (cached !== undefined) {
+  return rememberPlainText(value, cached);
+}
+</code></pre>
+<p>A description that is the only field has to be read during the parse. Markup that leaves no text (<code>&lt;br&gt;</code>) is an empty result, the same as a missing description. When the feed already has a title, author, or image, the notes wait until the page shows them.</p>
+<h2 id="hand-the-rest-to-domparser">Hand the rest to DOMParser</h2>
+<p><code>readHtmlText</code> in <code>src/utils/htmlText.ts</code> returns the text a document's body would expose for ordinary markup. Null means the fragment is outside what the scan claims. The caller then uses <code>DOMParser</code>, so the text stays the same.</p>
+<pre><code class="language-ts">const scanned = readHtmlText(prepared);
+
+if (scanned !== null) {
+  text = scanned;
+} else {
+  descriptionParser ??= new DOMParser();
+  text = descriptionParser.parseFromString(prepared, 'text/html').body.textContent ?? '';
+}
+</code></pre>
+<p>A space is inserted before <code>br</code>, <code>/p</code>, <code>/div</code>, <code>/li</code>, and heading closers before either reader runs. That space survives as text once the tag is gone, so adjacent paragraphs do not run together, and the two readers stay in agreement.</p>
+<p>The scan refuses these tags, and any character reference it does not know completely:</p>
+<pre><code class="language-ts">const RAW_TAGS = new Set([
+  'script',
+  'style',
+  'title',
+  'template',
+  'textarea',
+  'xmp',
+  'iframe',
+  'noembed',
+  'noframes',
+  'plaintext',
+  'svg',
+  'math',
+]);
+</code></pre>
+<p>Script, style, title, and template land in the document head, so their contents were never part of <code>body.textContent</code>. The scanner returns null for them instead of guessing, and <code>toPlainText</code> then matches the document:</p>
+<pre><code class="language-ts">expect(readHtmlText('&lt;script&gt;alert(1)&lt;/script&gt;Shown')).toBeNull();
+expect(readHtmlText('&lt;style&gt;p{}&lt;/style&gt;Hi')).toBeNull();
+expect(readHtmlText('&lt;svg&gt;&lt;text&gt;icon&lt;/text&gt;&lt;/svg&gt;')).toBeNull();
+expect(readHtmlText('&lt;p&gt;Ordinary&lt;/p&gt;')).toBe('Ordinary');
+</code></pre>
+<pre><code class="language-ts">expect(toPlainText('&lt;script&gt;alert(1)&lt;/script&gt;Shown as text')).toBe('Shown as text');
+expect(toPlainText('&lt;style&gt;p{color:red}&lt;/style&gt;Hi')).toBe('Hi');
+</code></pre>
+<p><code>DOMParser</code> runs with scripting disabled. Scripts do not run and images do not load. <code>&lt;noscript&gt;</code> is ordinary markup in that mode, and its text is kept.</p>
+<p>A name that is only a prefix of a real reference refuses the scan, so the HTML parser can apply the longest-match rule. <code>&amp;ampere;</code> stays <code>&amp;ere;</code> rather than being guessed.</p>
+<p>The comment on <code>toPlainText</code> says building a document per episode is what janks a feed of long show notes, and a worker cannot host <code>DOMParser</code>. Markup the string reader will not claim still goes through <code>DOMParser</code>. The scan itself needs no DOM, and copying a multi-megabyte feed across threads costs more than doing it here.</p>
+<h2 id="the-two-lines-on-screen-stay-in-css">The two lines on screen stay in CSS</h2>
+<p>The full note is still what gets shown. The two-line clamp stays in CSS, so find-in-page and screen readers keep the rest. The long-notes fixture checks that the scan reads the tail:</p>
+<pre><code class="language-ts">// The tail is still there: the scan does not stop at the two lines on screen.
+expect(text.endsWith('Episode 7.')).toBe(true);
+</code></pre>
+<h2 id="an-independent-domparser-is-the-oracle">An independent DOMParser is the oracle</h2>
+<p>The tests compare <code>toPlainText</code> with <code>domPlainText</code>, which calls <code>DOMParser</code> itself, including hostile markup. A faster reader cannot pass by being compared with itself.</p>
+<pre><code class="language-ts">text =
+  new DOMParser().parseFromString(text.replace(blockBoundary, ' $&amp;'), 'text/html').body
+    .textContent ?? '';
+</code></pre>
+<p>A long show-notes fixture asserts the scanner does not call <code>parseFromString</code>. A feed of notes that do need the parser asserts nothing is parsed until <code>description</code> is read, and a second read does not parse again:</p>
+<pre><code class="language-ts">expect(parseFromString).not.toHaveBeenCalled();
+expect(items[0].description).toBe('One');
+expect(parseFromString).toHaveBeenCalledTimes(1);
+// The same episode's notes are already plain text.
+expect(items[0].description).toBe('One');
+expect(parseFromString).toHaveBeenCalledTimes(1);
+</code></pre>
+<p>281 tests passed, lint reported no new warnings, and the production build succeeded.</p>
+<h2 id="what-i-would-repeat">What I would repeat</h2>
+<ul>
+<li><strong>Defer the parse.</strong> A visible row, the podcast header, or the offline short copy is what reads <code>description</code>. The other episodes can wait.</li>
+<li><strong>Return null when the scan would guess.</strong> Script and style contents stay out because the document puts those elements in the head. The scanner refuses the tags and <code>DOMParser</code> does the omission.</li>
+<li><strong>Leave the clamp in CSS.</strong> Cutting the note while parsing would take it away from find-in-page and screen readers.</li>
+<li><strong>Skip the worker when the fallback needs DOM.</strong> The copy of a multi-megabyte feed costs more than this scan, and a worker has no <code>DOMParser</code>.</li>
+</ul>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>
