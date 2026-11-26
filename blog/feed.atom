@@ -4,11 +4,127 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-26T02:17:00Z</updated>
+  <updated>2026-11-26T16:20:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>Don't parse show notes until something reads them</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/podr-show-notes-without-domparser/"/>
+    <id>https://kevintcoughlin.com/blog/podr-show-notes-without-domparser/</id>
+    <published>2026-11-26T16:20:00Z</published>
+    <updated>2026-11-26T16:20:00Z</updated>
+    <category term="performance"/>
+    <category term="tips"/>
+    <summary>Podr turned every episode and podcast description that contained &lt; or &amp; into plain text with DOMParser on the main thread, during feed load, before the episode list could update. Ordinary notes are a string scan now. The plain text is computed the first time something reads description, and cached. Laziness beat a worker: the scan needs no DOM, copying a multi-megabyte feed across threads costs more than the scan, and the fallback needs DOMParser, which workers do not have. The change is podr#188 (10c3607). podr#186 left this open. Large descriptions were still parsed in full on the main thread.</summary>
+    <content type="html">&lt;p&gt;&lt;a href=&quot;https://github.com/cascadiacollections/podr&quot;&gt;Podr&lt;/a&gt; turned every episode and podcast description that contained &lt;code&gt;&amp;lt;&lt;/code&gt; or &lt;code&gt;&amp;amp;&lt;/code&gt; into plain text with &lt;code&gt;DOMParser&lt;/code&gt; on the main thread, during feed load, before the episode list could update. Ordinary notes are a string scan now. The plain text is computed the first time something reads &lt;code&gt;description&lt;/code&gt;, and cached. Laziness beat a worker: the scan needs no DOM, copying a multi-megabyte feed across threads costs more than the scan, and the fallback needs &lt;code&gt;DOMParser&lt;/code&gt;, which workers do not have. The change is &lt;a href=&quot;https://github.com/cascadiacollections/podr/pull/188&quot;&gt;podr#188&lt;/a&gt; (&lt;a href=&quot;https://github.com/cascadiacollections/podr/commit/10c36079365a2096fb251229a18be34d06fa25e8&quot;&gt;&lt;code&gt;10c3607&lt;/code&gt;&lt;/a&gt;). &lt;a href=&quot;https://github.com/cascadiacollections/podr/pull/186&quot;&gt;podr#186&lt;/a&gt; left this open. Large descriptions were still parsed in full on the main thread.&lt;/p&gt;
+&lt;h2 id=&quot;what-i-measured&quot;&gt;What I measured&lt;/h2&gt;
+&lt;p&gt;The numbers are from jsdom, on show notes shaped like a CMS export: paragraphs, links, lists, WordPress comments, and the character references those tools emit (&lt;code&gt;&amp;amp;amp;&lt;/code&gt;, &lt;code&gt;&amp;amp;#8217;&lt;/code&gt;, &lt;code&gt;&amp;amp;mdash;&lt;/code&gt;, &lt;code&gt;&amp;amp;ldquo;&lt;/code&gt;, &lt;code&gt;&amp;amp;eacute;&lt;/code&gt;). The scanner's text matched &lt;code&gt;DOMParser&lt;/code&gt;. The 300-episode run produced the same 1,502,260 characters.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;&lt;/th&gt;&lt;th&gt;Before (&lt;code&gt;DOMParser&lt;/code&gt;)&lt;/th&gt;&lt;th&gt;After&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;One 12,767-byte description&lt;/td&gt;&lt;td&gt;6.9 ms&lt;/td&gt;&lt;td&gt;0.32 ms&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;One 128,381-byte description&lt;/td&gt;&lt;td&gt;42.4 ms&lt;/td&gt;&lt;td&gt;1.7 ms&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;300 descriptions, 10,923 bytes each (3.31 MB)&lt;/td&gt;&lt;td&gt;890 ms, during feed parse&lt;/td&gt;&lt;td&gt;0.9 ms to parse the feed, then 4.0 ms for the first 30&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;The list mounts 30 rows. Those are the notes that used to be waited on along with the other 270. Reading all 300 with the scanner, for a case that does walk every episode, took 41 ms.&lt;/p&gt;
+&lt;p&gt;App JS is 17KB gzip. The previous review measured about 15KB, so the reader and its character-reference table are about 2KB.&lt;/p&gt;
+&lt;h2 id=&quot;read-it-when-something-asks&quot;&gt;Read it when something asks&lt;/h2&gt;
+&lt;p&gt;A feed can carry hundreds of episodes. Scanning every show-notes string before the list paints blocks the main thread for notes the listener has not asked to see. &lt;code&gt;description&lt;/code&gt; is a getter. Spread would read that getter immediately, so the property is defined on the object:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ts&quot;&gt;function defineLazyDescription&amp;lt;T extends object&amp;gt;(
+  target: T,
+  raw: string
+): T &amp;amp; { readonly description: string } {
+  return Object.defineProperty(target, 'description', {
+    enumerable: true,
+    get(): string {
+      return raw ? toPlainText(raw) : '';
+    },
+  }) as T &amp;amp; { readonly description: string };
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The list mounts a page of rows, and saving keeps a short prefix of the first sixty. Both read &lt;code&gt;description&lt;/code&gt; and pay for those only. The value is the same plain text &lt;code&gt;toPlainText&lt;/code&gt; has always returned.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;toPlainText&lt;/code&gt; remembers 64 recent plain-text results. Opening a podcast reads each visible description once for the row and again when the trimmed copy is saved. The second read is the stored string:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ts&quot;&gt;const cached = plainTextCache.get(value);
+
+if (cached !== undefined) {
+  return rememberPlainText(value, cached);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A description that is the only field has to be read during the parse. Markup that leaves no text (&lt;code&gt;&amp;lt;br&amp;gt;&lt;/code&gt;) is an empty result, the same as a missing description. When the feed already has a title, author, or image, the notes wait until the page shows them.&lt;/p&gt;
+&lt;h2 id=&quot;hand-the-rest-to-domparser&quot;&gt;Hand the rest to DOMParser&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;readHtmlText&lt;/code&gt; in &lt;code&gt;src/utils/htmlText.ts&lt;/code&gt; returns the text a document's body would expose for ordinary markup. Null means the fragment is outside what the scan claims. The caller then uses &lt;code&gt;DOMParser&lt;/code&gt;, so the text stays the same.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ts&quot;&gt;const scanned = readHtmlText(prepared);
+
+if (scanned !== null) {
+  text = scanned;
+} else {
+  descriptionParser ??= new DOMParser();
+  text = descriptionParser.parseFromString(prepared, 'text/html').body.textContent ?? '';
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A space is inserted before &lt;code&gt;br&lt;/code&gt;, &lt;code&gt;/p&lt;/code&gt;, &lt;code&gt;/div&lt;/code&gt;, &lt;code&gt;/li&lt;/code&gt;, and heading closers before either reader runs. That space survives as text once the tag is gone, so adjacent paragraphs do not run together, and the two readers stay in agreement.&lt;/p&gt;
+&lt;p&gt;The scan refuses these tags, and any character reference it does not know completely:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ts&quot;&gt;const RAW_TAGS = new Set([
+  'script',
+  'style',
+  'title',
+  'template',
+  'textarea',
+  'xmp',
+  'iframe',
+  'noembed',
+  'noframes',
+  'plaintext',
+  'svg',
+  'math',
+]);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Script, style, title, and template land in the document head, so their contents were never part of &lt;code&gt;body.textContent&lt;/code&gt;. The scanner returns null for them instead of guessing, and &lt;code&gt;toPlainText&lt;/code&gt; then matches the document:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ts&quot;&gt;expect(readHtmlText('&amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt;Shown')).toBeNull();
+expect(readHtmlText('&amp;lt;style&amp;gt;p{}&amp;lt;/style&amp;gt;Hi')).toBeNull();
+expect(readHtmlText('&amp;lt;svg&amp;gt;&amp;lt;text&amp;gt;icon&amp;lt;/text&amp;gt;&amp;lt;/svg&amp;gt;')).toBeNull();
+expect(readHtmlText('&amp;lt;p&amp;gt;Ordinary&amp;lt;/p&amp;gt;')).toBe('Ordinary');
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ts&quot;&gt;expect(toPlainText('&amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt;Shown as text')).toBe('Shown as text');
+expect(toPlainText('&amp;lt;style&amp;gt;p{color:red}&amp;lt;/style&amp;gt;Hi')).toBe('Hi');
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;DOMParser&lt;/code&gt; runs with scripting disabled. Scripts do not run and images do not load. &lt;code&gt;&amp;lt;noscript&amp;gt;&lt;/code&gt; is ordinary markup in that mode, and its text is kept.&lt;/p&gt;
+&lt;p&gt;A name that is only a prefix of a real reference refuses the scan, so the HTML parser can apply the longest-match rule. &lt;code&gt;&amp;amp;ampere;&lt;/code&gt; stays &lt;code&gt;&amp;amp;ere;&lt;/code&gt; rather than being guessed.&lt;/p&gt;
+&lt;p&gt;The comment on &lt;code&gt;toPlainText&lt;/code&gt; says building a document per episode is what janks a feed of long show notes, and a worker cannot host &lt;code&gt;DOMParser&lt;/code&gt;. Markup the string reader will not claim still goes through &lt;code&gt;DOMParser&lt;/code&gt;. The scan itself needs no DOM, and copying a multi-megabyte feed across threads costs more than doing it here.&lt;/p&gt;
+&lt;h2 id=&quot;the-two-lines-on-screen-stay-in-css&quot;&gt;The two lines on screen stay in CSS&lt;/h2&gt;
+&lt;p&gt;The full note is still what gets shown. The two-line clamp stays in CSS, so find-in-page and screen readers keep the rest. The long-notes fixture checks that the scan reads the tail:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ts&quot;&gt;// The tail is still there: the scan does not stop at the two lines on screen.
+expect(text.endsWith('Episode 7.')).toBe(true);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&quot;an-independent-domparser-is-the-oracle&quot;&gt;An independent DOMParser is the oracle&lt;/h2&gt;
+&lt;p&gt;The tests compare &lt;code&gt;toPlainText&lt;/code&gt; with &lt;code&gt;domPlainText&lt;/code&gt;, which calls &lt;code&gt;DOMParser&lt;/code&gt; itself, including hostile markup. A faster reader cannot pass by being compared with itself.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ts&quot;&gt;text =
+  new DOMParser().parseFromString(text.replace(blockBoundary, ' $&amp;amp;'), 'text/html').body
+    .textContent ?? '';
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A long show-notes fixture asserts the scanner does not call &lt;code&gt;parseFromString&lt;/code&gt;. A feed of notes that do need the parser asserts nothing is parsed until &lt;code&gt;description&lt;/code&gt; is read, and a second read does not parse again:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-ts&quot;&gt;expect(parseFromString).not.toHaveBeenCalled();
+expect(items[0].description).toBe('One');
+expect(parseFromString).toHaveBeenCalledTimes(1);
+// The same episode's notes are already plain text.
+expect(items[0].description).toBe('One');
+expect(parseFromString).toHaveBeenCalledTimes(1);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;281 tests passed, lint reported no new warnings, and the production build succeeded.&lt;/p&gt;
+&lt;h2 id=&quot;what-i-would-repeat&quot;&gt;What I would repeat&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Defer the parse.&lt;/strong&gt; A visible row, the podcast header, or the offline short copy is what reads &lt;code&gt;description&lt;/code&gt;. The other episodes can wait.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Return null when the scan would guess.&lt;/strong&gt; Script and style contents stay out because the document puts those elements in the head. The scanner refuses the tags and &lt;code&gt;DOMParser&lt;/code&gt; does the omission.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Leave the clamp in CSS.&lt;/strong&gt; Cutting the note while parsing would take it away from find-in-page and screen readers.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Skip the worker when the fallback needs DOM.&lt;/strong&gt; The copy of a multi-megabyte feed costs more than this scan, and a worker has no &lt;code&gt;DOMParser&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+  </entry>
   <entry>
     <title>The Same Audit on a Second Game Found More: Salt Line's Solver in 40 Percent of the Time</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/artillery-solver-in-40-percent-of-the-time-same-answers/"/>

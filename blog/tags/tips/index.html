@@ -177,8 +177,17 @@
     </header>
     <main class="shell">
       <h1>tips</h1>
-      <p class="meta">10 posts · <a href="/blog/tags/">All tags</a></p>
+      <p class="meta">11 posts · <a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
+        <li>
+          <time datetime="2026-11-26T16:20:00Z">November 26, 2026</time>
+          <h2><a href="/blog/podr-show-notes-without-domparser/">Don't parse show notes until something reads them</a></h2>
+          <p>Podr turned every episode and podcast description that contained &lt; or &amp; into plain text with DOMParser on the main thread, during feed load, before the episode list could update. Ordinary notes are a string scan now. The plain text is computed the first time something reads description, and cached. Laziness beat a worker: the scan needs no DOM, copying a multi-megabyte feed across threads costs more than the scan, and the fallback needs DOMParser, which workers do not have. The change is podr#188 (10c3607). podr#186 left this open. Large descriptions were still parsed in full on the main thread.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/performance/">performance</a></li>
+            <li><a href="/blog/tags/tips/" aria-current="page">tips</a></li>
+          </ul>
+        </li>
         <li>
           <time datetime="2026-11-25T17:25:00Z">November 25, 2026</time>
           <h2><a href="/blog/shipped-11105-icons-to-use-17/">I shipped 11,105 icons to use 17</a></h2>
