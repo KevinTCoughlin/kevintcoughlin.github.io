@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Yesterday I wrote about making my racing game's track solver a third faster without changing one answer. Salt Line, its artillery sibling, has the same kind of prover, so I ran the same audit on it." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/artillery-solver-in-40-percent-of-the-time-same-answers/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>The Same Audit on a Second Game Found More: Salt Line's Solver in 40 Percent of the Time — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>The Same Audit on a Second Game Found More: Salt Line's Solver in 40 Percent of the Time</h1>
+        <time datetime="2026-11-26T02:17:00Z">November 26, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/performance/">performance</a></li>
+          <li><a href="/blog/tags/rust/">rust</a></li>
+        </ul>
+<p>Yesterday I wrote about <a href="https://kevintcoughlin.com/blog/track-solver-a-third-faster-same-answers/">making my racing game's track solver a third faster without changing one answer</a>. <a href="https://github.com/cascadiacollections/saltline">Salt Line</a>, its artillery sibling, has the same kind of prover, so I ran the same audit on it.</p>
+<p>It came out better. The proof now takes about 40 percent of the time it did. It accepts the same screens, lists the same shots and reports the same flight times as before, bit for bit.</p>
+<h2 id="the-short-version">The Short Version</h2>
+<table>
+<thead>
+<tr><th></th><th>Before</th><th>After</th></tr>
+</thead>
+<tbody>
+<tr><td>Batch of 5,000 screens, one thread</td><td>10.4–11.2 s</td><td>4.1–4.2 s</td></tr>
+<tr><td>Generation gate, 4,000 screens</td><td>0.800 s</td><td>0.316 s</td></tr>
+<tr><td>Prove one screen solvable</td><td>28–109 µs</td><td>11–48 µs</td></tr>
+<tr><td>Generate one screen, proof included</td><td>59–163 µs</td><td>31–69 µs</td></tr>
+<tr><td>Resolve one shot</td><td>925 ns</td><td>566 ns</td></tr>
+<tr><td>Solver results</td><td></td><td>identical</td></tr>
+</tbody>
+</table>
+<p>Those are from one pinned core of a 4-core x86-64 cloud machine, release build. The machine is noisy, so read the ratios and not the third digit. I haven't measured a phone, or arm64 at all.</p>
+<h2 id="what-proven-costs">What &quot;Proven&quot; Costs</h2>
+<p>Salt Line never shows a screen it hasn't proven clearable. For each target, a solver sweeps forty flight times, solves each for the angle and power that would land there, and snaps the answer to what the player's dials can actually set. Then it flies every candidate through the game's own fixed-step integrator and applies the game's own damage code, because the closed form knows nothing about wind changes, ricochets or tunnelling. A screen needs three distinct shots per target. One that fails is redrawn, down a ladder that ends on level ground.</p>
+<p>The sim is deterministic across Linux, macOS, Windows and phones, and a daily seed has to be the same game for everyone. So the rule was the same as last time: a speed-up that moves one result is a bug, not a trade-off.</p>
+<h2 id="save-the-answers-before-the-first-edit">Save the Answers Before the First Edit</h2>
+<p>Before I touched anything, I saved everything that prints a solver result:</p>
+<ul>
+<li>the batch reports, for the default build and each of the five build shapes</li>
+<li>the balance reports and the salvage probe</li>
+<li>both determinism runs, with all 200 run hashes</li>
+<li>a throwaway dump of 57,675 lines: for 75 loadouts, the screen hash, the rung, and every candidate's shot with the exact bits of its flight times, on fresh screens and again after three shots of damage</li>
+</ul>
+<p>The batch report had no per-screen detail, so I wrote the dump for the audit. After every change I ran all twelve files again and diffed them, ignoring one timing line.</p>
+<h2 id="where-the-time-went">Where the Time Went</h2>
+<p>In the generation gate, 89 percent was the solver and 11 percent was building terrain. Inside the solver, 77 percent was flights, which I expected. I didn't expect this: <strong>36 percent of the whole run was flying shots the solver had just flown.</strong></p>
+<h2 id="fewer-ticks">Fewer Ticks</h2>
+<h3 id="dont-fly-the-same-shot-twice">Don't fly the same shot twice</h3>
+<p>The solver flew each candidate once to see whether it landed anywhere near the target. If it did, it handed the shot to the game's damage code on a scratch copy of the screen, so the proof could never drift from what the game does. That code flew the shot again.</p>
+<p>The copy is identical to the screen until the damage is applied, and a flight depends only on the screen, the shot, the loadout and the fuse. The second flight could only repeat the first. I split &quot;fire a shot&quot; into &quot;fly it&quot; and &quot;apply what flew&quot; and gave the copy the flight the solver already had. That one change took about 45 percent off the full candidate count.</p>
+<h3 id="dont-find-every-answer-to-use-one">Don't find every answer to use one</h3>
+<p>The attract demo, the autopilot and the challenge hint arcs all asked the solver for every shot that fells a target, then used the first. There can be over a hundred. The search visits shots in the same order whatever the limit, so stopping at the first gives the same shot. That went from about 600 µs to between 2 and 13 µs.</p>
+<h2 id="cheaper-ticks">Cheaper Ticks</h2>
+<h3 id="the-same-floor">The same floor</h3>
+<p>The terrain lookup under the shell called <code>floor</code> on every step, and on x86-64 without SSE4.1 that's a library call. By the time the lookup reaches it, the position is known to be positive and inside the field, where truncating is the floor. Same lead as the racing game, same fix.</p>
+<h3 id="boxes-the-shell-is-nowhere-near">Boxes the shell is nowhere near</h3>
+<p>Every step was swept against every target's box. Most steps are far from all of them. Skipping those took another fifth off the full count, and it was the one change I couldn't make the easy way. More on that below.</p>
+<h3 id="trig-on-1801-angles">Trig on 1,801 angles</h3>
+<p>The barrel has 1,801 positions. The solver's angle search asked for the sine and cosine of the same ones several thousand times per screen. They now come from a table that's filled on first use by the same computation.</p>
+<h3 id="the-same-two-hashes">The same two hashes</h3>
+<p>Terrain noise hashed two lattice values for every sample. The terrain is sampled once per pixel column and a lattice cell is tens to hundreds of columns wide, so nearly every sample hashed the pair the one before it had. Each noise layer now remembers its last pair. A hash is a pure function of its inputs, so the remembered value is the value.</p>
+<h2 id="the-change-that-wasnt-obviously-safe">The Change That Wasn't Obviously Safe</h2>
+<p>Skipping the box sweep sounds trivial. If a step is outside the bounding box of all the boxes, it can't hit one.</p>
+<p>In exact arithmetic that's true. In floating point it isn't quite. The segment test divides two rounded differences, and for a step that ends within a rounding error of a box edge it can report a hit that exact arithmetic wouldn't. A plain bounding-box check would disagree with it there. It would be vanishingly rare, and it would break the rule.</p>
+<p>So the skip only applies when both ends of the step are more than one unit clear of every box, and every number involved is below 2⁴⁰. With that much room, the segment test's own first failing clip has to reject the step: the two differences can't round to the same value, and the quotient can't underflow to zero. The argument is in a comment beside the code. A test checks it against the real segment test on the edges and their neighbouring floats, on NaN and infinities, and on 360,000 ordinary steps.</p>
+<h2 id="the-bug-my-own-test-found">The Bug My Own Test Found</h2>
+<p>In the racing game, removing waste exposed an old bug. Here the bug was mine.</p>
+<p>My first draft of the terrain lookup panicked on a NaN position over a one-column field, where the old code returned NaN. Nothing in the game can produce that input. The test that compares the new lookup to the old one on awkward values produced it anyway, and the rule has no exception for inputs I think are impossible.</p>
+<h2 id="what-i-threw-away">What I Threw Away</h2>
+<p>Each of these looked good in the profiler and failed on the stopwatch.</p>
+<ul>
+<li>A hand-written <code>floor</code> with no library call removed 6.5 percent of instructions and no measurable time over forty runs.</li>
+<li>Inlining the terrain lookup was lost in the noise.</li>
+<li>Skipping the ground test when the shell is above all terrain made the run about 50 percent slower. Finding the highest ground for each shell cost more than the tests it saved.</li>
+</ul>
+<h2 id="what-i-left-alone">What I Left Alone</h2>
+<p>Nothing was reordered, no trial count or cap changed, and the solver is still single-threaded.</p>
+<p>And as before, arm64 has a <code>floor</code> instruction, so the truncation will count for less on a phone. The rest doesn't care about the architecture.</p>
+<h2 id="what-doing-it-twice-taught-me">What Doing It Twice Taught Me</h2>
+<ul>
+<li><strong>The biggest win was the same kind of thing both times.</strong> Two pieces of code each did the careful thing without knowing the other had. A profiler finds that in minutes.</li>
+<li><strong>If the tool that prints your results has no detail, write one that does.</strong> I couldn't have trusted a summary histogram to notice one changed shot.</li>
+<li><strong>&quot;Obviously equivalent&quot; is a claim about real numbers.</strong> The bounding-box skip is true in maths and false in floats. A margin made it true in both.</li>
+<li><strong>Test the new form against the old on values you'd never pass.</strong> That's where mine differed.</li>
+<li><strong>Believe the stopwatch over the profiler.</strong> Two changes that removed instructions removed no time, and a third made the run slower.</li>
+</ul>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>
