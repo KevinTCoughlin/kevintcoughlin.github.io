@@ -8,7 +8,7 @@ tags:
 
 # I shipped 11,105 icons to use 17
 
-[Shoutkit](https://github.com/cascadiacollections/shoutkit-android)'s phone app draws 31 Material icons, and the watch app draws three: PlayArrow, Pause, and Stop. Fourteen of the phone's icons come from `material-icons-core`. The other seventeen came from `material-icons-extended`. The 1.7.8 Android archive of that library is 11,105 icon classes. Release builds shrink the unused ones away. Debug builds dex every class, and that step is where CI ran out of heap. Copying the seventeen and dropping the dependency took the FOSS debug APK from 29,397,070 bytes to 22,728,773.
+[ShoutKit](https://github.com/cascadiacollections/shoutkit-android)'s phone app draws 31 Material icons, and the watch app draws three: PlayArrow, Pause, and Stop. Fourteen of the phone's icons come from `material-icons-core`. The other seventeen came from `material-icons-extended`. The 1.7.8 Android archive of that library is 11,105 icon classes. Release builds shrink the unused ones away. Debug builds dex every class, and that step is where CI ran out of heap. Copying the seventeen and dropping the dependency took the FOSS debug APK from 29,397,070 bytes to 22,728,773.
 
 The phone app turns minify and resource shrinking on for the release build type only:
 

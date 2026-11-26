@@ -13,12 +13,14 @@
 ## Things I make
 
 - [Salt Line](https://cascadiacollections.github.io/saltline/): single-player artillery roguelike (deterministic Rust simulation + Godot). Endless procedural horizon, persistent terrain damage, shells as the run resource, a modifier draft every four screens, local versus and a map editor. Coming to Steam, with a free shareware demo.
-- Shoutkit: one free, open-source, private internet radio app for iPhone and Android, with no ads and no tracking. [iPhone](https://cascadiacollections.github.io/shoutkit/), [Android](https://cascadiacollections.github.io/shoutkit-android/).
+- ShoutKit: one free, open-source, private internet radio app for iPhone and Android, with no ads and no tracking. F-Droid builds and signs its own separate .foss install. No listing has been submitted yet. [iPhone](https://cascadiacollections.github.io/shoutkit/), [Android](https://cascadiacollections.github.io/shoutkit-android/).
 - [godot-device-power](https://github.com/KevinTCoughlin/godot-device-power): Godot 4 addon that picks a frame cap and refresh rate from power source, battery saver, thermal state and Android game mode.
 - [godot-xdg-portals](https://kevintcoughlin.com/godot-xdg-portals/): desktop portals for Godot games on Linux and in Flatpak (C++ GDExtension + GDScript).
 - [lazydeck](https://lazydeck.dev/): lazydocker-style terminal UI for managing Steam Deck and Steam Machine devkits (Go).
-- [An untitled racer](https://cascadiacollections.github.io/racer/): early prototype of a retro pseudo-3D roguelike racer where every track is proven drivable by a bot.
+- [cs-server](https://github.com/KevinTCoughlin/cs-server): a public Counter-Strike 1.6 and Day of Defeat server on ReHLDS, running in Podman.
+- [podr](https://podrapp.com/): a podcast player for the web. Star a show and keep it ready to open offline.
 - [bauhaus](https://github.com/cascadiacollections/bauhaus): daily style-transferred art from CC0 museum collections on Cloudflare Workers.
+- [Bauhaus for Android](https://cascadiacollections.github.io/bauhaus-android/): sets the daily Bauhaus landscape as an Android wallpaper. Free and open source.
 - [mc-dad-server](https://kevintcoughlin.com/mc-dad-server/): a Minecraft server in about two minutes (Go).
 - [Cascadia Collections](https://www.cascadiacollections.com/): the independent studio Kevin founded, which publishes these.
 
