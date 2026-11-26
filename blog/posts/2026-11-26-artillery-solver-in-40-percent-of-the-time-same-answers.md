@@ -1,5 +1,5 @@
 ---
-published: 2026-11-25T09:00:00Z
+published: 2026-11-26T02:17:00Z
 tags:
   - performance
   - rust
@@ -7,7 +7,7 @@ tags:
 
 # The Same Audit on a Second Game Found More: Salt Line's Solver in 40 Percent of the Time
 
-Earlier today I wrote about [making my racing game's track solver a third faster without changing one answer](/blog/track-solver-a-third-faster-same-answers/). [Salt Line](https://github.com/cascadiacollections/saltline), its artillery sibling, has the same kind of prover, so I ran the same audit on it.
+Yesterday I wrote about [making my racing game's track solver a third faster without changing one answer](/blog/track-solver-a-third-faster-same-answers/). [Salt Line](https://github.com/cascadiacollections/saltline), its artillery sibling, has the same kind of prover, so I ran the same audit on it.
 
 It came out better. The proof now takes about 40 percent of the time it did. It accepts the same screens, lists the same shots and reports the same flight times as before, bit for bit.
 

@@ -4,11 +4,93 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-25T17:25:00Z</updated>
+  <updated>2026-11-26T02:17:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>The Same Audit on a Second Game Found More: Salt Line's Solver in 40 Percent of the Time</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/artillery-solver-in-40-percent-of-the-time-same-answers/"/>
+    <id>https://kevintcoughlin.com/blog/artillery-solver-in-40-percent-of-the-time-same-answers/</id>
+    <published>2026-11-26T02:17:00Z</published>
+    <updated>2026-11-26T02:17:00Z</updated>
+    <category term="performance"/>
+    <category term="rust"/>
+    <summary>Yesterday I wrote about making my racing game's track solver a third faster without changing one answer. Salt Line, its artillery sibling, has the same kind of prover, so I ran the same audit on it.</summary>
+    <content type="html">&lt;p&gt;Yesterday I wrote about &lt;a href=&quot;https://kevintcoughlin.com/blog/track-solver-a-third-faster-same-answers/&quot;&gt;making my racing game's track solver a third faster without changing one answer&lt;/a&gt;. &lt;a href=&quot;https://github.com/cascadiacollections/saltline&quot;&gt;Salt Line&lt;/a&gt;, its artillery sibling, has the same kind of prover, so I ran the same audit on it.&lt;/p&gt;
+&lt;p&gt;It came out better. The proof now takes about 40 percent of the time it did. It accepts the same screens, lists the same shots and reports the same flight times as before, bit for bit.&lt;/p&gt;
+&lt;h2 id=&quot;the-short-version&quot;&gt;The Short Version&lt;/h2&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;&lt;/th&gt;&lt;th&gt;Before&lt;/th&gt;&lt;th&gt;After&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Batch of 5,000 screens, one thread&lt;/td&gt;&lt;td&gt;10.4–11.2 s&lt;/td&gt;&lt;td&gt;4.1–4.2 s&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Generation gate, 4,000 screens&lt;/td&gt;&lt;td&gt;0.800 s&lt;/td&gt;&lt;td&gt;0.316 s&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Prove one screen solvable&lt;/td&gt;&lt;td&gt;28–109 µs&lt;/td&gt;&lt;td&gt;11–48 µs&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Generate one screen, proof included&lt;/td&gt;&lt;td&gt;59–163 µs&lt;/td&gt;&lt;td&gt;31–69 µs&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Resolve one shot&lt;/td&gt;&lt;td&gt;925 ns&lt;/td&gt;&lt;td&gt;566 ns&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;Solver results&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;identical&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Those are from one pinned core of a 4-core x86-64 cloud machine, release build. The machine is noisy, so read the ratios and not the third digit. I haven't measured a phone, or arm64 at all.&lt;/p&gt;
+&lt;h2 id=&quot;what-proven-costs&quot;&gt;What &amp;quot;Proven&amp;quot; Costs&lt;/h2&gt;
+&lt;p&gt;Salt Line never shows a screen it hasn't proven clearable. For each target, a solver sweeps forty flight times, solves each for the angle and power that would land there, and snaps the answer to what the player's dials can actually set. Then it flies every candidate through the game's own fixed-step integrator and applies the game's own damage code, because the closed form knows nothing about wind changes, ricochets or tunnelling. A screen needs three distinct shots per target. One that fails is redrawn, down a ladder that ends on level ground.&lt;/p&gt;
+&lt;p&gt;The sim is deterministic across Linux, macOS, Windows and phones, and a daily seed has to be the same game for everyone. So the rule was the same as last time: a speed-up that moves one result is a bug, not a trade-off.&lt;/p&gt;
+&lt;h2 id=&quot;save-the-answers-before-the-first-edit&quot;&gt;Save the Answers Before the First Edit&lt;/h2&gt;
+&lt;p&gt;Before I touched anything, I saved everything that prints a solver result:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;the batch reports, for the default build and each of the five build shapes&lt;/li&gt;
+&lt;li&gt;the balance reports and the salvage probe&lt;/li&gt;
+&lt;li&gt;both determinism runs, with all 200 run hashes&lt;/li&gt;
+&lt;li&gt;a throwaway dump of 57,675 lines: for 75 loadouts, the screen hash, the rung, and every candidate's shot with the exact bits of its flight times, on fresh screens and again after three shots of damage&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The batch report had no per-screen detail, so I wrote the dump for the audit. After every change I ran all twelve files again and diffed them, ignoring one timing line.&lt;/p&gt;
+&lt;h2 id=&quot;where-the-time-went&quot;&gt;Where the Time Went&lt;/h2&gt;
+&lt;p&gt;In the generation gate, 89 percent was the solver and 11 percent was building terrain. Inside the solver, 77 percent was flights, which I expected. I didn't expect this: &lt;strong&gt;36 percent of the whole run was flying shots the solver had just flown.&lt;/strong&gt;&lt;/p&gt;
+&lt;h2 id=&quot;fewer-ticks&quot;&gt;Fewer Ticks&lt;/h2&gt;
+&lt;h3 id=&quot;dont-fly-the-same-shot-twice&quot;&gt;Don't fly the same shot twice&lt;/h3&gt;
+&lt;p&gt;The solver flew each candidate once to see whether it landed anywhere near the target. If it did, it handed the shot to the game's damage code on a scratch copy of the screen, so the proof could never drift from what the game does. That code flew the shot again.&lt;/p&gt;
+&lt;p&gt;The copy is identical to the screen until the damage is applied, and a flight depends only on the screen, the shot, the loadout and the fuse. The second flight could only repeat the first. I split &amp;quot;fire a shot&amp;quot; into &amp;quot;fly it&amp;quot; and &amp;quot;apply what flew&amp;quot; and gave the copy the flight the solver already had. That one change took about 45 percent off the full candidate count.&lt;/p&gt;
+&lt;h3 id=&quot;dont-find-every-answer-to-use-one&quot;&gt;Don't find every answer to use one&lt;/h3&gt;
+&lt;p&gt;The attract demo, the autopilot and the challenge hint arcs all asked the solver for every shot that fells a target, then used the first. There can be over a hundred. The search visits shots in the same order whatever the limit, so stopping at the first gives the same shot. That went from about 600 µs to between 2 and 13 µs.&lt;/p&gt;
+&lt;h2 id=&quot;cheaper-ticks&quot;&gt;Cheaper Ticks&lt;/h2&gt;
+&lt;h3 id=&quot;the-same-floor&quot;&gt;The same floor&lt;/h3&gt;
+&lt;p&gt;The terrain lookup under the shell called &lt;code&gt;floor&lt;/code&gt; on every step, and on x86-64 without SSE4.1 that's a library call. By the time the lookup reaches it, the position is known to be positive and inside the field, where truncating is the floor. Same lead as the racing game, same fix.&lt;/p&gt;
+&lt;h3 id=&quot;boxes-the-shell-is-nowhere-near&quot;&gt;Boxes the shell is nowhere near&lt;/h3&gt;
+&lt;p&gt;Every step was swept against every target's box. Most steps are far from all of them. Skipping those took another fifth off the full count, and it was the one change I couldn't make the easy way. More on that below.&lt;/p&gt;
+&lt;h3 id=&quot;trig-on-1801-angles&quot;&gt;Trig on 1,801 angles&lt;/h3&gt;
+&lt;p&gt;The barrel has 1,801 positions. The solver's angle search asked for the sine and cosine of the same ones several thousand times per screen. They now come from a table that's filled on first use by the same computation.&lt;/p&gt;
+&lt;h3 id=&quot;the-same-two-hashes&quot;&gt;The same two hashes&lt;/h3&gt;
+&lt;p&gt;Terrain noise hashed two lattice values for every sample. The terrain is sampled once per pixel column and a lattice cell is tens to hundreds of columns wide, so nearly every sample hashed the pair the one before it had. Each noise layer now remembers its last pair. A hash is a pure function of its inputs, so the remembered value is the value.&lt;/p&gt;
+&lt;h2 id=&quot;the-change-that-wasnt-obviously-safe&quot;&gt;The Change That Wasn't Obviously Safe&lt;/h2&gt;
+&lt;p&gt;Skipping the box sweep sounds trivial. If a step is outside the bounding box of all the boxes, it can't hit one.&lt;/p&gt;
+&lt;p&gt;In exact arithmetic that's true. In floating point it isn't quite. The segment test divides two rounded differences, and for a step that ends within a rounding error of a box edge it can report a hit that exact arithmetic wouldn't. A plain bounding-box check would disagree with it there. It would be vanishingly rare, and it would break the rule.&lt;/p&gt;
+&lt;p&gt;So the skip only applies when both ends of the step are more than one unit clear of every box, and every number involved is below 2⁴⁰. With that much room, the segment test's own first failing clip has to reject the step: the two differences can't round to the same value, and the quotient can't underflow to zero. The argument is in a comment beside the code. A test checks it against the real segment test on the edges and their neighbouring floats, on NaN and infinities, and on 360,000 ordinary steps.&lt;/p&gt;
+&lt;h2 id=&quot;the-bug-my-own-test-found&quot;&gt;The Bug My Own Test Found&lt;/h2&gt;
+&lt;p&gt;In the racing game, removing waste exposed an old bug. Here the bug was mine.&lt;/p&gt;
+&lt;p&gt;My first draft of the terrain lookup panicked on a NaN position over a one-column field, where the old code returned NaN. Nothing in the game can produce that input. The test that compares the new lookup to the old one on awkward values produced it anyway, and the rule has no exception for inputs I think are impossible.&lt;/p&gt;
+&lt;h2 id=&quot;what-i-threw-away&quot;&gt;What I Threw Away&lt;/h2&gt;
+&lt;p&gt;Each of these looked good in the profiler and failed on the stopwatch.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;A hand-written &lt;code&gt;floor&lt;/code&gt; with no library call removed 6.5 percent of instructions and no measurable time over forty runs.&lt;/li&gt;
+&lt;li&gt;Inlining the terrain lookup was lost in the noise.&lt;/li&gt;
+&lt;li&gt;Skipping the ground test when the shell is above all terrain made the run about 50 percent slower. Finding the highest ground for each shell cost more than the tests it saved.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;what-i-left-alone&quot;&gt;What I Left Alone&lt;/h2&gt;
+&lt;p&gt;Nothing was reordered, no trial count or cap changed, and the solver is still single-threaded.&lt;/p&gt;
+&lt;p&gt;And as before, arm64 has a &lt;code&gt;floor&lt;/code&gt; instruction, so the truncation will count for less on a phone. The rest doesn't care about the architecture.&lt;/p&gt;
+&lt;h2 id=&quot;what-doing-it-twice-taught-me&quot;&gt;What Doing It Twice Taught Me&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;The biggest win was the same kind of thing both times.&lt;/strong&gt; Two pieces of code each did the careful thing without knowing the other had. A profiler finds that in minutes.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;If the tool that prints your results has no detail, write one that does.&lt;/strong&gt; I couldn't have trusted a summary histogram to notice one changed shot.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&amp;quot;Obviously equivalent&amp;quot; is a claim about real numbers.&lt;/strong&gt; The bounding-box skip is true in maths and false in floats. A margin made it true in both.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Test the new form against the old on values you'd never pass.&lt;/strong&gt; That's where mine differed.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Believe the stopwatch over the profiler.&lt;/strong&gt; Two changes that removed instructions removed no time, and a third made the run slower.&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+  </entry>
   <entry>
     <title>I shipped 11,105 icons to use 17</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/shipped-11105-icons-to-use-17/"/>
@@ -594,88 +676,6 @@ if breaker:
 &lt;p&gt;Otherwise the breaker would sit in &lt;code&gt;&amp;quot;half-open&amp;quot;&lt;/code&gt;. &lt;code&gt;is_open()&lt;/code&gt; keeps later callers off upstream there, and &lt;code&gt;admit()&lt;/code&gt; only starts a probe from &lt;code&gt;&amp;quot;open&amp;quot;&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;The docstring on &lt;code&gt;is_open()&lt;/code&gt; says this needs no lock. &lt;code&gt;admit()&lt;/code&gt; does not await, and a Worker isolate has one event loop, so a second caller cannot pass &lt;code&gt;admit()&lt;/code&gt; before the state is &lt;code&gt;&amp;quot;half-open&amp;quot;&lt;/code&gt;. On a cache miss, &lt;code&gt;get()&lt;/code&gt; calls &lt;code&gt;admit()&lt;/code&gt; before it awaits the fetch. While the breaker is &lt;code&gt;&amp;quot;closed&amp;quot;&lt;/code&gt;, &lt;code&gt;admit()&lt;/code&gt; returns immediately and concurrent misses each still fetch. &lt;code&gt;refreshing&lt;/code&gt; de-duplicates revalidation only on the &lt;code&gt;Podcasts&lt;/code&gt; object &lt;code&gt;fetch()&lt;/code&gt; builds per request.&lt;/p&gt;
 &lt;p&gt;Only count failures of the dependency the breaker protects. Half-open should admit one probe.&lt;/p&gt;
-</content>
-  </entry>
-  <entry>
-    <title>The Same Audit on a Second Game Found More: Salt Line's Solver in 40 Percent of the Time</title>
-    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/artillery-solver-in-40-percent-of-the-time-same-answers/"/>
-    <id>https://kevintcoughlin.com/blog/artillery-solver-in-40-percent-of-the-time-same-answers/</id>
-    <published>2026-11-25T09:00:00Z</published>
-    <updated>2026-11-25T09:00:00Z</updated>
-    <category term="performance"/>
-    <category term="rust"/>
-    <summary>Earlier today I wrote about making my racing game's track solver a third faster without changing one answer. Salt Line, its artillery sibling, has the same kind of prover, so I ran the same audit on it.</summary>
-    <content type="html">&lt;p&gt;Earlier today I wrote about &lt;a href=&quot;https://kevintcoughlin.com/blog/track-solver-a-third-faster-same-answers/&quot;&gt;making my racing game's track solver a third faster without changing one answer&lt;/a&gt;. &lt;a href=&quot;https://github.com/cascadiacollections/saltline&quot;&gt;Salt Line&lt;/a&gt;, its artillery sibling, has the same kind of prover, so I ran the same audit on it.&lt;/p&gt;
-&lt;p&gt;It came out better. The proof now takes about 40 percent of the time it did. It accepts the same screens, lists the same shots and reports the same flight times as before, bit for bit.&lt;/p&gt;
-&lt;h2 id=&quot;the-short-version&quot;&gt;The Short Version&lt;/h2&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;&lt;th&gt;&lt;/th&gt;&lt;th&gt;Before&lt;/th&gt;&lt;th&gt;After&lt;/th&gt;&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;&lt;td&gt;Batch of 5,000 screens, one thread&lt;/td&gt;&lt;td&gt;10.4–11.2 s&lt;/td&gt;&lt;td&gt;4.1–4.2 s&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td&gt;Generation gate, 4,000 screens&lt;/td&gt;&lt;td&gt;0.800 s&lt;/td&gt;&lt;td&gt;0.316 s&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td&gt;Prove one screen solvable&lt;/td&gt;&lt;td&gt;28–109 µs&lt;/td&gt;&lt;td&gt;11–48 µs&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td&gt;Generate one screen, proof included&lt;/td&gt;&lt;td&gt;59–163 µs&lt;/td&gt;&lt;td&gt;31–69 µs&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td&gt;Resolve one shot&lt;/td&gt;&lt;td&gt;925 ns&lt;/td&gt;&lt;td&gt;566 ns&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td&gt;Solver results&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;identical&lt;/td&gt;&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;Those are from one pinned core of a 4-core x86-64 cloud machine, release build. The machine is noisy, so read the ratios and not the third digit. I haven't measured a phone, or arm64 at all.&lt;/p&gt;
-&lt;h2 id=&quot;what-proven-costs&quot;&gt;What &amp;quot;Proven&amp;quot; Costs&lt;/h2&gt;
-&lt;p&gt;Salt Line never shows a screen it hasn't proven clearable. For each target, a solver sweeps forty flight times, solves each for the angle and power that would land there, and snaps the answer to what the player's dials can actually set. Then it flies every candidate through the game's own fixed-step integrator and applies the game's own damage code, because the closed form knows nothing about wind changes, ricochets or tunnelling. A screen needs three distinct shots per target. One that fails is redrawn, down a ladder that ends on level ground.&lt;/p&gt;
-&lt;p&gt;The sim is deterministic across Linux, macOS, Windows and phones, and a daily seed has to be the same game for everyone. So the rule was the same as last time: a speed-up that moves one result is a bug, not a trade-off.&lt;/p&gt;
-&lt;h2 id=&quot;save-the-answers-before-the-first-edit&quot;&gt;Save the Answers Before the First Edit&lt;/h2&gt;
-&lt;p&gt;Before I touched anything, I saved everything that prints a solver result:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;the batch reports, for the default build and each of the five build shapes&lt;/li&gt;
-&lt;li&gt;the balance reports and the salvage probe&lt;/li&gt;
-&lt;li&gt;both determinism runs, with all 200 run hashes&lt;/li&gt;
-&lt;li&gt;a throwaway dump of 57,675 lines: for 75 loadouts, the screen hash, the rung, and every candidate's shot with the exact bits of its flight times, on fresh screens and again after three shots of damage&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;The batch report had no per-screen detail, so I wrote the dump for the audit. After every change I ran all twelve files again and diffed them, ignoring one timing line.&lt;/p&gt;
-&lt;h2 id=&quot;where-the-time-went&quot;&gt;Where the Time Went&lt;/h2&gt;
-&lt;p&gt;In the generation gate, 89 percent was the solver and 11 percent was building terrain. Inside the solver, 77 percent was flights, which I expected. I didn't expect this: &lt;strong&gt;36 percent of the whole run was flying shots the solver had just flown.&lt;/strong&gt;&lt;/p&gt;
-&lt;h2 id=&quot;fewer-ticks&quot;&gt;Fewer Ticks&lt;/h2&gt;
-&lt;h3 id=&quot;dont-fly-the-same-shot-twice&quot;&gt;Don't fly the same shot twice&lt;/h3&gt;
-&lt;p&gt;The solver flew each candidate once to see whether it landed anywhere near the target. If it did, it handed the shot to the game's damage code on a scratch copy of the screen, so the proof could never drift from what the game does. That code flew the shot again.&lt;/p&gt;
-&lt;p&gt;The copy is identical to the screen until the damage is applied, and a flight depends only on the screen, the shot, the loadout and the fuse. The second flight could only repeat the first. I split &amp;quot;fire a shot&amp;quot; into &amp;quot;fly it&amp;quot; and &amp;quot;apply what flew&amp;quot; and gave the copy the flight the solver already had. That one change took about 45 percent off the full candidate count.&lt;/p&gt;
-&lt;h3 id=&quot;dont-find-every-answer-to-use-one&quot;&gt;Don't find every answer to use one&lt;/h3&gt;
-&lt;p&gt;The attract demo, the autopilot and the challenge hint arcs all asked the solver for every shot that fells a target, then used the first. There can be over a hundred. The search visits shots in the same order whatever the limit, so stopping at the first gives the same shot. That went from about 600 µs to between 2 and 13 µs.&lt;/p&gt;
-&lt;h2 id=&quot;cheaper-ticks&quot;&gt;Cheaper Ticks&lt;/h2&gt;
-&lt;h3 id=&quot;the-same-floor&quot;&gt;The same floor&lt;/h3&gt;
-&lt;p&gt;The terrain lookup under the shell called &lt;code&gt;floor&lt;/code&gt; on every step, and on x86-64 without SSE4.1 that's a library call. By the time the lookup reaches it, the position is known to be positive and inside the field, where truncating is the floor. Same lead as the racing game, same fix.&lt;/p&gt;
-&lt;h3 id=&quot;boxes-the-shell-is-nowhere-near&quot;&gt;Boxes the shell is nowhere near&lt;/h3&gt;
-&lt;p&gt;Every step was swept against every target's box. Most steps are far from all of them. Skipping those took another fifth off the full count, and it was the one change I couldn't make the easy way. More on that below.&lt;/p&gt;
-&lt;h3 id=&quot;trig-on-1801-angles&quot;&gt;Trig on 1,801 angles&lt;/h3&gt;
-&lt;p&gt;The barrel has 1,801 positions. The solver's angle search asked for the sine and cosine of the same ones several thousand times per screen. They now come from a table that's filled on first use by the same computation.&lt;/p&gt;
-&lt;h3 id=&quot;the-same-two-hashes&quot;&gt;The same two hashes&lt;/h3&gt;
-&lt;p&gt;Terrain noise hashed two lattice values for every sample. The terrain is sampled once per pixel column and a lattice cell is tens to hundreds of columns wide, so nearly every sample hashed the pair the one before it had. Each noise layer now remembers its last pair. A hash is a pure function of its inputs, so the remembered value is the value.&lt;/p&gt;
-&lt;h2 id=&quot;the-change-that-wasnt-obviously-safe&quot;&gt;The Change That Wasn't Obviously Safe&lt;/h2&gt;
-&lt;p&gt;Skipping the box sweep sounds trivial. If a step is outside the bounding box of all the boxes, it can't hit one.&lt;/p&gt;
-&lt;p&gt;In exact arithmetic that's true. In floating point it isn't quite. The segment test divides two rounded differences, and for a step that ends within a rounding error of a box edge it can report a hit that exact arithmetic wouldn't. A plain bounding-box check would disagree with it there. It would be vanishingly rare, and it would break the rule.&lt;/p&gt;
-&lt;p&gt;So the skip only applies when both ends of the step are more than one unit clear of every box, and every number involved is below 2⁴⁰. With that much room, the segment test's own first failing clip has to reject the step: the two differences can't round to the same value, and the quotient can't underflow to zero. The argument is in a comment beside the code. A test checks it against the real segment test on the edges and their neighbouring floats, on NaN and infinities, and on 360,000 ordinary steps.&lt;/p&gt;
-&lt;h2 id=&quot;the-bug-my-own-test-found&quot;&gt;The Bug My Own Test Found&lt;/h2&gt;
-&lt;p&gt;In the racing game, removing waste exposed an old bug. Here the bug was mine.&lt;/p&gt;
-&lt;p&gt;My first draft of the terrain lookup panicked on a NaN position over a one-column field, where the old code returned NaN. Nothing in the game can produce that input. The test that compares the new lookup to the old one on awkward values produced it anyway, and the rule has no exception for inputs I think are impossible.&lt;/p&gt;
-&lt;h2 id=&quot;what-i-threw-away&quot;&gt;What I Threw Away&lt;/h2&gt;
-&lt;p&gt;Each of these looked good in the profiler and failed on the stopwatch.&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;A hand-written &lt;code&gt;floor&lt;/code&gt; with no library call removed 6.5 percent of instructions and no measurable time over forty runs.&lt;/li&gt;
-&lt;li&gt;Inlining the terrain lookup was lost in the noise.&lt;/li&gt;
-&lt;li&gt;Skipping the ground test when the shell is above all terrain made the run about 50 percent slower. Finding the highest ground for each shell cost more than the tests it saved.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&quot;what-i-left-alone&quot;&gt;What I Left Alone&lt;/h2&gt;
-&lt;p&gt;Nothing was reordered, no trial count or cap changed, and the solver is still single-threaded.&lt;/p&gt;
-&lt;p&gt;And as before, arm64 has a &lt;code&gt;floor&lt;/code&gt; instruction, so the truncation will count for less on a phone. The rest doesn't care about the architecture.&lt;/p&gt;
-&lt;h2 id=&quot;what-doing-it-twice-taught-me&quot;&gt;What Doing It Twice Taught Me&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;strong&gt;The biggest win was the same kind of thing both times.&lt;/strong&gt; Two pieces of code each did the careful thing without knowing the other had. A profiler finds that in minutes.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;If the tool that prints your results has no detail, write one that does.&lt;/strong&gt; I couldn't have trusted a summary histogram to notice one changed shot.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;&amp;quot;Obviously equivalent&amp;quot; is a claim about real numbers.&lt;/strong&gt; The bounding-box skip is true in maths and false in floats. A margin made it true in both.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Test the new form against the old on values you'd never pass.&lt;/strong&gt; That's where mine differed.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Believe the stopwatch over the profiler.&lt;/strong&gt; Two changes that removed instructions removed no time, and a third made the run slower.&lt;/li&gt;
-&lt;/ul&gt;
 </content>
   </entry>
   <entry>
