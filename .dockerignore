@@ -9,7 +9,6 @@ eslint.config.mjs
 .prettierrc.json
 .prettierignore
 .lighthouserc.json
-netlify.toml
 README.md
 AGENTS.md
 Dockerfile
