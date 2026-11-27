@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="In Bauhaus, embed_exif started from image.getexif() and only overwrote title, artist, and copyright. Image.convert(&quot;RGB&quot;) keeps the source EXIF, so /api/&lt;date&gt;/original was published with the camera's GPS IFD, body serial number, and maker notes. That is the file the Atom feed links as &quot;Original&quot;. Unsplash photos, which the scheduled run uses when both museum sources fail, commonly carry GPS. The change is bauhaus#200 (7be86a6)." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/pillow-convert-keeps-exif-gps/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Pillow's convert() kept the camera GPS on the published original — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>Pillow's convert() kept the camera GPS on the published original</h1>
+        <time datetime="2026-11-27T16:16:00Z">November 27, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/python/">python</a></li>
+          <li><a href="/blog/tags/tips/">tips</a></li>
+        </ul>
+<p>In <a href="https://github.com/cascadiacollections/bauhaus">Bauhaus</a>, <code>embed_exif</code> started from <code>image.getexif()</code> and only overwrote title, artist, and copyright. <code>Image.convert(&quot;RGB&quot;)</code> keeps the source EXIF, so <code>/api/&lt;date&gt;/original</code> was published with the camera's GPS IFD, body serial number, and maker notes. That is the file the Atom feed links as &quot;Original&quot;. Unsplash photos, which the scheduled run uses when both museum sources fail, commonly carry GPS. The change is <a href="https://github.com/cascadiacollections/bauhaus/pull/200">bauhaus#200</a> (<a href="https://github.com/cascadiacollections/bauhaus/commit/7be86a655bb4c8291b1e634ead573c4083a9005c"><code>7be86a6</code></a>).</p>
+<h2 id="the-jpeg-was-not-on-the-allowlist">The JPEG was not on the allowlist</h2>
+<p>The metadata JSON was already an allowlist that drops GPS. The JPEG was not. A client that asked for the privacy-safe image and a client that fetched the original were not looking at the same promise.</p>
+<p><code>embed_exif</code> copied the image's own directory and wrote three fields over it:</p>
+<pre><code class="language-python">exif = image.getexif()
+</code></pre>
+<p>I reproduced that. <code>convert(&quot;RGB&quot;)</code> on a JPEG with a GPS IFD and <code>BodySerialNumber</code> still returned both.</p>
+<h2 id="the-landscape-gate-scored-the-stored-raster">The landscape gate scored the stored raster</h2>
+<p>A portrait stored as a landscape raster with <code>Orientation=6</code> was measured by raw pixels, so it passed <code>landscapes_only</code> and would have been published as a wallpaper. Dropping the orientation tag without rotating the pixels would show that photo sideways.</p>
+<h2 id="start-from-an-empty-exif-directory">Start from an empty EXIF directory</h2>
+<p>Published JPEGs now start from an empty directory and embed only title, artist, and copyright:</p>
+<pre><code class="language-python">exif = Image.Exif()
+</code></pre>
+<p><code>open_rgb</code> in <code>src/quality.py</code> applies EXIF orientation to the pixels before style transfer, the quality gate, and the published original. The landscape gate scores those upright dimensions. The source <code>Orientation</code> tag is no longer copied into <code>metadata.json</code>. <code>Orientation</code> was added to the deliberately omitted tag set next to <code>BodySerialNumber</code>, <code>LensSerialNumber</code>, and <code>CameraOwnerName</code>:</p>
+<pre><code class="language-python">_DELIBERATELY_OMITTED = frozenset({
+    &quot;BodySerialNumber&quot;, &quot;LensSerialNumber&quot;, &quot;CameraOwnerName&quot;, &quot;Orientation&quot;,
+})
+</code></pre>
+<p><code>open_rgb</code> loads the bytes, applies <code>ImageOps.exif_transpose</code>, then converts to RGB. <code>convert()</code> may return the same object, so the helper copies when that RGB image is the source or the oriented image. The copy survives the source being closed:</p>
+<pre><code class="language-python">with Image.open(BytesIO(image_bytes)) as img:
+    img.load()
+    oriented = ImageOps.exif_transpose(img) or img
+    rgb = oriented.convert(&quot;RGB&quot;)
+    # convert() may return the same object. Copy so the result survives
+    # the source image being closed.
+    if rgb is img or rgb is oriented:
+        rgb = rgb.copy()
+    return rgb
+</code></pre>
+<p>Already published releases are immutable, so this protects new days.</p>
+<p>After the change the published JPEG keeps title and artist, contains neither the serial nor a GPS IFD, and an <code>Orientation=6</code> raster of 1200x800 decodes as 800x1200. <code>uv run pytest</code> reported 314 passed and 4 skipped.</p>
+<h2 id="what-i-would-repeat">What I would repeat</h2>
+<ul>
+<li><strong><code>convert()</code> keeps EXIF.</strong> Writing title, artist, and copyright over <code>image.getexif()</code> leaves the GPS IFD, the body serial number, and the maker notes in place.</li>
+<li><strong>Start from an empty directory and allowlist.</strong> <code>Image.Exif()</code> plus those three fields is what the published JPEG carries. The JSON allowlist did not cover that file.</li>
+<li><strong>Bake orientation into the pixels first.</strong> Run <code>ImageOps.exif_transpose</code> before dropping the tag or measuring width and height. A 1200x800 raster with <code>Orientation=6</code> is 800x1200 to a viewer.</li>
+</ul>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>

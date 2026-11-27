@@ -4,11 +4,59 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-26T16:20:00Z</updated>
+  <updated>2026-11-27T16:16:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>Pillow's convert() kept the camera GPS on the published original</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/pillow-convert-keeps-exif-gps/"/>
+    <id>https://kevintcoughlin.com/blog/pillow-convert-keeps-exif-gps/</id>
+    <published>2026-11-27T16:16:00Z</published>
+    <updated>2026-11-27T16:16:00Z</updated>
+    <category term="python"/>
+    <category term="tips"/>
+    <summary>In Bauhaus, embed_exif started from image.getexif() and only overwrote title, artist, and copyright. Image.convert(&quot;RGB&quot;) keeps the source EXIF, so /api/&lt;date&gt;/original was published with the camera's GPS IFD, body serial number, and maker notes. That is the file the Atom feed links as &quot;Original&quot;. Unsplash photos, which the scheduled run uses when both museum sources fail, commonly carry GPS. The change is bauhaus#200 (7be86a6).</summary>
+    <content type="html">&lt;p&gt;In &lt;a href=&quot;https://github.com/cascadiacollections/bauhaus&quot;&gt;Bauhaus&lt;/a&gt;, &lt;code&gt;embed_exif&lt;/code&gt; started from &lt;code&gt;image.getexif()&lt;/code&gt; and only overwrote title, artist, and copyright. &lt;code&gt;Image.convert(&amp;quot;RGB&amp;quot;)&lt;/code&gt; keeps the source EXIF, so &lt;code&gt;/api/&amp;lt;date&amp;gt;/original&lt;/code&gt; was published with the camera's GPS IFD, body serial number, and maker notes. That is the file the Atom feed links as &amp;quot;Original&amp;quot;. Unsplash photos, which the scheduled run uses when both museum sources fail, commonly carry GPS. The change is &lt;a href=&quot;https://github.com/cascadiacollections/bauhaus/pull/200&quot;&gt;bauhaus#200&lt;/a&gt; (&lt;a href=&quot;https://github.com/cascadiacollections/bauhaus/commit/7be86a655bb4c8291b1e634ead573c4083a9005c&quot;&gt;&lt;code&gt;7be86a6&lt;/code&gt;&lt;/a&gt;).&lt;/p&gt;
+&lt;h2 id=&quot;the-jpeg-was-not-on-the-allowlist&quot;&gt;The JPEG was not on the allowlist&lt;/h2&gt;
+&lt;p&gt;The metadata JSON was already an allowlist that drops GPS. The JPEG was not. A client that asked for the privacy-safe image and a client that fetched the original were not looking at the same promise.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;embed_exif&lt;/code&gt; copied the image's own directory and wrote three fields over it:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;exif = image.getexif()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I reproduced that. &lt;code&gt;convert(&amp;quot;RGB&amp;quot;)&lt;/code&gt; on a JPEG with a GPS IFD and &lt;code&gt;BodySerialNumber&lt;/code&gt; still returned both.&lt;/p&gt;
+&lt;h2 id=&quot;the-landscape-gate-scored-the-stored-raster&quot;&gt;The landscape gate scored the stored raster&lt;/h2&gt;
+&lt;p&gt;A portrait stored as a landscape raster with &lt;code&gt;Orientation=6&lt;/code&gt; was measured by raw pixels, so it passed &lt;code&gt;landscapes_only&lt;/code&gt; and would have been published as a wallpaper. Dropping the orientation tag without rotating the pixels would show that photo sideways.&lt;/p&gt;
+&lt;h2 id=&quot;start-from-an-empty-exif-directory&quot;&gt;Start from an empty EXIF directory&lt;/h2&gt;
+&lt;p&gt;Published JPEGs now start from an empty directory and embed only title, artist, and copyright:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;exif = Image.Exif()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;open_rgb&lt;/code&gt; in &lt;code&gt;src/quality.py&lt;/code&gt; applies EXIF orientation to the pixels before style transfer, the quality gate, and the published original. The landscape gate scores those upright dimensions. The source &lt;code&gt;Orientation&lt;/code&gt; tag is no longer copied into &lt;code&gt;metadata.json&lt;/code&gt;. &lt;code&gt;Orientation&lt;/code&gt; was added to the deliberately omitted tag set next to &lt;code&gt;BodySerialNumber&lt;/code&gt;, &lt;code&gt;LensSerialNumber&lt;/code&gt;, and &lt;code&gt;CameraOwnerName&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;_DELIBERATELY_OMITTED = frozenset({
+    &amp;quot;BodySerialNumber&amp;quot;, &amp;quot;LensSerialNumber&amp;quot;, &amp;quot;CameraOwnerName&amp;quot;, &amp;quot;Orientation&amp;quot;,
+})
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;open_rgb&lt;/code&gt; loads the bytes, applies &lt;code&gt;ImageOps.exif_transpose&lt;/code&gt;, then converts to RGB. &lt;code&gt;convert()&lt;/code&gt; may return the same object, so the helper copies when that RGB image is the source or the oriented image. The copy survives the source being closed:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;with Image.open(BytesIO(image_bytes)) as img:
+    img.load()
+    oriented = ImageOps.exif_transpose(img) or img
+    rgb = oriented.convert(&amp;quot;RGB&amp;quot;)
+    # convert() may return the same object. Copy so the result survives
+    # the source image being closed.
+    if rgb is img or rgb is oriented:
+        rgb = rgb.copy()
+    return rgb
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Already published releases are immutable, so this protects new days.&lt;/p&gt;
+&lt;p&gt;After the change the published JPEG keeps title and artist, contains neither the serial nor a GPS IFD, and an &lt;code&gt;Orientation=6&lt;/code&gt; raster of 1200x800 decodes as 800x1200. &lt;code&gt;uv run pytest&lt;/code&gt; reported 314 passed and 4 skipped.&lt;/p&gt;
+&lt;h2 id=&quot;what-i-would-repeat&quot;&gt;What I would repeat&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;convert()&lt;/code&gt; keeps EXIF.&lt;/strong&gt; Writing title, artist, and copyright over &lt;code&gt;image.getexif()&lt;/code&gt; leaves the GPS IFD, the body serial number, and the maker notes in place.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Start from an empty directory and allowlist.&lt;/strong&gt; &lt;code&gt;Image.Exif()&lt;/code&gt; plus those three fields is what the published JPEG carries. The JSON allowlist did not cover that file.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Bake orientation into the pixels first.&lt;/strong&gt; Run &lt;code&gt;ImageOps.exif_transpose&lt;/code&gt; before dropping the tag or measuring width and height. A 1200x800 raster with &lt;code&gt;Orientation=6&lt;/code&gt; is 800x1200 to a viewer.&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+  </entry>
   <entry>
     <title>Don't parse show notes until something reads them</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/podr-show-notes-without-domparser/"/>
