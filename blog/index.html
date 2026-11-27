@@ -180,6 +180,15 @@
       <p class="meta"><a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
         <li>
+          <time datetime="2026-11-27T16:16:00Z">November 27, 2026</time>
+          <h2><a href="/blog/pillow-convert-keeps-exif-gps/">Pillow's convert() kept the camera GPS on the published original</a></h2>
+          <p>In Bauhaus, embed_exif started from image.getexif() and only overwrote title, artist, and copyright. Image.convert(&quot;RGB&quot;) keeps the source EXIF, so /api/&lt;date&gt;/original was published with the camera's GPS IFD, body serial number, and maker notes. That is the file the Atom feed links as &quot;Original&quot;. Unsplash photos, which the scheduled run uses when both museum sources fail, commonly carry GPS. The change is bauhaus#200 (7be86a6).</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/python/">python</a></li>
+            <li><a href="/blog/tags/tips/">tips</a></li>
+          </ul>
+        </li>
+        <li>
           <time datetime="2026-11-26T16:20:00Z">November 26, 2026</time>
           <h2><a href="/blog/podr-show-notes-without-domparser/">Don't parse show notes until something reads them</a></h2>
           <p>Podr turned every episode and podcast description that contained &lt; or &amp; into plain text with DOMParser on the main thread, during feed load, before the episode list could update. Ordinary notes are a string scan now. The plain text is computed the first time something reads description, and cached. Laziness beat a worker: the scan needs no DOM, copying a multi-megabyte feed across threads costs more than the scan, and the fallback needs DOMParser, which workers do not have. The change is podr#188 (10c3607). podr#186 left this open. Large descriptions were still parsed in full on the main thread.</p>
