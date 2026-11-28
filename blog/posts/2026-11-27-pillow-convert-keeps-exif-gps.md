@@ -1,5 +1,6 @@
 ---
 published: 2026-11-27T16:16:00Z
+description: Bauhaus overwrote only title, artist, and copyright in EXIF. Converting the image kept the camera GPS, body serial, and maker notes on the published original.
 tags:
   - python
   - tips

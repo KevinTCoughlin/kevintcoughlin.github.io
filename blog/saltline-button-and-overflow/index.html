@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Two bugs in Salt Line, both reachable from ordinary play and both fixed in saltline#167 (d5d720c). On a controller the third draft card shared B with pause, and pause is the first thing play asks for, so the press opened the pause screen. The shell reserve is an i32 with no cap unless Forced March imposes one, and a Standing Orders streak pays a bonus that grows on every one-shot clear. Past i32::MAX that add panics in a debug build and wraps negative in a release build. A negative reserve is out of shells." />
+    <meta name="description" content="Two Salt Line bugs from ordinary play: the third draft card shared B with pause, and the shell reserve could wrap past its integer limit." />
     <meta name="author" content="Kevin T. Coughlin" />
     <meta name="theme-color" content="#14211d" />
     <link rel="canonical" href="https://kevintcoughlin.com/blog/saltline-button-and-overflow/" />
@@ -14,7 +14,31 @@
       content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <title>The third draft card was pause, and the shell reserve could wrap — Kevin Coughlin</title>
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="The third draft card was pause, and the shell reserve could wrap" />
+    <meta property="og:description" content="Two Salt Line bugs from ordinary play: the third draft card shared B with pause, and the shell reserve could wrap past its integer limit." />
+    <meta property="og:url" content="https://kevintcoughlin.com/blog/saltline-button-and-overflow/" />
+    <meta property="og:image" content="https://kevintcoughlin.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Kevin Coughlin — Making useful things for curious people." />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:site_name" content="Kevin Coughlin" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="article:published_time" content="2026-11-25T17:21:00Z" />
+    <meta property="article:modified_time" content="2026-11-25T17:21:00Z" />
+    <meta property="article:author" content="https://kevintcoughlin.com/" />
+    <meta property="article:tag" content="gamedev" />
+    <meta property="article:tag" content="github-actions" />
+    <meta property="article:tag" content="rust" />
+    <meta property="article:tag" content="tips" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@kevintcoughlin" />
+    <meta name="twitter:title" content="The third draft card was pause, and the shell reserve could wrap" />
+    <meta name="twitter:description" content="Two Salt Line bugs from ordinary play: the third draft card shared B with pause, and the shell reserve could wrap past its integer limit." />
+    <meta name="twitter:image" content="https://kevintcoughlin.com/og-image.png" />
+    <meta name="twitter:image:alt" content="Kevin Coughlin — Making useful things for curious people." />
+    <title>The third draft card was pause, and the shell reserve could wrap</title>
     <style>
       :root {
         color-scheme: dark;
@@ -169,6 +193,35 @@
       src="https://static.cloudflareinsights.com/beacon.min.js"
       data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
     ></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "The third draft card was pause, and the shell reserve could wrap",
+        "description": "Two Salt Line bugs from ordinary play: the third draft card shared B with pause, and the shell reserve could wrap past its integer limit.",
+        "image": "https://kevintcoughlin.com/og-image.png",
+        "datePublished": "2026-11-25T17:21:00Z",
+        "dateModified": "2026-11-25T17:21:00Z",
+        "author": {
+          "@type": "Person",
+          "name": "Kevin Coughlin",
+          "url": "https://kevintcoughlin.com/"
+        },
+        "publisher": {
+          "@type": "Person",
+          "name": "Kevin Coughlin",
+          "url": "https://kevintcoughlin.com/"
+        },
+        "url": "https://kevintcoughlin.com/blog/saltline-button-and-overflow/",
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "https://kevintcoughlin.com/blog/saltline-button-and-overflow/"
+        },
+        "isPartOf": {
+          "@id": "https://kevintcoughlin.com/blog/#blog"
+        }
+      }
+    </script>
   </head>
   <body>
     <header class="shell">

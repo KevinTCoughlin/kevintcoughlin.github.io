@@ -53,8 +53,14 @@ tags:
 ---
 ```
 
-- The first line of the body is a `# Title` heading. That title is the page
-  title; the first paragraph is the summary.
+- The first line of the body is a `# Title` heading. That heading is the h1
+  and the feed title. It is also the document title, with ` — Kevin Coughlin`
+  appended when the result is still 65 characters or fewer. Optional `title`
+  is a shorter document and social title when the heading is longer than that.
+- The first paragraph is the summary shown on the index and in the feed. It is
+  also the meta description when it is about 160 characters or fewer; otherwise
+  the generator keeps whole sentences that fit. Optional `description` replaces
+  that meta description when the trimmed lead would drop the point.
 - `tags` is required. Use 2–4 lowercase, hyphenated labels (`github-actions`,
   not `GitHub Actions`). Reuse a tag from `blog/tags/` before adding one.
   Tags render on the post and the blog index, link to `blog/tags/<tag>/`,

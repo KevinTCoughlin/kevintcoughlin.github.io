@@ -1,5 +1,7 @@
 ---
 published: 2026-11-14T06:51:09Z
+title: A 32-bit Counter-Strike 1.6 server on Apple silicon, no Rosetta
+description: I run a containerized Counter-Strike 1.6 server on Linux under Podman. I wanted it on a Mac with Apple's container CLI; the plan was linux/amd64 and Rosetta.
 tags:
   - containers
   - homelab

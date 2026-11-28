@@ -1,5 +1,6 @@
 ---
 published: 2026-11-25T07:00:00Z
+description: Every generated track is proven drivable before a player sees it. A late track costs about four million physics ticks.
 tags:
   - performance
   - rust

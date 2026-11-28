@@ -1,5 +1,6 @@
 ---
 published: 2026-11-23T16:10:05Z
+description: The deathban-pro Pages workflow uploaded the site, then failed. Checkout, staging, and the upload succeeded, but a second later the artifact was gone.
 tags:
   - github-actions
   - tips

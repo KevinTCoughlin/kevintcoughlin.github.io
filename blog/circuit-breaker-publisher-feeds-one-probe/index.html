@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Five broken publisher feeds in a row used to open the circuit breaker in podr-service for 30 seconds. Search (/?q=), top podcasts (/?q=toppodcasts), and /podcast/{id} share that breaker with iTunes and Podcast Index, so they returned 500, or a cached entry still inside ttl + STALE_SECONDS. The log called the publisher failure an iTunes API error." />
+    <meta name="description" content="Five broken publisher feeds used to open podr-service's breaker for 30 seconds, so search, top podcasts, and podcast pages returned 500 or a stale cache." />
     <meta name="author" content="Kevin T. Coughlin" />
     <meta name="theme-color" content="#14211d" />
     <link rel="canonical" href="https://kevintcoughlin.com/blog/circuit-breaker-publisher-feeds-one-probe/" />
@@ -14,7 +14,29 @@
       content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <title>Bad publisher feeds were opening the circuit breaker for iTunes — Kevin Coughlin</title>
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="Bad publisher feeds were opening the circuit breaker for iTunes" />
+    <meta property="og:description" content="Five broken publisher feeds used to open podr-service's breaker for 30 seconds, so search, top podcasts, and podcast pages returned 500 or a stale cache." />
+    <meta property="og:url" content="https://kevintcoughlin.com/blog/circuit-breaker-publisher-feeds-one-probe/" />
+    <meta property="og:image" content="https://kevintcoughlin.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Kevin Coughlin — Making useful things for curious people." />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:site_name" content="Kevin Coughlin" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="article:published_time" content="2026-11-25T16:10:00Z" />
+    <meta property="article:modified_time" content="2026-11-25T16:10:00Z" />
+    <meta property="article:author" content="https://kevintcoughlin.com/" />
+    <meta property="article:tag" content="python" />
+    <meta property="article:tag" content="tips" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@kevintcoughlin" />
+    <meta name="twitter:title" content="Bad publisher feeds were opening the circuit breaker for iTunes" />
+    <meta name="twitter:description" content="Five broken publisher feeds used to open podr-service's breaker for 30 seconds, so search, top podcasts, and podcast pages returned 500 or a stale cache." />
+    <meta name="twitter:image" content="https://kevintcoughlin.com/og-image.png" />
+    <meta name="twitter:image:alt" content="Kevin Coughlin — Making useful things for curious people." />
+    <title>Bad publisher feeds were opening the circuit breaker for iTunes</title>
     <style>
       :root {
         color-scheme: dark;
@@ -169,6 +191,35 @@
       src="https://static.cloudflareinsights.com/beacon.min.js"
       data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
     ></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Bad publisher feeds were opening the circuit breaker for iTunes",
+        "description": "Five broken publisher feeds used to open podr-service's breaker for 30 seconds, so search, top podcasts, and podcast pages returned 500 or a stale cache.",
+        "image": "https://kevintcoughlin.com/og-image.png",
+        "datePublished": "2026-11-25T16:10:00Z",
+        "dateModified": "2026-11-25T16:10:00Z",
+        "author": {
+          "@type": "Person",
+          "name": "Kevin Coughlin",
+          "url": "https://kevintcoughlin.com/"
+        },
+        "publisher": {
+          "@type": "Person",
+          "name": "Kevin Coughlin",
+          "url": "https://kevintcoughlin.com/"
+        },
+        "url": "https://kevintcoughlin.com/blog/circuit-breaker-publisher-feeds-one-probe/",
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "https://kevintcoughlin.com/blog/circuit-breaker-publisher-feeds-one-probe/"
+        },
+        "isPartOf": {
+          "@id": "https://kevintcoughlin.com/blog/#blog"
+        }
+      }
+    </script>
   </head>
   <body>
     <header class="shell">

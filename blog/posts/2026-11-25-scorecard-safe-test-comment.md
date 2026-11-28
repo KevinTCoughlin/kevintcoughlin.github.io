@@ -1,5 +1,6 @@
 ---
 published: 2026-11-25T17:22:00Z
+description: deathban-pro removed a test-results action whose workflow had checks: write, which Scorecard warns on, and restored the comment with pull-requests: write.
 tags:
   - github-actions
   - tips

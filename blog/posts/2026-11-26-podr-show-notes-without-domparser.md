@@ -1,5 +1,6 @@
 ---
 published: 2026-11-26T16:20:00Z
+description: Podr used DOMParser on the main thread, during feed load, to turn show notes into plain text. Ordinary notes are a string scan now, read only when needed.
 tags:
   - performance
   - tips
