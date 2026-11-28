@@ -1,6 +1,7 @@
 ---
 published: 2026-10-26T14:17:02Z
 updated: 2026-11-01T19:03:06Z
+title: Fixing black HDMI on an LG C2 after CleanYourTV
 tags:
   - tips
   - tv

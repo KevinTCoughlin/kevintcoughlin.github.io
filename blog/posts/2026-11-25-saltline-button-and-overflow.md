@@ -1,5 +1,6 @@
 ---
 published: 2026-11-25T17:21:00Z
+description: Two Salt Line bugs from ordinary play: the third draft card shared B with pause, and the shell reserve could wrap past its integer limit.
 tags:
   - gamedev
   - github-actions

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="I run cs-server, a containerized Counter-Strike 1.6 ScoutzKnivez server on the ReHLDS stack. It lives on a Linux box under Podman and Quadlet. I wanted it to run on a Mac too, with Apple's new container CLI, and the obvious plan was --platform linux/amd64 --rosetta." />
+    <meta name="description" content="I run a containerized Counter-Strike 1.6 server on Linux under Podman. I wanted it on a Mac with Apple's container CLI; the plan was linux/amd64 and Rosetta." />
     <meta name="author" content="Kevin T. Coughlin" />
     <meta name="theme-color" content="#14211d" />
     <link rel="canonical" href="https://kevintcoughlin.com/blog/cs16-server-apple-silicon/" />
@@ -14,7 +14,30 @@
       content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <title>Running a 32-bit Counter-Strike 1.6 server on Apple silicon (without Rosetta) — Kevin Coughlin</title>
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="A 32-bit Counter-Strike 1.6 server on Apple silicon, no Rosetta" />
+    <meta property="og:description" content="I run a containerized Counter-Strike 1.6 server on Linux under Podman. I wanted it on a Mac with Apple's container CLI; the plan was linux/amd64 and Rosetta." />
+    <meta property="og:url" content="https://kevintcoughlin.com/blog/cs16-server-apple-silicon/" />
+    <meta property="og:image" content="https://kevintcoughlin.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Kevin Coughlin — Making useful things for curious people." />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:site_name" content="Kevin Coughlin" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="article:published_time" content="2026-11-14T06:51:09Z" />
+    <meta property="article:modified_time" content="2026-11-14T06:51:09Z" />
+    <meta property="article:author" content="https://kevintcoughlin.com/" />
+    <meta property="article:tag" content="containers" />
+    <meta property="article:tag" content="homelab" />
+    <meta property="article:tag" content="macos" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@kevintcoughlin" />
+    <meta name="twitter:title" content="A 32-bit Counter-Strike 1.6 server on Apple silicon, no Rosetta" />
+    <meta name="twitter:description" content="I run a containerized Counter-Strike 1.6 server on Linux under Podman. I wanted it on a Mac with Apple's container CLI; the plan was linux/amd64 and Rosetta." />
+    <meta name="twitter:image" content="https://kevintcoughlin.com/og-image.png" />
+    <meta name="twitter:image:alt" content="Kevin Coughlin — Making useful things for curious people." />
+    <title>A 32-bit Counter-Strike 1.6 server on Apple silicon, no Rosetta</title>
     <style>
       :root {
         color-scheme: dark;
@@ -169,6 +192,35 @@
       src="https://static.cloudflareinsights.com/beacon.min.js"
       data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
     ></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Running a 32-bit Counter-Strike 1.6 server on Apple silicon (without Rosetta)",
+        "description": "I run a containerized Counter-Strike 1.6 server on Linux under Podman. I wanted it on a Mac with Apple's container CLI; the plan was linux/amd64 and Rosetta.",
+        "image": "https://kevintcoughlin.com/og-image.png",
+        "datePublished": "2026-11-14T06:51:09Z",
+        "dateModified": "2026-11-14T06:51:09Z",
+        "author": {
+          "@type": "Person",
+          "name": "Kevin Coughlin",
+          "url": "https://kevintcoughlin.com/"
+        },
+        "publisher": {
+          "@type": "Person",
+          "name": "Kevin Coughlin",
+          "url": "https://kevintcoughlin.com/"
+        },
+        "url": "https://kevintcoughlin.com/blog/cs16-server-apple-silicon/",
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "https://kevintcoughlin.com/blog/cs16-server-apple-silicon/"
+        },
+        "isPartOf": {
+          "@id": "https://kevintcoughlin.com/blog/#blog"
+        }
+      }
+    </script>
   </head>
   <body>
     <header class="shell">

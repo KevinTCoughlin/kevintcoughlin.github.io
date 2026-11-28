@@ -1,5 +1,7 @@
 ---
 published: 2026-11-26T02:17:00Z
+title: Same audit, second game: Salt Line's solver in 40% of the time
+description: Salt Line has the same kind of prover as my racing game, so I ran the same audit on it. The proof got faster and the answers stayed the same.
 tags:
   - performance
   - rust

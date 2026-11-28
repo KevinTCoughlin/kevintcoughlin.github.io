@@ -14,6 +14,10 @@
 //
 // Every post needs a `tags` list in front matter: lowercase hyphenated labels,
 // shown alphabetically. Each tag links to blog/tags/<tag>/.
+//
+// Optional `title` is the document and social title when the heading is too
+// long for a search result. Optional `description` is the meta description
+// when the first paragraph is past ~160 characters. The heading stays the h1.
 
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -102,6 +106,41 @@ function parsePost(file) {
   if (Number.isNaN(published.getTime())) throw new Error(`${file}: bad published date`);
   if (updated < published) throw new Error(`${file}: updated is before published`);
 
+  const headline = heading[1].trim();
+  const seoTitle = singleLine(file, 'title', meta.title);
+  const customDescription = singleLine(file, 'description', meta.description);
+  if (seoTitle.length > TITLE_MAX) {
+    throw new Error(
+      `${file}: title is ${seoTitle.length} characters; aim for ${TITLE_MAX} or fewer`
+    );
+  }
+  const docTitle = documentTitle(seoTitle || headline);
+  if (docTitle.length > TITLE_MAX) {
+    throw new Error(
+      `${file}: document title is ${docTitle.length} characters. Set a shorter title in front matter (aim ≤ ${TITLE_MAX}).`
+    );
+  }
+
+  // Plain text: keep link text, drop inline Markdown markers. Escaped on output.
+  const summary = firstParagraph
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[*`]/g, '')
+    .trim();
+  let description = customDescription;
+  if (description.length > DESC_MAX) {
+    throw new Error(
+      `${file}: description is ${description.length} characters; keep it to ${DESC_MAX}`
+    );
+  }
+  if (!description) {
+    description = metaDescription(summary);
+    if (description.endsWith('…')) {
+      console.warn(
+        `${file}: meta description was cut mid-sentence. Set description in front matter.`
+      );
+    }
+  }
+
   const slug = file.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace(/\.md$/, '');
   // Root-relative links would break in feed readers; make every URL absolute.
   const html = addHeadingIds(
@@ -110,17 +149,21 @@ function parsePost(file) {
   return {
     slug,
     url: `${BLOG_URL}${slug}/`,
-    title: heading[1].trim(),
-    // Plain text: keep link text, drop inline Markdown markers. Escaped on output.
-    summary: firstParagraph
-      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-      .replace(/[*`]/g, '')
-      .trim(),
+    title: headline,
+    docTitle,
+    summary,
+    description,
     published,
     updated,
     tags: parseTags(file, meta.tags),
     html,
   };
+}
+
+function singleLine(file, key, value) {
+  if (value == null) return '';
+  if (typeof value !== 'string') throw new Error(`${file}: ${key} must be a single line`);
+  return value.trim();
 }
 
 // GitHub-style heading anchors, so in-post links like [x](#some-heading) work.
@@ -160,7 +203,194 @@ const humanDate = (d) =>
     timeZone: 'UTC',
   });
 
-function page({ title, description, canonical, main, tagsCurrent = false }) {
+// Search results show about 60–65 characters of a title and ~160 of a
+// description. Keep the site suffix when it still fits. A longer heading needs
+// `title` in front matter; a longer lead needs `description`, or it is cut on
+// a sentence boundary.
+const TITLE_MAX = 65;
+const TITLE_SUFFIX = ' — Kevin Coughlin';
+const DESC_MAX = 160;
+const OG_IMAGE = `${SITE}/og-image.png`;
+const OG_IMAGE_ALT = 'Kevin Coughlin — Making useful things for curious people.';
+const SITE_NAME = 'Kevin Coughlin';
+const AUTHOR_NAME = 'Kevin Coughlin';
+const BLOG_DESCRIPTION = 'Notes on developer tooling, games and servers by Kevin Coughlin.';
+const TAGS_DESCRIPTION = "All tags on Kevin Coughlin's blog.";
+const BLOG_ID = `${BLOG_URL}#blog`;
+
+const documentTitle = (headline) => {
+  const withSite = `${headline}${TITLE_SUFFIX}`;
+  return withSite.length <= TITLE_MAX ? withSite : headline;
+};
+
+function splitSentences(text) {
+  const parts = [];
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c !== '.' && c !== '!' && c !== '?') continue;
+    const atEnd = i + 1 === text.length;
+    if (!atEnd && text[i + 1] !== ' ') continue;
+    // Keep decimals such as 2.5 and 1.6 inside the sentence.
+    if (
+      c === '.' &&
+      i > 0 &&
+      /\d/.test(text[i - 1]) &&
+      i + 1 < text.length &&
+      /\d/.test(text[i + 1])
+    ) {
+      continue;
+    }
+    parts.push(text.slice(start, i + 1).trim());
+    start = i + 1;
+  }
+  const rest = text.slice(start).trim();
+  if (rest) parts.push(rest);
+  return parts;
+}
+
+function metaDescription(summary) {
+  const text = summary.replace(/\s+/g, ' ').trim();
+  if (text.length <= DESC_MAX) return text;
+  let out = '';
+  for (const sentence of splitSentences(text)) {
+    const next = out ? `${out} ${sentence}` : sentence;
+    if (next.length > DESC_MAX) break;
+    out = next;
+  }
+  if (out) return out;
+  let cut = text.slice(0, DESC_MAX - 1);
+  const space = cut.lastIndexOf(' ');
+  if (space >= 80) cut = cut.slice(0, space);
+  return `${cut.replace(/[,:;]+$/, '').trimEnd()}…`;
+}
+
+const person = () => ({ '@type': 'Person', name: AUTHOR_NAME, url: `${SITE}/` });
+
+function itemList(items) {
+  return {
+    '@type': 'ItemList',
+    numberOfItems: items.length,
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      ...item,
+    })),
+  };
+}
+
+function blogPostRef(post) {
+  return {
+    '@type': 'BlogPosting',
+    headline: post.title,
+    url: post.url,
+    datePublished: isoDate(post.published),
+    dateModified: isoDate(post.updated),
+  };
+}
+
+function collectionLd({ id, name, description, url, posts, about }) {
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': ['Blog', 'CollectionPage'],
+    name,
+    description,
+    url,
+    image: OG_IMAGE,
+    inLanguage: 'en',
+    author: person(),
+  };
+  if (id) data['@id'] = id;
+  else data.isPartOf = { '@id': BLOG_ID };
+  if (about) data.about = { '@type': 'Thing', name: about };
+  if (posts) {
+    data.blogPost = posts.map(blogPostRef);
+    data.mainEntity = itemList(posts.map((post) => ({ name: post.title, url: post.url })));
+  }
+  return data;
+}
+
+function postJsonLd(post) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.description,
+    image: OG_IMAGE,
+    datePublished: isoDate(post.published),
+    dateModified: isoDate(post.updated),
+    author: person(),
+    publisher: person(),
+    url: post.url,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': post.url },
+    isPartOf: { '@id': BLOG_ID },
+  };
+}
+
+function jsonLdScript(data) {
+  const json = JSON.stringify(data, null, 2).replace(/</g, '\\u003c');
+  const body = json
+    .split('\n')
+    .map((line) => `      ${line}`)
+    .join('\n');
+  return `    <script type="application/ld+json">\n${body}\n    </script>`;
+}
+
+function socialTags({ title, description, url, type, published, updated, tags }) {
+  const lines = [
+    `<meta property="og:type" content="${type}" />`,
+    `<meta property="og:title" content="${escape(title)}" />`,
+    `<meta property="og:description" content="${escape(description)}" />`,
+    `<meta property="og:url" content="${url}" />`,
+    `<meta property="og:image" content="${OG_IMAGE}" />`,
+    `<meta property="og:image:width" content="1200" />`,
+    `<meta property="og:image:height" content="630" />`,
+    `<meta property="og:image:alt" content="${escape(OG_IMAGE_ALT)}" />`,
+    `<meta property="og:image:type" content="image/png" />`,
+    `<meta property="og:site_name" content="${SITE_NAME}" />`,
+    `<meta property="og:locale" content="en_US" />`,
+  ];
+  if (type === 'article') {
+    lines.push(
+      `<meta property="article:published_time" content="${isoDate(published)}" />`,
+      `<meta property="article:modified_time" content="${isoDate(updated)}" />`,
+      `<meta property="article:author" content="${SITE}/" />`
+    );
+    for (const tag of tags) lines.push(`<meta property="article:tag" content="${escape(tag)}" />`);
+  }
+  lines.push(
+    `<meta name="twitter:card" content="summary_large_image" />`,
+    `<meta name="twitter:creator" content="@kevintcoughlin" />`,
+    `<meta name="twitter:title" content="${escape(title)}" />`,
+    `<meta name="twitter:description" content="${escape(description)}" />`,
+    `<meta name="twitter:image" content="${OG_IMAGE}" />`,
+    `<meta name="twitter:image:alt" content="${escape(OG_IMAGE_ALT)}" />`
+  );
+  return lines.map((line) => `    ${line}`).join('\n');
+}
+
+function page({
+  title,
+  description,
+  canonical,
+  main,
+  tagsCurrent = false,
+  type = 'website',
+  jsonLd,
+  published,
+  updated,
+  tags,
+}) {
+  const social = socialTags({
+    title,
+    description,
+    url: canonical,
+    type,
+    published,
+    updated,
+    tags,
+  });
+  const structured = jsonLd ? `\n${jsonLdScript(jsonLd)}` : '';
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -177,6 +407,7 @@ function page({ title, description, canonical, main, tagsCurrent = false }) {
       content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
+${social}
     <title>${escape(title)}</title>
     <style>
       :root {
@@ -331,7 +562,7 @@ function page({ title, description, canonical, main, tagsCurrent = false }) {
       defer
       src="https://static.cloudflareinsights.com/beacon.min.js"
       data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
-    ></script>
+    ></script>${structured}
   </head>
   <body>
     <header class="shell">
@@ -381,9 +612,14 @@ ${posts.map((post) => postListItem(post, currentTag)).join('\n')}
 
 function postPage(post) {
   return page({
-    title: `${post.title} — Kevin Coughlin`,
-    description: post.summary,
+    title: post.docTitle,
+    description: post.description,
     canonical: post.url,
+    type: 'article',
+    published: post.published,
+    updated: post.updated,
+    tags: post.tags,
+    jsonLd: postJsonLd(post),
     main: `      <article>
         <h1>${escape(post.title)}</h1>
         <time datetime="${isoDate(post.published)}">${humanDate(post.published)}</time>
@@ -396,8 +632,15 @@ ${post.html}
 function indexPage(posts) {
   return page({
     title: FEED_TITLE,
-    description: 'Notes on developer tooling, games and servers by Kevin Coughlin.',
+    description: BLOG_DESCRIPTION,
     canonical: BLOG_URL,
+    jsonLd: collectionLd({
+      id: BLOG_ID,
+      name: FEED_TITLE,
+      description: BLOG_DESCRIPTION,
+      url: BLOG_URL,
+      posts,
+    }),
     main: `      <h1>Blog</h1>
       <p class="meta"><a href="/blog/tags/">All tags</a></p>
 ${postList(posts)}`,
@@ -418,10 +661,20 @@ function postsByTag(posts) {
 }
 
 function tagPage(tag, tagged) {
+  const url = `${BLOG_URL}tags/${tag}/`;
+  const description = `Posts tagged ${tag}.`;
+  const title = documentTitle(tag);
   return page({
-    title: `${tag} — Kevin Coughlin`,
-    description: `Posts tagged ${tag}.`,
-    canonical: `${BLOG_URL}tags/${tag}/`,
+    title,
+    description,
+    canonical: url,
+    jsonLd: collectionLd({
+      name: title,
+      description,
+      url,
+      posts: tagged,
+      about: tag,
+    }),
     main: `      <h1>${escape(tag)}</h1>
       <p class="meta">${countLabel(tagged.length, 'post')} · <a href="/blog/tags/">All tags</a></p>
 ${postList(tagged, tag)}`,
@@ -440,11 +693,26 @@ function tagIndexPage(tagGroups) {
         </li>`;
     })
     .join('\n');
+  const title = documentTitle('Tags');
   return page({
-    title: `Tags — Kevin Coughlin`,
-    description: "All tags on Kevin Coughlin's blog.",
+    title,
+    description: TAGS_DESCRIPTION,
     canonical: `${BLOG_URL}tags/`,
     tagsCurrent: true,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': ['Blog', 'CollectionPage'],
+      name: title,
+      description: TAGS_DESCRIPTION,
+      url: `${BLOG_URL}tags/`,
+      image: OG_IMAGE,
+      inLanguage: 'en',
+      author: person(),
+      isPartOf: { '@id': BLOG_ID },
+      mainEntity: itemList(
+        tagGroups.map(([tag]) => ({ name: tag, url: `${BLOG_URL}tags/${tag}/` }))
+      ),
+    },
     main: `      <h1>Tags</h1>
       <p class="meta">${countLabel(tagGroups.length, 'tag')}</p>
       <ul class="tag-index">
@@ -557,6 +825,72 @@ function removeEmptyDirs(dir) {
   if (readdirSync(dir).length === 0) rmSync(dir);
 }
 
+const decode = (s) =>
+  s
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+
+function assertPage(path, html) {
+  if (!path.startsWith('blog/') || !path.endsWith('.html')) return;
+  const isPost = path !== 'blog/index.html' && !path.startsWith('blog/tags/');
+  const required = [
+    'property="og:title"',
+    'property="og:description"',
+    'property="og:url"',
+    'property="og:type"',
+    `property="og:image" content="${OG_IMAGE}"`,
+    'name="twitter:card" content="summary_large_image"',
+    'name="twitter:title"',
+    'name="twitter:description"',
+    'name="twitter:image"',
+    'type="application/ld+json"',
+  ];
+  for (const token of required) {
+    if (!html.includes(token)) throw new Error(`${path}: missing ${token}`);
+  }
+  const canonical = html.match(/rel="canonical" href="([^"]+)"/);
+  const ogUrl = html.match(/property="og:url" content="([^"]+)"/);
+  if (!canonical || !ogUrl || canonical[1] !== ogUrl[1]) {
+    throw new Error(`${path}: og:url does not match canonical`);
+  }
+  const ogType = html.match(/property="og:type" content="([^"]+)"/);
+  if (isPost && ogType?.[1] !== 'article') throw new Error(`${path}: og:type should be article`);
+  if (!isPost && ogType?.[1] !== 'website') throw new Error(`${path}: og:type should be website`);
+  const title = decode(html.match(/<title>([^<]*)<\/title>/)?.[1] ?? '');
+  const description = decode(html.match(/name="description" content="([^"]*)"/)?.[1] ?? '');
+  if (!title) throw new Error(`${path}: missing title`);
+  if (!description) throw new Error(`${path}: missing description`);
+  if (title.length > TITLE_MAX) throw new Error(`${path}: title is ${title.length} characters`);
+  if (description.length > DESC_MAX) {
+    throw new Error(`${path}: description is ${description.length} characters`);
+  }
+  const ld = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+  if (!ld) throw new Error(`${path}: JSON-LD block not found`);
+  const data = JSON.parse(ld[1]);
+  if (isPost) {
+    if (data['@type'] !== 'BlogPosting') throw new Error(`${path}: expected BlogPosting`);
+    for (const key of ['headline', 'datePublished', 'dateModified', 'author', 'url', 'image']) {
+      if (data[key] == null) throw new Error(`${path}: JSON-LD missing ${key}`);
+    }
+    if (data.author?.['@type'] !== 'Person' || data.author.name !== AUTHOR_NAME) {
+      throw new Error(`${path}: author should be a Person named ${AUTHOR_NAME}`);
+    }
+    if (data.url !== canonical[1] || data.image !== OG_IMAGE) {
+      throw new Error(`${path}: JSON-LD url or image does not match the page`);
+    }
+  } else {
+    const types = [].concat(data['@type']);
+    if (!types.includes('Blog') || !types.includes('CollectionPage')) {
+      throw new Error(`${path}: expected Blog and CollectionPage JSON-LD`);
+    }
+    if (data.url !== canonical[1] || data.image !== OG_IMAGE) {
+      throw new Error(`${path}: JSON-LD url or image does not match the page`);
+    }
+  }
+}
+
 const posts = readdirSync(POSTS_DIR)
   .filter((f) => f.endsWith('.md'))
   .map(parsePost)
@@ -572,6 +906,8 @@ const outputs = new Map([
   ...posts.map((p) => [`blog/${p.slug}/index.html`, postPage(p)]),
   ...tagGroups.map(([tag, tagged]) => [`blog/tags/${tag}/index.html`, tagPage(tag, tagged)]),
 ]);
+
+for (const [path, text] of outputs) assertPage(path, text);
 
 const unexpected = filesUnder('blog/tags').filter((path) => !outputs.has(path));
 

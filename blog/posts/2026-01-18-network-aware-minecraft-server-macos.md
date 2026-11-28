@@ -1,5 +1,6 @@
 ---
 published: 2026-01-18T18:15:54Z
+description: I wanted my Minecraft server to start on home WiFi, shut down when I leave, and do daily restarts like a production server. Here's the macOS setup.
 tags:
   - homelab
   - macos

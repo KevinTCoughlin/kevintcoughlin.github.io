@@ -1,5 +1,6 @@
 ---
 published: 2026-11-25T17:19:00Z
+description: ShoutKit fades the volume in when a station rejoins. A buffer underrun looked like a rejoin, so the volume dropped to 1/14 and swelled back to full.
 tags:
   - audio
   - ios

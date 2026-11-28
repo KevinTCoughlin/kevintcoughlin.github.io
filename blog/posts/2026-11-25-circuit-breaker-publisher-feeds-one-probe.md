@@ -1,5 +1,6 @@
 ---
 published: 2026-11-25T16:10:00Z
+description: Five broken publisher feeds used to open podr-service's breaker for 30 seconds, so search, top podcasts, and podcast pages returned 500 or a stale cache.
 tags:
   - python
   - tips

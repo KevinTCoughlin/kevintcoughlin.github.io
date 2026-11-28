@@ -1,5 +1,6 @@
 ---
 published: 2026-11-25T17:25:00Z
+description: ShoutKit needed 17 icons from material-icons-extended, a library of 11,105 classes. Debug builds dexed every class, and that step ran CI out of heap.
 tags:
   - android
   - performance
