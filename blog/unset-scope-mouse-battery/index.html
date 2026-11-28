@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Some Linux drivers never write power_supply scope, so a wireless mouse was read as the computer's battery. A desktop with only that supply was capped." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/unset-scope-mouse-battery/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="Unset scope made a mouse the computer's battery — Kevin Coughlin" />
+    <meta property="og:description" content="Some Linux drivers never write power_supply scope, so a wireless mouse was read as the computer's battery. A desktop with only that supply was capped." />
+    <meta property="og:url" content="https://kevintcoughlin.com/blog/unset-scope-mouse-battery/" />
+    <meta property="og:image" content="https://kevintcoughlin.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Kevin Coughlin — Making useful things for curious people." />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:site_name" content="Kevin Coughlin" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="article:published_time" content="2026-11-30T16:00:00Z" />
+    <meta property="article:modified_time" content="2026-11-30T16:00:00Z" />
+    <meta property="article:author" content="https://kevintcoughlin.com/" />
+    <meta property="article:tag" content="gamedev" />
+    <meta property="article:tag" content="tips" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@kevintcoughlin" />
+    <meta name="twitter:title" content="Unset scope made a mouse the computer's battery — Kevin Coughlin" />
+    <meta name="twitter:description" content="Some Linux drivers never write power_supply scope, so a wireless mouse was read as the computer's battery. A desktop with only that supply was capped." />
+    <meta name="twitter:image" content="https://kevintcoughlin.com/og-image.png" />
+    <meta name="twitter:image:alt" content="Kevin Coughlin — Making useful things for curious people." />
+    <title>Unset scope made a mouse the computer's battery — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "A mouse battery with no scope was the computer's battery",
+        "description": "Some Linux drivers never write power_supply scope, so a wireless mouse was read as the computer's battery. A desktop with only that supply was capped.",
+        "image": "https://kevintcoughlin.com/og-image.png",
+        "datePublished": "2026-11-30T16:00:00Z",
+        "dateModified": "2026-11-30T16:00:00Z",
+        "author": {
+          "@type": "Person",
+          "name": "Kevin Coughlin",
+          "url": "https://kevintcoughlin.com/"
+        },
+        "publisher": {
+          "@type": "Person",
+          "name": "Kevin Coughlin",
+          "url": "https://kevintcoughlin.com/"
+        },
+        "url": "https://kevintcoughlin.com/blog/unset-scope-mouse-battery/",
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "https://kevintcoughlin.com/blog/unset-scope-mouse-battery/"
+        },
+        "isPartOf": {
+          "@id": "https://kevintcoughlin.com/blog/#blog"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>A mouse battery with no scope was the computer's battery</h1>
+        <time datetime="2026-11-30T16:00:00Z">November 30, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/gamedev/">gamedev</a></li>
+          <li><a href="/blog/tags/tips/">tips</a></li>
+        </ul>
+<p><a href="https://github.com/KevinTCoughlin/godot-device-power/pull/29">godot-device-power#29</a> skips a Linux supply whose sysfs <code>scope</code> is <code>Device</code>. A missing <code>scope</code> still counted as the machine. That is how a laptop battery and a mains adapter usually appear, and it is how a wireless mouse or controller was read when its driver wrote no <code>scope</code>. A desktop whose only battery was that mouse was held to the battery cap, and a charging peripheral could make a laptop on battery look plugged in. The follow-up is <a href="https://github.com/KevinTCoughlin/godot-device-power/pull/34">godot-device-power#34</a> (<a href="https://github.com/KevinTCoughlin/godot-device-power/commit/8d843358fc3cdb2fa6a9a280295f966603fb2993"><code>8d84335</code></a>).</p>
+<h2 id="a-missing-scope-still-counted">A missing scope still counted</h2>
+<p><code>power_source_from_supplies()</code> dropped a supply when <code>scope</code> was <code>Device</code>. <code>System</code> and <code>Unknown</code> counted, and so did a supply with no <code>scope</code> file. Drivers that leave <code>scope</code> unset, on older kernels and out-of-tree, never hit that check.</p>
+<p><a href="https://github.com/KevinTCoughlin/godot-device-power/pull/34">#34</a> passes the supply's name into one check, <code>is_peripheral()</code>. A <code>present</code> of <code>0</code> still drops the supply.</p>
+<pre><code class="language-gdscript">        var supply_name: String = key if key is String else &quot;&quot;
+        if is_peripheral(supply_name, supply) or _field(supply, &quot;present&quot;) == &quot;0&quot;:
+            continue
+</code></pre>
+<p><code>Device</code> is still a peripheral. <code>System</code> is the machine's, taken at its word: <code>hidpp_battery_0</code> on the hid bus with <code>scope</code> of <code>System</code> stays the computer's battery. No <code>scope</code>, or <code>Unknown</code>, is a peripheral when the parent bus or the driver name says so. Anything else is still the machine's.</p>
+<h2 id="the-bus-then-the-name">The bus, then the name</h2>
+<p>The bus is the main signal. A laptop pack or adapter hangs off ACPI, platform, i2c or a USB-C port controller, not <code>hid</code>, <code>bluetooth</code> or <code>usb</code>. <code>_read_supplies()</code> stores that bus on a new <code>subsystem</code> field. The value is the last part of the parent <code>device/subsystem</code> link, so <code>../../bus/hid</code> is <code>hid</code>. Empty when there is no parent or the link is unreadable.</p>
+<pre><code class="language-gdscript">static func _read_subsystem(base: String) -&gt; String:
+    var device := DirAccess.open(base.path_join(&quot;device&quot;))
+    if device == null or not device.is_link(&quot;subsystem&quot;):
+        return &quot;&quot;
+    return device.read_link(&quot;subsystem&quot;).get_file()
+</code></pre>
+<p>The name is the fallback when that link cannot be read. The prefixes are the ones the kernel's HID battery drivers use: hid-input, Logitech HID++, Sony and PlayStation controllers, Nintendo controllers, Wacom tablets, Wiimotes and Steam controllers.</p>
+<pre><code class="language-gdscript">const _PERIPHERAL_BUSES := {&quot;hid&quot;: true, &quot;bluetooth&quot;: true, &quot;usb&quot;: true}
+## Name prefixes the kernel's HID battery drivers use, for a supply whose
+## [code]device[/code] link cannot be read: hid-input, Logitech HID++,
+## Sony and PlayStation controllers, Nintendo controllers, Wacom tablets,
+## Wiimotes and Steam controllers.
+const _PERIPHERAL_NAME_PREFIXES: Array[String] = [
+    &quot;hid-&quot;,
+    &quot;hidpp_battery&quot;,
+    &quot;sony_controller_battery&quot;,
+    &quot;ps-controller-battery&quot;,
+    &quot;nintendo_switch_controller&quot;,
+    &quot;wacom_&quot;,
+    &quot;wiimote_&quot;,
+    &quot;steam-controller-&quot;,
+]
+</code></pre>
+<p><code>wacom_</code> also matches the tablet's own mains adapter. <code>wacom_ac_0</code> online, beside a discharging <code>BAT1</code>, stays on battery. The adapter is not the machine's mains.</p>
+<pre><code class="language-gdscript">static func is_peripheral(supply_name: String, supply: Dictionary) -&gt; bool:
+    var scope := _field(supply, &quot;scope&quot;)
+    if scope == &quot;Device&quot;:
+        return true
+    if scope == &quot;System&quot;:
+        return false
+    if _PERIPHERAL_BUSES.has(_field(supply, &quot;subsystem&quot;)):
+        return true
+    for prefix: String in _PERIPHERAL_NAME_PREFIXES:
+        if supply_name.begins_with(prefix):
+            return true
+    return false
+</code></pre>
+<p>UPower's DisplayDevice was the other way to separate a peripheral from the computer. It needs D-Bus and a daemon. This backend reads only sysfs, so I left DisplayDevice out.</p>
+<h2 id="what-the-suite-ran">What the suite ran</h2>
+<p><code>./scripts/run_tests.sh</code> reported 128 passed, 0 failed, on Godot 4.7.2 (macOS universal build, headless). With the bus and name checks removed, 3 of the 128 fail.</p>
+<p>The new cases cover an unscoped supply on the hid, bluetooth, usb, acpi and platform buses, a match by name, a tablet's <code>wacom_ac_*</code> adapter, <code>Unknown</code> on hid, and <code>System</code> winning over both the bus and the name. One test builds a tree of <code>device</code> and <code>subsystem</code> symlinks under <code>/tmp</code> and writes no <code>scope</code> file. The mouse's bus reads as <code>hid</code> and the pack's as <code>acpi</code>. An unscoped charging mouse beside that discharging pack stays on battery. The mouse alone is unknown.</p>
+<p>The buses and the names come from kernel driver sources. I have not checked them against a live <code>/sys/class/power_supply</code>.</p>
+<h2 id="what-i-would-repeat">What I would repeat</h2>
+<ul>
+<li><strong>A missing <code>scope</code> still needs a second look.</strong> <code>Device</code> is a peripheral. <code>System</code> is the machine's, even when the bus is hid and the name is a controller's. No file, or <code>Unknown</code>, follows the bus and then the name.</li>
+<li><strong>Read the bus first.</strong> <code>hid</code>, <code>bluetooth</code> and <code>usb</code> mark a peripheral. The name prefixes apply when the <code>device</code> link cannot be read.</li>
+<li><strong>The 128 did not open a live sysfs.</strong> They passed on Godot 4.7.2's macOS build, headless. Removing the bus and name checks fails 3 of them.</li>
+</ul>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>
