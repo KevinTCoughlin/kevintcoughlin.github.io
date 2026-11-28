@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Listen Now trapped on Dictionary(uniqueKeysWithValues:) when two RecentStation rows shared an id. The latest play is kept, and counts sum to 6." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/uniquekeyswithvalues-traps-on-duplicates/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="Listen Now crashed when two recents shared an id — Kevin Coughlin" />
+    <meta property="og:description" content="Listen Now trapped on Dictionary(uniqueKeysWithValues:) when two RecentStation rows shared an id. The latest play is kept, and counts sum to 6." />
+    <meta property="og:url" content="https://kevintcoughlin.com/blog/uniquekeyswithvalues-traps-on-duplicates/" />
+    <meta property="og:image" content="https://kevintcoughlin.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Kevin Coughlin — Making useful things for curious people." />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:site_name" content="Kevin Coughlin" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="article:published_time" content="2026-11-29T16:00:00Z" />
+    <meta property="article:modified_time" content="2026-11-29T16:00:00Z" />
+    <meta property="article:author" content="https://kevintcoughlin.com/" />
+    <meta property="article:tag" content="ios" />
+    <meta property="article:tag" content="swift" />
+    <meta property="article:tag" content="tips" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@kevintcoughlin" />
+    <meta name="twitter:title" content="Listen Now crashed when two recents shared an id — Kevin Coughlin" />
+    <meta name="twitter:description" content="Listen Now trapped on Dictionary(uniqueKeysWithValues:) when two RecentStation rows shared an id. The latest play is kept, and counts sum to 6." />
+    <meta name="twitter:image" content="https://kevintcoughlin.com/og-image.png" />
+    <meta name="twitter:image:alt" content="Kevin Coughlin — Making useful things for curious people." />
+    <title>Listen Now crashed when two recents shared an id — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Listen Now crashed when two recents shared an id",
+        "description": "Listen Now trapped on Dictionary(uniqueKeysWithValues:) when two RecentStation rows shared an id. The latest play is kept, and counts sum to 6.",
+        "image": "https://kevintcoughlin.com/og-image.png",
+        "datePublished": "2026-11-29T16:00:00Z",
+        "dateModified": "2026-11-29T16:00:00Z",
+        "author": {
+          "@type": "Person",
+          "name": "Kevin Coughlin",
+          "url": "https://kevintcoughlin.com/"
+        },
+        "publisher": {
+          "@type": "Person",
+          "name": "Kevin Coughlin",
+          "url": "https://kevintcoughlin.com/"
+        },
+        "url": "https://kevintcoughlin.com/blog/uniquekeyswithvalues-traps-on-duplicates/",
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "https://kevintcoughlin.com/blog/uniquekeyswithvalues-traps-on-duplicates/"
+        },
+        "isPartOf": {
+          "@id": "https://kevintcoughlin.com/blog/#blog"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>Listen Now crashed when two recents shared an id</h1>
+        <time datetime="2026-11-29T16:00:00Z">November 29, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/ios/">ios</a></li>
+          <li><a href="/blog/tags/swift/">swift</a></li>
+          <li><a href="/blog/tags/tips/">tips</a></li>
+        </ul>
+<p>In <a href="https://github.com/cascadiacollections/shoutkit">ShoutKit</a>, Listen Now keyed Recently Played with <code>Dictionary(uniqueKeysWithValues:)</code>. That initializer traps when two keys match. <code>stationID</code> stopped being unique in schema V2, because CloudKit does not support unique attributes, and with iCloud sync on the same station can briefly have two Recently Played rows. Drawing Listen Now in that window crashed. The change is <a href="https://github.com/cascadiacollections/shoutkit/pull/288">shoutkit#288</a> (<a href="https://github.com/cascadiacollections/shoutkit/commit/fa434a1708e25a4c3ff3722e79a5a885502fe129"><code>fa434a1</code></a>), for <a href="https://github.com/cascadiacollections/shoutkit/issues/282">shoutkit#282</a>.</p>
+<h2 id="the-lookup-trapped">The lookup trapped</h2>
+<p><code>displayedRecentStations</code> built a dictionary from every recent row:</p>
+<pre><code class="language-swift">let byID = Dictionary(uniqueKeysWithValues: recents.map { ($0.stationID, $0) })
+</code></pre>
+<p>A duplicate <code>stationID</code> is a precondition failure, so Listen Now fatal-errored and Recently Played never appeared.</p>
+<p>The store itself never inserts a second row for a station. <code>mergeDuplicateStations()</code> runs when the store is created, and the normal play path updates one row, so a single device that only writes through <code>LibraryStore</code> should not hit this. Two devices can each record the same station before they sync, and both rows then arrive. The crash is the gap after that import lands and before the next merge, while the view is on screen. <code>logRecent</code> kept the gap open: it updated <code>matches.first</code> and left the other row.</p>
+<h2 id="show-the-latest-play">Show the latest play</h2>
+<p><code>RecentStation.latestByStationID(_:)</code> builds the same lookup with <code>Dictionary(_:uniquingKeysWith:)</code> and keeps the row with the later <code>playedAt</code>:</p>
+<pre><code class="language-swift">static func latestByStationID(_ recents: some Sequence&lt;RecentStation&gt;) -&gt; [String: RecentStation] {
+    Dictionary(recents.map { ($0.stationID, $0) }) { first, second in
+        first.playedAt &gt;= second.playedAt ? first : second
+    }
+}
+</code></pre>
+<p><code>mergeDuplicateRecents()</code> sorts by <code>playedAt</code> descending and keeps the first row it sees for each id, then adds the other play counts onto that row. The lookup picks that same survivor, so the view shows the row it will show after the merge. The view calls it:</p>
+<pre><code class="language-swift">// Not `uniqueKeysWithValues`: since schema version 2 two rows can
+// share a station until they are merged (DECISIONS.md 2026-11-22).
+let byID = RecentStation.latestByStationID(recents)
+return recentlyPlayedTeaser.displayedIDs.compactMap { byID[$0] }
+</code></pre>
+<p>The function lives in <code>Persistence</code>. <code>BrowseFeature</code> depends on <code>DesignSystem</code> and cannot be tested on the Mac host, so this one-line call site in <code>ListenNowView</code> is untested.</p>
+<h2 id="playing-again-merges-the-counts">Playing again merges the counts</h2>
+<p><code>logRecent</code> collapses every row for the station before it writes the new play. <code>collapseRecents</code> keeps the latest <code>playedAt</code>, adds the others' <code>playCount</code>, and deletes the rest without saving:</p>
+<pre><code class="language-swift">func collapseRecents(_ recents: [RecentStation]) -&gt; RecentStation? {
+    guard let keeper = recents.max(by: { $0.playedAt &lt; $1.playedAt }) else { return nil }
+    for recent in recents where recent !== keeper {
+        keeper.playCount += recent.playCount
+        context.delete(recent)
+    }
+    return keeper
+}
+</code></pre>
+<p>The keeper then records this play and takes the station's name:</p>
+<pre><code class="language-swift">if let existing = collapseRecents(matches) {
+    existing.playedAt = .now
+    existing.playCount += 1
+    // A genuine new play un-hides it from Listen Now even if it was
+    // previously dismissed there.
+    existing.isHiddenFromListenNow = false
+    existing.name = station.name
+</code></pre>
+<p>The test inserts the duplicates after the store has already merged at creation, saves, and then logs a play of KEXP:</p>
+<pre><code class="language-swift">// Arrive after the store merged at creation, as a sync import would.
+context.insert(RecentStation(
+    stationID: &quot;kexp&quot;, name: &quot;Older&quot;, genre: &quot;&quot;, playedAt: Date(timeIntervalSince1970: 1000), playCount: 3,
+))
+context.insert(RecentStation(
+    stationID: &quot;kexp&quot;, name: &quot;Newer&quot;, genre: &quot;&quot;, playedAt: Date(timeIntervalSince1970: 2000), playCount: 2,
+))
+</code></pre>
+<pre><code class="language-swift">store.logRecent(Station(id: &quot;kexp&quot;, name: &quot;KEXP&quot;, genre: &quot;Eclectic&quot;, listenerCount: 0))
+</code></pre>
+<p>One row remains, named KEXP, with play count 6. That is the older row's 3, the newer row's 2, and the new play.</p>
+<pre><code class="language-swift">#expect(recents.count == 1)
+#expect(recents.first?.name == &quot;KEXP&quot;)
+#expect(recents.first?.playCount == 6)
+</code></pre>
+<p>A second test runs <code>latestByStationID</code> on two rows with station id <code>kexp</code> (named Old and New) and one named WFMU, in both orders. Both expect two entries, <code>kexp</code> pointing at New, and <code>wfmu</code> pointing at WFMU.</p>
+<p><code>swift test --disable-xctest</code> in <code>Packages/Persistence</code> reported 113 tests in 15 suites passed. <code>xcodebuild</code> with <code>-destination 'generic/platform=iOS Simulator'</code>, <code>CODE_SIGNING_ALLOWED=NO</code>, and <code>build-for-testing</code> compiled the <code>ListenNowView</code> change. SwiftLint 0.65.1 <code>--strict</code> and SwiftFormat 0.64.5 <code>--lint</code> were clean. The simulator test plan was not run: that machine has no iOS Simulator runtime installed, and CI covers the plan. Nothing here was run on hardware. The issue did not need it.</p>
+<h2 id="what-i-would-repeat">What I would repeat</h2>
+<ul>
+<li><strong><code>uniqueKeysWithValues</code> traps on a duplicate key.</strong> After schema V2, two <code>RecentStation</code> rows can share an id between a sync import and <code>mergeDuplicateStations()</code>. A lookup built with that initializer crashes if Listen Now draws in the gap.</li>
+<li><strong>Keep the latest <code>playedAt</code>.</strong> <code>Dictionary(_:uniquingKeysWith:)</code> returns the later play, the same row <code>mergeDuplicateRecents()</code> keeps, so the teaser shows the row the merge will leave.</li>
+<li><strong>Add the other play counts on the write.</strong> <code>collapseRecents</code> sums them onto that row and deletes the rest. The test's counts are 3 + 2 + 1 = 6.</li>
+</ul>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>

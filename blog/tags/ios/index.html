@@ -213,6 +213,13 @@
         "blogPost": [
           {
             "@type": "BlogPosting",
+            "headline": "Listen Now crashed when two recents shared an id",
+            "url": "https://kevintcoughlin.com/blog/uniquekeyswithvalues-traps-on-duplicates/",
+            "datePublished": "2026-11-29T16:00:00Z",
+            "dateModified": "2026-11-29T16:00:00Z"
+          },
+          {
+            "@type": "BlogPosting",
             "headline": "Why my radio app dipped to 1/14 volume on every network blip",
             "url": "https://kevintcoughlin.com/blog/shoutkit-underrun-volume-dip/",
             "datePublished": "2026-11-25T17:19:00Z",
@@ -221,11 +228,17 @@
         ],
         "mainEntity": {
           "@type": "ItemList",
-          "numberOfItems": 1,
+          "numberOfItems": 2,
           "itemListElement": [
             {
               "@type": "ListItem",
               "position": 1,
+              "name": "Listen Now crashed when two recents shared an id",
+              "url": "https://kevintcoughlin.com/blog/uniquekeyswithvalues-traps-on-duplicates/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
               "name": "Why my radio app dipped to 1/14 volume on every network blip",
               "url": "https://kevintcoughlin.com/blog/shoutkit-underrun-volume-dip/"
             }
@@ -241,8 +254,18 @@
     </header>
     <main class="shell">
       <h1>ios</h1>
-      <p class="meta">1 post · <a href="/blog/tags/">All tags</a></p>
+      <p class="meta">2 posts · <a href="/blog/tags/">All tags</a></p>
       <ul class="posts">
+        <li>
+          <time datetime="2026-11-29T16:00:00Z">November 29, 2026</time>
+          <h2><a href="/blog/uniquekeyswithvalues-traps-on-duplicates/">Listen Now crashed when two recents shared an id</a></h2>
+          <p>In ShoutKit, Listen Now keyed Recently Played with Dictionary(uniqueKeysWithValues:). That initializer traps when two keys match. stationID stopped being unique in schema V2, because CloudKit does not support unique attributes, and with iCloud sync on the same station can briefly have two Recently Played rows. Drawing Listen Now in that window crashed. The change is shoutkit#288 (fa434a1), for shoutkit#282.</p>
+          <ul class="tags" aria-label="Tags">
+            <li><a href="/blog/tags/ios/" aria-current="page">ios</a></li>
+            <li><a href="/blog/tags/swift/">swift</a></li>
+            <li><a href="/blog/tags/tips/">tips</a></li>
+          </ul>
+        </li>
         <li>
           <time datetime="2026-11-25T17:19:00Z">November 25, 2026</time>
           <h2><a href="/blog/shoutkit-underrun-volume-dip/">Why my radio app dipped to 1/14 volume on every network blip</a></h2>
