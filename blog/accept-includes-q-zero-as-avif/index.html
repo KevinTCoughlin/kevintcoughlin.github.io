@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="In Bauhaus, negotiateFormat used Accept.includes(&quot;image/avif&quot;). image/avif;q=0 selected AVIF, and a higher JPEG q lost. The change is bauhaus#202 (18ef0bb)." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/accept-includes-q-zero-as-avif/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="Accept.includes treated image/avif;q=0 as AVIF — Kevin Coughlin" />
+    <meta property="og:description" content="In Bauhaus, negotiateFormat used Accept.includes(&quot;image/avif&quot;). image/avif;q=0 selected AVIF, and a higher JPEG q lost. The change is bauhaus#202 (18ef0bb)." />
+    <meta property="og:url" content="https://kevintcoughlin.com/blog/accept-includes-q-zero-as-avif/" />
+    <meta property="og:image" content="https://kevintcoughlin.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Kevin Coughlin — Making useful things for curious people." />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:site_name" content="Kevin Coughlin" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="article:published_time" content="2026-12-02T16:00:00Z" />
+    <meta property="article:modified_time" content="2026-12-02T16:00:00Z" />
+    <meta property="article:author" content="https://kevintcoughlin.com/" />
+    <meta property="article:tag" content="http" />
+    <meta property="article:tag" content="tips" />
+    <meta property="article:tag" content="web" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@kevintcoughlin" />
+    <meta name="twitter:title" content="Accept.includes treated image/avif;q=0 as AVIF — Kevin Coughlin" />
+    <meta name="twitter:description" content="In Bauhaus, negotiateFormat used Accept.includes(&quot;image/avif&quot;). image/avif;q=0 selected AVIF, and a higher JPEG q lost. The change is bauhaus#202 (18ef0bb)." />
+    <meta name="twitter:image" content="https://kevintcoughlin.com/og-image.png" />
+    <meta name="twitter:image:alt" content="Kevin Coughlin — Making useful things for curious people." />
+    <title>Accept.includes treated image/avif;q=0 as AVIF — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Accept.includes treated image/avif;q=0 as AVIF",
+        "description": "In Bauhaus, negotiateFormat used Accept.includes(\"image/avif\"). image/avif;q=0 selected AVIF, and a higher JPEG q lost. The change is bauhaus#202 (18ef0bb).",
+        "image": "https://kevintcoughlin.com/og-image.png",
+        "datePublished": "2026-12-02T16:00:00Z",
+        "dateModified": "2026-12-02T16:00:00Z",
+        "author": {
+          "@type": "Person",
+          "name": "Kevin Coughlin",
+          "url": "https://kevintcoughlin.com/"
+        },
+        "publisher": {
+          "@type": "Person",
+          "name": "Kevin Coughlin",
+          "url": "https://kevintcoughlin.com/"
+        },
+        "url": "https://kevintcoughlin.com/blog/accept-includes-q-zero-as-avif/",
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "https://kevintcoughlin.com/blog/accept-includes-q-zero-as-avif/"
+        },
+        "isPartOf": {
+          "@id": "https://kevintcoughlin.com/blog/#blog"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>Accept.includes treated image/avif;q=0 as AVIF</h1>
+        <time datetime="2026-12-02T16:00:00Z">December 2, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/http/">http</a></li>
+          <li><a href="/blog/tags/tips/">tips</a></li>
+          <li><a href="/blog/tags/web/">web</a></li>
+        </ul>
+<p>In <a href="https://github.com/cascadiacollections/bauhaus">Bauhaus</a>, <code>negotiateFormat</code> used <code>Accept.includes(&quot;image/avif&quot;)</code>. <code>image/avif;q=0</code> selected AVIF, and a higher JPEG <code>q</code> lost. The change is <a href="https://github.com/cascadiacollections/bauhaus/pull/202">bauhaus#202</a> (<a href="https://github.com/cascadiacollections/bauhaus/commit/18ef0bb963fdb8c4aa271e669fe4066985ce3c4a"><code>18ef0bb</code></a>).</p>
+<h2 id="the-substring-was-the-whole-check">The substring was the whole check</h2>
+<p>The worker returned on the first hit:</p>
+<pre><code>const accept = request.headers.get(&quot;Accept&quot;) ?? &quot;&quot;;
+if (accept.includes(&quot;image/avif&quot;)) return &quot;avif&quot;;
+if (accept.includes(&quot;image/webp&quot;)) return &quot;webp&quot;;
+return &quot;jpeg&quot;;
+</code></pre>
+<p><code>image/avif;q=0</code> means do not send AVIF. The characters <code>image/avif</code> are still in the header, so the worker sent AVIF. A client that cannot decode it gets a broken image. Quality was never read. <code>image/avif;q=0.5, image/jpeg;q=1</code> contains <code>image/avif</code>, so AVIF won over the higher JPEG <code>q</code>.</p>
+<h2 id="a-q-of-0-does-not-win">A q of 0 does not win</h2>
+<p>Named types are parsed with their <code>q</code>. A missing <code>q</code> is 1, and the number is clamped into 0 through 1. The best <code>q</code> so far starts at 0, so a candidate has to beat 0:</p>
+<pre><code>let best: ImageFormat | null = null;
+let bestQ = 0;
+for (const format of NEGOTIATED_FORMATS) {
+  const q = explicitAcceptQuality(accept, FORMAT_CONTENT_TYPE[format]);
+  // Equal q keeps the earlier format: AVIF, then WebP, then JPEG.
+  if (q === null || q &lt;= bestQ) continue;
+  best = format;
+  bestQ = q;
+}
+return best ?? &quot;jpeg&quot;;
+</code></pre>
+<p><code>NEGOTIATED_FORMATS</code> is <code>[&quot;avif&quot;, &quot;webp&quot;, &quot;jpeg&quot;]</code>. Equal <code>q</code> keeps the earlier format. <code>?format=avif</code>, <code>webp</code>, or <code>jpeg</code> still returns before the header is read.</p>
+<p>The helper counts a part only when the type is exactly the mime it was asked about:</p>
+<pre><code>if (typeRaw.trim().toLowerCase() !== mime) continue;
+</code></pre>
+<p><code>*/*</code> and <code>image/*</code> are not those names, so they are not a request for AVIF. The first mention of a type is the one that sticks, so a later duplicate cannot raise a <code>q=0</code>. The doc comment splits those wildcards, because <code>*/</code> would end the block comment:</p>
+<pre><code> * A wildcard (`*` / `*`) or `image/` + `*` is not a match.
+</code></pre>
+<p>curl and the wallpaper one-liners send <code>*/*</code> and get JPEG, which is what they can decode. On macOS, KDE, and GNOME those one-liners are <code>curl -sfo /tmp/bauhaus.jpg</code>.</p>
+<h2 id="what-the-tests-pin">What the tests pin</h2>
+<p><code>image/avif;q=0, image/webp, image/jpeg</code> selects WebP. Both of the others default to <code>q=1</code>, and WebP is earlier. <code>image/avif;q=0.5, image/jpeg;q=1</code> selects JPEG. <code>*/*</code> stays on JPEG. <code>image/jpeg;q=0.8, image/webp;q=0.8, image/avif;q=0.8</code> selects AVIF. A header that already named <code>image/avif</code> with no <code>q</code>, beside WebP, JPEG, and <code>*/*</code>, still selects AVIF.</p>
+<p>The worker CI job runs <code>npx tsc --noEmit</code>, then <code>npm test</code>. That run reported 235 passed.</p>
+<p>The EXIF allowlist on the published JPEG is a separate change, in <a href="https://kevintcoughlin.com/blog/pillow-convert-keeps-exif-gps/">Pillow's convert() kept the camera GPS on the published original</a>.</p>
+<h2 id="what-i-would-repeat">What I would repeat</h2>
+<ul>
+<li><strong><code>includes</code> is not content negotiation.</strong> <code>image/avif;q=0</code> still contains <code>image/avif</code>. That <code>q</code> means do not send AVIF.</li>
+<li><strong>Let the highest <code>q</code> win.</strong> Start from 0 so <code>q=0</code> cannot. On a tie, AVIF, then WebP, then JPEG.</li>
+<li><strong><code>*/*</code> stays on JPEG.</strong> curl and the wallpaper one-liners save a <code>.jpg</code>. They do not ask for AVIF.</li>
+</ul>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>
