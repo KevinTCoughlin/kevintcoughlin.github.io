@@ -4,11 +4,85 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-27T16:16:00Z</updated>
+  <updated>2026-11-28T16:00:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>A 404 from NetherNet meant Bedrock was up</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/nethernet-404-means-bedrock-is-up/"/>
+    <id>https://kevintcoughlin.com/blog/nethernet-404-means-bedrock-is-up/</id>
+    <published>2026-11-28T16:00:00Z</published>
+    <updated>2026-11-28T16:00:00Z</updated>
+    <category term="github-actions"/>
+    <category term="minecraft"/>
+    <category term="tips"/>
+    <summary>The server-health check treated Bedrock as down on every run while Java stayed up. NetherNet on TCP 19132 answers HTTP 404, and that 404 is the port being up.</summary>
+    <content type="html">&lt;p&gt;The server-health check treated Bedrock as down on every run while Java stayed up. NetherNet on TCP 19132 answers HTTP 404, and that 404 is the port being up.&lt;/p&gt;
+&lt;p&gt;I required a RakNet unconnected pong on UDP 19132. The check runs every 15 minutes. This Geyser is 2.12.1 with &lt;code&gt;transport: nethernet&lt;/code&gt;: signaling is the built-in HTTP server on TCP 19132 (it answers &lt;code&gt;HTTP/1.1 404 Not Found&lt;/code&gt;) and the game is on UDP 19132. There is no RakNet, so a RakNet unconnected ping never comes back. Every run opened or updated &lt;a href=&quot;https://github.com/KevinTCoughlin/minecraft-server/issues/135&quot;&gt;#135&lt;/a&gt;. The port lines were:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;25565 up: Paper 26.3, players 0/20&lt;/li&gt;
+&lt;li&gt;19132 down: no RakNet unconnected pong&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;That issue said Java Edition is TCP 25565 (server-list status). Bedrock/Geyser is UDP 19132 (RakNet unconnected ping). The change is &lt;a href=&quot;https://github.com/KevinTCoughlin/minecraft-server/pull/137&quot;&gt;minecraft-server#137&lt;/a&gt; (&lt;a href=&quot;https://github.com/KevinTCoughlin/minecraft-server/commit/51db676e14c29bbdbd1620eef3c18044ddfe049c&quot;&gt;&lt;code&gt;51db676&lt;/code&gt;&lt;/a&gt;).&lt;/p&gt;
+&lt;h2 id=&quot;any-http-status-on-tcp-19132-is-up&quot;&gt;Any HTTP status on TCP 19132 is up&lt;/h2&gt;
+&lt;p&gt;Bedrock counts as up when that TCP port accepts a connection and answers HTTP with any status. &lt;code&gt;http_fields&lt;/code&gt; in &lt;code&gt;.github/workflows/server-health.yml&lt;/code&gt; reads the status code from the first line. &lt;code&gt;HTTP/1.0&lt;/code&gt; and &lt;code&gt;HTTP/1.1&lt;/code&gt; both count:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def http_fields(data):
+    line = data.split(b&amp;quot;\n&amp;quot;, 1)[0].rstrip(b&amp;quot;\r&amp;quot;)
+    parts = line.split(b&amp;quot; &amp;quot;)
+    if len(parts) &amp;lt; 2:
+        return None
+    version, status = parts[0], parts[1]
+    if version not in (b&amp;quot;HTTP/1.0&amp;quot;, b&amp;quot;HTTP/1.1&amp;quot;):
+        return None
+    if len(status) != 3 or not status.isdigit():
+        return None
+    return {
+        &amp;quot;name&amp;quot;: &amp;quot;NetherNet&amp;quot;,
+        &amp;quot;extra&amp;quot;: f&amp;quot;HTTP {status.decode('ascii')}&amp;quot;,
+        &amp;quot;via&amp;quot;: &amp;quot;nethernet&amp;quot;,
+    }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The probe is this GET:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;request = (
+    &amp;quot;GET / HTTP/1.1\r\n&amp;quot;
+    f&amp;quot;Host: {host}\r\n&amp;quot;
+    &amp;quot;Connection: close\r\n&amp;quot;
+    &amp;quot;\r\n&amp;quot;
+).encode(&amp;quot;ascii&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;MC_HEALTH_BEDROCK_MODE&lt;/code&gt; accepts &lt;code&gt;nethernet&lt;/code&gt; (the default), &lt;code&gt;raknet&lt;/code&gt;, or &lt;code&gt;either&lt;/code&gt;. An unset &lt;code&gt;MC_HEALTH_BEDROCK_MODE&lt;/code&gt; defaults to &lt;code&gt;nethernet&lt;/code&gt; in the workflow. &lt;code&gt;nethernet&lt;/code&gt; and &lt;code&gt;either&lt;/code&gt; try signaling first. A RakNet pong is still a fallback and also counts as up. A TCP accept that is not HTTP falls back to RakNet. &lt;code&gt;raknet&lt;/code&gt; never opens TCP:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def query_bedrock(host, port, timeout, mode):
+    # nethernet is this server's Geyser transport. Signaling answers HTTP
+    # on TCP, and any status is up. either is the same rule, named for
+    # &amp;quot;either protocol&amp;quot;. Both fall back to RakNet when signaling does not
+    # answer, and that pong also counts as up. raknet never opens TCP.
+    if mode != &amp;quot;raknet&amp;quot;:
+        http = query_nethernet(host, port, timeout)
+        if http is not None:
+            return http
+    return query_raknet(host, port, timeout)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The workflow's down-issue text now says:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot;&gt;Bedrock/Geyser signaling is TCP ${MC_HEALTH_BEDROCK_PORT} (NetherNet HTTP, any status). A RakNet unconnected ping on UDP ${MC_HEALTH_BEDROCK_PORT} also counts as up.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&quot;the-live-probe&quot;&gt;The live probe&lt;/h2&gt;
+&lt;p&gt;One live probe of the configured host: &lt;code&gt;nethernet&lt;/code&gt; reported &lt;code&gt;19132 up: NetherNet, HTTP 404&lt;/code&gt; with Java still up. &lt;code&gt;raknet&lt;/code&gt; still reported &lt;code&gt;19132 down: no RakNet unconnected pong&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;tests/server-health-driver.py&lt;/code&gt; covers HTTP 404, 200, and 500, a TCP accept that is not HTTP, and all three modes. The driver says why 404 is in that list:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;    # NetherNet signaling: any HTTP status on TCP is up, and RakNet is not asked.
+    # 404 is what Geyser's built-in server answers for GET /.
+    for status in (404, 200, 500):
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;For each of those statuses the stdout has to contain &lt;code&gt;up: NetherNet, HTTP {status}&lt;/code&gt;, and the RakNet peer's ping count stays 0. The non-HTTP peer sends &lt;code&gt;b&amp;quot;OK\n&amp;quot;&lt;/code&gt; and is not signaling. With no RakNet pong the port stays down, and the detail contains &lt;code&gt;no NetherNet HTTP response or RakNet unconnected pong&lt;/code&gt;. &lt;code&gt;raknet&lt;/code&gt; ignores signaling: HTTP 404 alone is down, and a pong is still up. &lt;code&gt;either&lt;/code&gt; counts the HTTP answer, and it counts a pong when signaling does not answer.&lt;/p&gt;
+&lt;h2 id=&quot;what-i-would-repeat&quot;&gt;What I would repeat&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Count the 404.&lt;/strong&gt; Geyser's built-in server answers &lt;code&gt;GET /&lt;/code&gt; with &lt;code&gt;HTTP/1.1 404 Not Found&lt;/code&gt;. Any HTTP status on TCP 19132 is up, and 404 is the status this transport returns.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;NetherNet has no RakNet pong.&lt;/strong&gt; There is no RakNet, the unconnected ping never comes back, and the check opened or updated #135 on every run while Java was up.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Keep the pong as a fallback.&lt;/strong&gt; &lt;code&gt;nethernet&lt;/code&gt; and &lt;code&gt;either&lt;/code&gt; fall back when signaling does not answer, and that pong counts as up. &lt;code&gt;raknet&lt;/code&gt; sends only the ping. A TCP accept that is not HTTP falls back to RakNet too.&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+  </entry>
   <entry>
     <title>Pillow's convert() kept the camera GPS on the published original</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/pillow-convert-keeps-exif-gps/"/>
