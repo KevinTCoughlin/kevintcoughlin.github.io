@@ -4,11 +4,89 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-27T16:16:00Z</updated>
+  <updated>2026-11-29T16:00:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>Listen Now crashed when two recents shared an id</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/uniquekeyswithvalues-traps-on-duplicates/"/>
+    <id>https://kevintcoughlin.com/blog/uniquekeyswithvalues-traps-on-duplicates/</id>
+    <published>2026-11-29T16:00:00Z</published>
+    <updated>2026-11-29T16:00:00Z</updated>
+    <category term="ios"/>
+    <category term="swift"/>
+    <category term="tips"/>
+    <summary>In ShoutKit, Listen Now keyed Recently Played with Dictionary(uniqueKeysWithValues:). That initializer traps when two keys match. stationID stopped being unique in schema V2, because CloudKit does not support unique attributes, and with iCloud sync on the same station can briefly have two Recently Played rows. Drawing Listen Now in that window crashed. The change is shoutkit#288 (fa434a1), for shoutkit#282.</summary>
+    <content type="html">&lt;p&gt;In &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit&quot;&gt;ShoutKit&lt;/a&gt;, Listen Now keyed Recently Played with &lt;code&gt;Dictionary(uniqueKeysWithValues:)&lt;/code&gt;. That initializer traps when two keys match. &lt;code&gt;stationID&lt;/code&gt; stopped being unique in schema V2, because CloudKit does not support unique attributes, and with iCloud sync on the same station can briefly have two Recently Played rows. Drawing Listen Now in that window crashed. The change is &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit/pull/288&quot;&gt;shoutkit#288&lt;/a&gt; (&lt;a href=&quot;https://github.com/cascadiacollections/shoutkit/commit/fa434a1708e25a4c3ff3722e79a5a885502fe129&quot;&gt;&lt;code&gt;fa434a1&lt;/code&gt;&lt;/a&gt;), for &lt;a href=&quot;https://github.com/cascadiacollections/shoutkit/issues/282&quot;&gt;shoutkit#282&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;the-lookup-trapped&quot;&gt;The lookup trapped&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;displayedRecentStations&lt;/code&gt; built a dictionary from every recent row:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;let byID = Dictionary(uniqueKeysWithValues: recents.map { ($0.stationID, $0) })
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A duplicate &lt;code&gt;stationID&lt;/code&gt; is a precondition failure, so Listen Now fatal-errored and Recently Played never appeared.&lt;/p&gt;
+&lt;p&gt;The store itself never inserts a second row for a station. &lt;code&gt;mergeDuplicateStations()&lt;/code&gt; runs when the store is created, and the normal play path updates one row, so a single device that only writes through &lt;code&gt;LibraryStore&lt;/code&gt; should not hit this. Two devices can each record the same station before they sync, and both rows then arrive. The crash is the gap after that import lands and before the next merge, while the view is on screen. &lt;code&gt;logRecent&lt;/code&gt; kept the gap open: it updated &lt;code&gt;matches.first&lt;/code&gt; and left the other row.&lt;/p&gt;
+&lt;h2 id=&quot;show-the-latest-play&quot;&gt;Show the latest play&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;RecentStation.latestByStationID(_:)&lt;/code&gt; builds the same lookup with &lt;code&gt;Dictionary(_:uniquingKeysWith:)&lt;/code&gt; and keeps the row with the later &lt;code&gt;playedAt&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;static func latestByStationID(_ recents: some Sequence&amp;lt;RecentStation&amp;gt;) -&amp;gt; [String: RecentStation] {
+    Dictionary(recents.map { ($0.stationID, $0) }) { first, second in
+        first.playedAt &amp;gt;= second.playedAt ? first : second
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;mergeDuplicateRecents()&lt;/code&gt; sorts by &lt;code&gt;playedAt&lt;/code&gt; descending and keeps the first row it sees for each id, then adds the other play counts onto that row. The lookup picks that same survivor, so the view shows the row it will show after the merge. The view calls it:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;// Not `uniqueKeysWithValues`: since schema version 2 two rows can
+// share a station until they are merged (DECISIONS.md 2026-11-22).
+let byID = RecentStation.latestByStationID(recents)
+return recentlyPlayedTeaser.displayedIDs.compactMap { byID[$0] }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The function lives in &lt;code&gt;Persistence&lt;/code&gt;. &lt;code&gt;BrowseFeature&lt;/code&gt; depends on &lt;code&gt;DesignSystem&lt;/code&gt; and cannot be tested on the Mac host, so this one-line call site in &lt;code&gt;ListenNowView&lt;/code&gt; is untested.&lt;/p&gt;
+&lt;h2 id=&quot;playing-again-merges-the-counts&quot;&gt;Playing again merges the counts&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;logRecent&lt;/code&gt; collapses every row for the station before it writes the new play. &lt;code&gt;collapseRecents&lt;/code&gt; keeps the latest &lt;code&gt;playedAt&lt;/code&gt;, adds the others' &lt;code&gt;playCount&lt;/code&gt;, and deletes the rest without saving:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;func collapseRecents(_ recents: [RecentStation]) -&amp;gt; RecentStation? {
+    guard let keeper = recents.max(by: { $0.playedAt &amp;lt; $1.playedAt }) else { return nil }
+    for recent in recents where recent !== keeper {
+        keeper.playCount += recent.playCount
+        context.delete(recent)
+    }
+    return keeper
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The keeper then records this play and takes the station's name:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;if let existing = collapseRecents(matches) {
+    existing.playedAt = .now
+    existing.playCount += 1
+    // A genuine new play un-hides it from Listen Now even if it was
+    // previously dismissed there.
+    existing.isHiddenFromListenNow = false
+    existing.name = station.name
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The test inserts the duplicates after the store has already merged at creation, saves, and then logs a play of KEXP:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;// Arrive after the store merged at creation, as a sync import would.
+context.insert(RecentStation(
+    stationID: &amp;quot;kexp&amp;quot;, name: &amp;quot;Older&amp;quot;, genre: &amp;quot;&amp;quot;, playedAt: Date(timeIntervalSince1970: 1000), playCount: 3,
+))
+context.insert(RecentStation(
+    stationID: &amp;quot;kexp&amp;quot;, name: &amp;quot;Newer&amp;quot;, genre: &amp;quot;&amp;quot;, playedAt: Date(timeIntervalSince1970: 2000), playCount: 2,
+))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;store.logRecent(Station(id: &amp;quot;kexp&amp;quot;, name: &amp;quot;KEXP&amp;quot;, genre: &amp;quot;Eclectic&amp;quot;, listenerCount: 0))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;One row remains, named KEXP, with play count 6. That is the older row's 3, the newer row's 2, and the new play.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-swift&quot;&gt;#expect(recents.count == 1)
+#expect(recents.first?.name == &amp;quot;KEXP&amp;quot;)
+#expect(recents.first?.playCount == 6)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A second test runs &lt;code&gt;latestByStationID&lt;/code&gt; on two rows with station id &lt;code&gt;kexp&lt;/code&gt; (named Old and New) and one named WFMU, in both orders. Both expect two entries, &lt;code&gt;kexp&lt;/code&gt; pointing at New, and &lt;code&gt;wfmu&lt;/code&gt; pointing at WFMU.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;swift test --disable-xctest&lt;/code&gt; in &lt;code&gt;Packages/Persistence&lt;/code&gt; reported 113 tests in 15 suites passed. &lt;code&gt;xcodebuild&lt;/code&gt; with &lt;code&gt;-destination 'generic/platform=iOS Simulator'&lt;/code&gt;, &lt;code&gt;CODE_SIGNING_ALLOWED=NO&lt;/code&gt;, and &lt;code&gt;build-for-testing&lt;/code&gt; compiled the &lt;code&gt;ListenNowView&lt;/code&gt; change. SwiftLint 0.65.1 &lt;code&gt;--strict&lt;/code&gt; and SwiftFormat 0.64.5 &lt;code&gt;--lint&lt;/code&gt; were clean. The simulator test plan was not run: that machine has no iOS Simulator runtime installed, and CI covers the plan. Nothing here was run on hardware. The issue did not need it.&lt;/p&gt;
+&lt;h2 id=&quot;what-i-would-repeat&quot;&gt;What I would repeat&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;uniqueKeysWithValues&lt;/code&gt; traps on a duplicate key.&lt;/strong&gt; After schema V2, two &lt;code&gt;RecentStation&lt;/code&gt; rows can share an id between a sync import and &lt;code&gt;mergeDuplicateStations()&lt;/code&gt;. A lookup built with that initializer crashes if Listen Now draws in the gap.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Keep the latest &lt;code&gt;playedAt&lt;/code&gt;.&lt;/strong&gt; &lt;code&gt;Dictionary(_:uniquingKeysWith:)&lt;/code&gt; returns the later play, the same row &lt;code&gt;mergeDuplicateRecents()&lt;/code&gt; keeps, so the teaser shows the row the merge will leave.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Add the other play counts on the write.&lt;/strong&gt; &lt;code&gt;collapseRecents&lt;/code&gt; sums them onto that row and deletes the rest. The test's counts are 3 + 2 + 1 = 6.&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+  </entry>
   <entry>
     <title>Pillow's convert() kept the camera GPS on the published original</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/pillow-convert-keeps-exif-gps/"/>
