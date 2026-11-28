@@ -4,11 +4,81 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-27T16:16:00Z</updated>
+  <updated>2026-11-30T16:00:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>A mouse battery with no scope was the computer's battery</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/unset-scope-mouse-battery/"/>
+    <id>https://kevintcoughlin.com/blog/unset-scope-mouse-battery/</id>
+    <published>2026-11-30T16:00:00Z</published>
+    <updated>2026-11-30T16:00:00Z</updated>
+    <category term="gamedev"/>
+    <category term="tips"/>
+    <summary>godot-device-power#29 skips a Linux supply whose sysfs scope is Device. A missing scope still counted as the machine. That is how a laptop battery and a mains adapter usually appear, and it is how a wireless mouse or controller was read when its driver wrote no scope. A desktop whose only battery was that mouse was held to the battery cap, and a charging peripheral could make a laptop on battery look plugged in. The follow-up is godot-device-power#34 (8d84335).</summary>
+    <content type="html">&lt;p&gt;&lt;a href=&quot;https://github.com/KevinTCoughlin/godot-device-power/pull/29&quot;&gt;godot-device-power#29&lt;/a&gt; skips a Linux supply whose sysfs &lt;code&gt;scope&lt;/code&gt; is &lt;code&gt;Device&lt;/code&gt;. A missing &lt;code&gt;scope&lt;/code&gt; still counted as the machine. That is how a laptop battery and a mains adapter usually appear, and it is how a wireless mouse or controller was read when its driver wrote no &lt;code&gt;scope&lt;/code&gt;. A desktop whose only battery was that mouse was held to the battery cap, and a charging peripheral could make a laptop on battery look plugged in. The follow-up is &lt;a href=&quot;https://github.com/KevinTCoughlin/godot-device-power/pull/34&quot;&gt;godot-device-power#34&lt;/a&gt; (&lt;a href=&quot;https://github.com/KevinTCoughlin/godot-device-power/commit/8d843358fc3cdb2fa6a9a280295f966603fb2993&quot;&gt;&lt;code&gt;8d84335&lt;/code&gt;&lt;/a&gt;).&lt;/p&gt;
+&lt;h2 id=&quot;a-missing-scope-still-counted&quot;&gt;A missing scope still counted&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;power_source_from_supplies()&lt;/code&gt; dropped a supply when &lt;code&gt;scope&lt;/code&gt; was &lt;code&gt;Device&lt;/code&gt;. &lt;code&gt;System&lt;/code&gt; and &lt;code&gt;Unknown&lt;/code&gt; counted, and so did a supply with no &lt;code&gt;scope&lt;/code&gt; file. Drivers that leave &lt;code&gt;scope&lt;/code&gt; unset, on older kernels and out-of-tree, never hit that check.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/KevinTCoughlin/godot-device-power/pull/34&quot;&gt;#34&lt;/a&gt; passes the supply's name into one check, &lt;code&gt;is_peripheral()&lt;/code&gt;. A &lt;code&gt;present&lt;/code&gt; of &lt;code&gt;0&lt;/code&gt; still drops the supply.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-gdscript&quot;&gt;        var supply_name: String = key if key is String else &amp;quot;&amp;quot;
+        if is_peripheral(supply_name, supply) or _field(supply, &amp;quot;present&amp;quot;) == &amp;quot;0&amp;quot;:
+            continue
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;Device&lt;/code&gt; is still a peripheral. &lt;code&gt;System&lt;/code&gt; is the machine's, taken at its word: &lt;code&gt;hidpp_battery_0&lt;/code&gt; on the hid bus with &lt;code&gt;scope&lt;/code&gt; of &lt;code&gt;System&lt;/code&gt; stays the computer's battery. No &lt;code&gt;scope&lt;/code&gt;, or &lt;code&gt;Unknown&lt;/code&gt;, is a peripheral when the parent bus or the driver name says so. Anything else is still the machine's.&lt;/p&gt;
+&lt;h2 id=&quot;the-bus-then-the-name&quot;&gt;The bus, then the name&lt;/h2&gt;
+&lt;p&gt;The bus is the main signal. A laptop pack or adapter hangs off ACPI, platform, i2c or a USB-C port controller, not &lt;code&gt;hid&lt;/code&gt;, &lt;code&gt;bluetooth&lt;/code&gt; or &lt;code&gt;usb&lt;/code&gt;. &lt;code&gt;_read_supplies()&lt;/code&gt; stores that bus on a new &lt;code&gt;subsystem&lt;/code&gt; field. The value is the last part of the parent &lt;code&gt;device/subsystem&lt;/code&gt; link, so &lt;code&gt;../../bus/hid&lt;/code&gt; is &lt;code&gt;hid&lt;/code&gt;. Empty when there is no parent or the link is unreadable.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-gdscript&quot;&gt;static func _read_subsystem(base: String) -&amp;gt; String:
+    var device := DirAccess.open(base.path_join(&amp;quot;device&amp;quot;))
+    if device == null or not device.is_link(&amp;quot;subsystem&amp;quot;):
+        return &amp;quot;&amp;quot;
+    return device.read_link(&amp;quot;subsystem&amp;quot;).get_file()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The name is the fallback when that link cannot be read. The prefixes are the ones the kernel's HID battery drivers use: hid-input, Logitech HID++, Sony and PlayStation controllers, Nintendo controllers, Wacom tablets, Wiimotes and Steam controllers.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-gdscript&quot;&gt;const _PERIPHERAL_BUSES := {&amp;quot;hid&amp;quot;: true, &amp;quot;bluetooth&amp;quot;: true, &amp;quot;usb&amp;quot;: true}
+## Name prefixes the kernel's HID battery drivers use, for a supply whose
+## [code]device[/code] link cannot be read: hid-input, Logitech HID++,
+## Sony and PlayStation controllers, Nintendo controllers, Wacom tablets,
+## Wiimotes and Steam controllers.
+const _PERIPHERAL_NAME_PREFIXES: Array[String] = [
+    &amp;quot;hid-&amp;quot;,
+    &amp;quot;hidpp_battery&amp;quot;,
+    &amp;quot;sony_controller_battery&amp;quot;,
+    &amp;quot;ps-controller-battery&amp;quot;,
+    &amp;quot;nintendo_switch_controller&amp;quot;,
+    &amp;quot;wacom_&amp;quot;,
+    &amp;quot;wiimote_&amp;quot;,
+    &amp;quot;steam-controller-&amp;quot;,
+]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;wacom_&lt;/code&gt; also matches the tablet's own mains adapter. &lt;code&gt;wacom_ac_0&lt;/code&gt; online, beside a discharging &lt;code&gt;BAT1&lt;/code&gt;, stays on battery. The adapter is not the machine's mains.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-gdscript&quot;&gt;static func is_peripheral(supply_name: String, supply: Dictionary) -&amp;gt; bool:
+    var scope := _field(supply, &amp;quot;scope&amp;quot;)
+    if scope == &amp;quot;Device&amp;quot;:
+        return true
+    if scope == &amp;quot;System&amp;quot;:
+        return false
+    if _PERIPHERAL_BUSES.has(_field(supply, &amp;quot;subsystem&amp;quot;)):
+        return true
+    for prefix: String in _PERIPHERAL_NAME_PREFIXES:
+        if supply_name.begins_with(prefix):
+            return true
+    return false
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;UPower's DisplayDevice was the other way to separate a peripheral from the computer. It needs D-Bus and a daemon. This backend reads only sysfs, so I left DisplayDevice out.&lt;/p&gt;
+&lt;h2 id=&quot;what-the-suite-ran&quot;&gt;What the suite ran&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;./scripts/run_tests.sh&lt;/code&gt; reported 128 passed, 0 failed, on Godot 4.7.2 (macOS universal build, headless). With the bus and name checks removed, 3 of the 128 fail.&lt;/p&gt;
+&lt;p&gt;The new cases cover an unscoped supply on the hid, bluetooth, usb, acpi and platform buses, a match by name, a tablet's &lt;code&gt;wacom_ac_*&lt;/code&gt; adapter, &lt;code&gt;Unknown&lt;/code&gt; on hid, and &lt;code&gt;System&lt;/code&gt; winning over both the bus and the name. One test builds a tree of &lt;code&gt;device&lt;/code&gt; and &lt;code&gt;subsystem&lt;/code&gt; symlinks under &lt;code&gt;/tmp&lt;/code&gt; and writes no &lt;code&gt;scope&lt;/code&gt; file. The mouse's bus reads as &lt;code&gt;hid&lt;/code&gt; and the pack's as &lt;code&gt;acpi&lt;/code&gt;. An unscoped charging mouse beside that discharging pack stays on battery. The mouse alone is unknown.&lt;/p&gt;
+&lt;p&gt;The buses and the names come from kernel driver sources. I have not checked them against a live &lt;code&gt;/sys/class/power_supply&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;what-i-would-repeat&quot;&gt;What I would repeat&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;A missing &lt;code&gt;scope&lt;/code&gt; still needs a second look.&lt;/strong&gt; &lt;code&gt;Device&lt;/code&gt; is a peripheral. &lt;code&gt;System&lt;/code&gt; is the machine's, even when the bus is hid and the name is a controller's. No file, or &lt;code&gt;Unknown&lt;/code&gt;, follows the bus and then the name.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Read the bus first.&lt;/strong&gt; &lt;code&gt;hid&lt;/code&gt;, &lt;code&gt;bluetooth&lt;/code&gt; and &lt;code&gt;usb&lt;/code&gt; mark a peripheral. The name prefixes apply when the &lt;code&gt;device&lt;/code&gt; link cannot be read.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The 128 did not open a live sysfs.&lt;/strong&gt; They passed on Godot 4.7.2's macOS build, headless. Removing the bus and name checks fails 3 of them.&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+  </entry>
   <entry>
     <title>Pillow's convert() kept the camera GPS on the published original</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/pillow-convert-keeps-exif-gps/"/>
