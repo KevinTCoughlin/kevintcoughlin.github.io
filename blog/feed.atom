@@ -4,11 +4,72 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-27T16:16:00Z</updated>
+  <updated>2026-12-01T16:00:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>A gamemoded restart dropped the GameMode hold</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/gamemoded-restart-drops-the-hold/"/>
+    <id>https://kevintcoughlin.com/blog/gamemoded-restart-drops-the-hold/</id>
+    <published>2026-12-01T16:00:00Z</published>
+    <updated>2026-12-01T16:00:00Z</updated>
+    <category term="gamedev"/>
+    <category term="tips"/>
+    <summary>In godot-xdg-portals, gamemoded, not the portal, holds GameMode registrations. A daemon restart dropped them, and request_game_mode() still returned true.</summary>
+    <content type="html">&lt;p&gt;In &lt;a href=&quot;https://github.com/KevinTCoughlin/godot-xdg-portals&quot;&gt;godot-xdg-portals&lt;/a&gt;, &lt;code&gt;gamemoded&lt;/code&gt;, not the portal, holds GameMode registrations. A daemon restart dropped them, and &lt;code&gt;request_game_mode()&lt;/code&gt; still returned true.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;request_game_mode()&lt;/code&gt; records a pid after &lt;code&gt;RegisterGame&lt;/code&gt; returns 0. A later call for that pid returns true and does not call the portal again. A portal restart still works that way: a second &lt;code&gt;RegisterGame&lt;/code&gt; for a pid the daemon already knows is rejected. A &lt;code&gt;gamemoded&lt;/code&gt; restart drops every registration. The facade still had the pid, and the game ran without GameMode until it exited. The change is &lt;a href=&quot;https://github.com/KevinTCoughlin/godot-xdg-portals/pull/51&quot;&gt;godot-xdg-portals#51&lt;/a&gt; (&lt;a href=&quot;https://github.com/KevinTCoughlin/godot-xdg-portals/commit/bf3e41c93aa7e0c95c8e166135058d3796324049&quot;&gt;&lt;code&gt;bf3e41c&lt;/code&gt;&lt;/a&gt;), which builds on the portal name watch in &lt;a href=&quot;https://github.com/KevinTCoughlin/godot-xdg-portals/pull/44&quot;&gt;godot-xdg-portals#44&lt;/a&gt;. &lt;a href=&quot;https://github.com/KevinTCoughlin/godot-xdg-portals/issues/49&quot;&gt;#49&lt;/a&gt; had two options. This one takes the watch.&lt;/p&gt;
+&lt;h2 id=&quot;the-portal-name-watch-cannot-see-the-daemon&quot;&gt;The portal name watch cannot see the daemon&lt;/h2&gt;
+&lt;p&gt;#44 watches &lt;code&gt;org.freedesktop.portal.Desktop&lt;/code&gt;. When that name is lost, cached capabilities drop and GameMode holds stay. &lt;code&gt;gamemoded&lt;/code&gt; tracks the game process, so a portal restart does not drop them, and registering again would be rejected.&lt;/p&gt;
+&lt;p&gt;The daemon's own name is &lt;code&gt;com.feralinteractive.GameMode&lt;/code&gt;. #44 does not watch it. Before this change the pid stayed in &lt;code&gt;_game_mode_pids&lt;/code&gt;, so the next request returned before it reached the bus:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-gdscript&quot;&gt;    if _game_mode_pids.has(resolved):
+        return true
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;query_game_mode()&lt;/code&gt; asks the backend and does not read that dictionary. &lt;a href=&quot;https://github.com/KevinTCoughlin/godot-xdg-portals/issues/49&quot;&gt;#49&lt;/a&gt; says that call would report &lt;code&gt;NOT_REGISTERED&lt;/code&gt; after the daemon drops the pid. &lt;code&gt;request_game_mode()&lt;/code&gt; never asks.&lt;/p&gt;
+&lt;h2 id=&quot;watch-the-daemon-and-take-the-hold-again&quot;&gt;Watch the daemon, and take the hold again&lt;/h2&gt;
+&lt;p&gt;The native backend watches &lt;code&gt;com.feralinteractive.GameMode&lt;/code&gt; and only watches it. The portal still forwards &lt;code&gt;RegisterGame&lt;/code&gt;. There is no auto-start flag, so the watch does not activate the daemon.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-cpp&quot;&gt;    // gamemoded holds GameMode registrations, not the portal. When it restarts
+    // they are gone, and the facade has to register again. No auto-start flag:
+    // watching must not activate the daemon.
+    game_mode_daemon_watch = g_bus_watch_name_on_connection(connection,
+            GAME_MODE_DAEMON_BUS_NAME, G_BUS_NAME_WATCHER_FLAGS_NONE,
+            &amp;amp;XdgPortalNative::on_game_mode_daemon_appeared,
+            &amp;amp;XdgPortalNative::on_game_mode_daemon_vanished, this, nullptr);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The first report is the daemon as found at startup. Nothing was registered with an earlier instance, so that report is ignored. A later owner is a new instance. A replacement with no unowned gap is reported as lost, then back. The facade keeps those pids as lost. The game still wants them, and the next instance gets them back:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-gdscript&quot;&gt;func _on_game_mode_daemon_presence_changed(available: bool) -&amp;gt; void:
+    if available:
+        _retake_lost_game_mode()
+        return
+    for pid: int in _game_mode_pids.keys():
+        _game_mode_lost_pids[pid] = true
+    _game_mode_pids.clear()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;_retake_lost_game_mode()&lt;/code&gt; calls &lt;code&gt;RegisterGame&lt;/code&gt; for each lost pid once a daemon owns the name and the portal can be reached. If the portal name is unowned, it waits and runs again when the portal returns. A pid the new daemon rejects is dropped, and &lt;code&gt;portal_error&lt;/code&gt; is emitted with context &lt;code&gt;GameMode.RegisterGame&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-gdscript&quot;&gt;            portal_error.emit(
+                &amp;quot;GameMode.RegisterGame&amp;quot;,
+                &amp;quot;Could not register pid %d with GameMode again after gamemoded restarted.&amp;quot; % pid
+            )
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;release_game_mode()&lt;/code&gt; for a lost hold returns true with no bus call, and the hold is not taken again. &lt;code&gt;UnregisterGame&lt;/code&gt; would otherwise D-Bus-activate a daemon that never had the pid:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-gdscript&quot;&gt;    if _game_mode_lost_pids.has(resolved):
+        _game_mode_lost_pids.erase(resolved)
+        return true
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;request_game_mode()&lt;/code&gt; for a lost hold erases that entry and registers immediately. The outcome of that call decides it. Leaving the tree clears lost holds and does not unregister them. &lt;code&gt;gamemoded&lt;/code&gt; already dropped the pid.&lt;/p&gt;
+&lt;h2 id=&quot;inside-flatpak-the-name-is-not-visible&quot;&gt;Inside Flatpak the name is not visible&lt;/h2&gt;
+&lt;p&gt;A Flatpak sandbox cannot see &lt;code&gt;com.feralinteractive.GameMode&lt;/code&gt;, so the watch never fires and nothing changes there. No extra permission is requested. A &lt;code&gt;gamemoded&lt;/code&gt; restart is recovered only when the game exits. The same note is in &lt;code&gt;docs/compatibility.md&lt;/code&gt; and &lt;code&gt;docs/api.md&lt;/code&gt;. The constant says why a missing name is left alone:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-cpp&quot;&gt;// The GameMode daemon's own name. Only watched, never called: the portal
+// forwards registrations to it. A sandbox that cannot see the name never
+// reports it, which is the same as a daemon that never restarts.
+inline constexpr const char *GAME_MODE_DAEMON_BUS_NAME = &amp;quot;com.feralinteractive.GameMode&amp;quot;;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&quot;what-i-ran&quot;&gt;What I ran&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;./scripts/run_tests.sh&lt;/code&gt; reported 116 passed and 0 failed, on Godot 4.7.2, a macOS build, headless. Seven of the tests are new, in &lt;code&gt;tests/test_game_mode_daemon.gd&lt;/code&gt;. They cover taking the hold again after a restart, not taking a hold released before the restart, a local release while the daemon is gone, a request during the gap, a rejected re-take, a daemon restart during a portal gap, and leaving the tree after the daemon went away.&lt;/p&gt;
+&lt;p&gt;I did not run &lt;code&gt;./scripts/run_native_smoke.sh&lt;/code&gt; locally. It now has a &lt;code&gt;gamemode-restart&lt;/code&gt; mode, in which the fake portal also owns the daemon name and restarts it after the first &lt;code&gt;RegisterGame&lt;/code&gt;. The checks on &lt;a href=&quot;https://github.com/KevinTCoughlin/godot-xdg-portals/commit/bf3e41c93aa7e0c95c8e166135058d3796324049&quot;&gt;&lt;code&gt;bf3e41c&lt;/code&gt;&lt;/a&gt; passed, including the Godot suites and the fake-portal smoke (&lt;a href=&quot;https://github.com/KevinTCoughlin/godot-xdg-portals/actions/runs/46081122884&quot;&gt;run 46081122884&lt;/a&gt;). I did not run row 16 of &lt;code&gt;docs/native-testing.md&lt;/code&gt;, &lt;code&gt;systemctl --user restart gamemoded&lt;/code&gt;. Not tested on hardware.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>Pillow's convert() kept the camera GPS on the published original</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/pillow-convert-keeps-exif-gps/"/>
