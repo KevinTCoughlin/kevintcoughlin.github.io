@@ -4,11 +4,63 @@
   <id>https://kevintcoughlin.com/blog/</id>
   <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/"/>
   <link rel="self" type="application/atom+xml" href="https://kevintcoughlin.com/blog/feed.atom"/>
-  <updated>2026-11-27T16:16:00Z</updated>
+  <updated>2026-12-02T16:00:00Z</updated>
   <author>
     <name>Kevin T. Coughlin</name>
     <uri>https://kevintcoughlin.com/</uri>
   </author>
+  <entry>
+    <title>Accept.includes treated image/avif;q=0 as AVIF</title>
+    <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/accept-includes-q-zero-as-avif/"/>
+    <id>https://kevintcoughlin.com/blog/accept-includes-q-zero-as-avif/</id>
+    <published>2026-12-02T16:00:00Z</published>
+    <updated>2026-12-02T16:00:00Z</updated>
+    <category term="http"/>
+    <category term="tips"/>
+    <category term="web"/>
+    <summary>In Bauhaus, negotiateFormat used Accept.includes(&quot;image/avif&quot;). image/avif;q=0 selected AVIF, and a higher JPEG q lost. The change is bauhaus#202 (18ef0bb).</summary>
+    <content type="html">&lt;p&gt;In &lt;a href=&quot;https://github.com/cascadiacollections/bauhaus&quot;&gt;Bauhaus&lt;/a&gt;, &lt;code&gt;negotiateFormat&lt;/code&gt; used &lt;code&gt;Accept.includes(&amp;quot;image/avif&amp;quot;)&lt;/code&gt;. &lt;code&gt;image/avif;q=0&lt;/code&gt; selected AVIF, and a higher JPEG &lt;code&gt;q&lt;/code&gt; lost. The change is &lt;a href=&quot;https://github.com/cascadiacollections/bauhaus/pull/202&quot;&gt;bauhaus#202&lt;/a&gt; (&lt;a href=&quot;https://github.com/cascadiacollections/bauhaus/commit/18ef0bb963fdb8c4aa271e669fe4066985ce3c4a&quot;&gt;&lt;code&gt;18ef0bb&lt;/code&gt;&lt;/a&gt;).&lt;/p&gt;
+&lt;h2 id=&quot;the-substring-was-the-whole-check&quot;&gt;The substring was the whole check&lt;/h2&gt;
+&lt;p&gt;The worker returned on the first hit:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;const accept = request.headers.get(&amp;quot;Accept&amp;quot;) ?? &amp;quot;&amp;quot;;
+if (accept.includes(&amp;quot;image/avif&amp;quot;)) return &amp;quot;avif&amp;quot;;
+if (accept.includes(&amp;quot;image/webp&amp;quot;)) return &amp;quot;webp&amp;quot;;
+return &amp;quot;jpeg&amp;quot;;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;image/avif;q=0&lt;/code&gt; means do not send AVIF. The characters &lt;code&gt;image/avif&lt;/code&gt; are still in the header, so the worker sent AVIF. A client that cannot decode it gets a broken image. Quality was never read. &lt;code&gt;image/avif;q=0.5, image/jpeg;q=1&lt;/code&gt; contains &lt;code&gt;image/avif&lt;/code&gt;, so AVIF won over the higher JPEG &lt;code&gt;q&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;a-q-of-0-does-not-win&quot;&gt;A q of 0 does not win&lt;/h2&gt;
+&lt;p&gt;Named types are parsed with their &lt;code&gt;q&lt;/code&gt;. A missing &lt;code&gt;q&lt;/code&gt; is 1, and the number is clamped into 0 through 1. The best &lt;code&gt;q&lt;/code&gt; so far starts at 0, so a candidate has to beat 0:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;let best: ImageFormat | null = null;
+let bestQ = 0;
+for (const format of NEGOTIATED_FORMATS) {
+  const q = explicitAcceptQuality(accept, FORMAT_CONTENT_TYPE[format]);
+  // Equal q keeps the earlier format: AVIF, then WebP, then JPEG.
+  if (q === null || q &amp;lt;= bestQ) continue;
+  best = format;
+  bestQ = q;
+}
+return best ?? &amp;quot;jpeg&amp;quot;;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;NEGOTIATED_FORMATS&lt;/code&gt; is &lt;code&gt;[&amp;quot;avif&amp;quot;, &amp;quot;webp&amp;quot;, &amp;quot;jpeg&amp;quot;]&lt;/code&gt;. Equal &lt;code&gt;q&lt;/code&gt; keeps the earlier format. &lt;code&gt;?format=avif&lt;/code&gt;, &lt;code&gt;webp&lt;/code&gt;, or &lt;code&gt;jpeg&lt;/code&gt; still returns before the header is read.&lt;/p&gt;
+&lt;p&gt;The helper counts a part only when the type is exactly the mime it was asked about:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;if (typeRaw.trim().toLowerCase() !== mime) continue;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;*/*&lt;/code&gt; and &lt;code&gt;image/*&lt;/code&gt; are not those names, so they are not a request for AVIF. The first mention of a type is the one that sticks, so a later duplicate cannot raise a &lt;code&gt;q=0&lt;/code&gt;. The doc comment splits those wildcards, because &lt;code&gt;*/&lt;/code&gt; would end the block comment:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt; * A wildcard (`*` / `*`) or `image/` + `*` is not a match.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;curl and the wallpaper one-liners send &lt;code&gt;*/*&lt;/code&gt; and get JPEG, which is what they can decode. On macOS, KDE, and GNOME those one-liners are &lt;code&gt;curl -sfo /tmp/bauhaus.jpg&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;what-the-tests-pin&quot;&gt;What the tests pin&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;image/avif;q=0, image/webp, image/jpeg&lt;/code&gt; selects WebP. Both of the others default to &lt;code&gt;q=1&lt;/code&gt;, and WebP is earlier. &lt;code&gt;image/avif;q=0.5, image/jpeg;q=1&lt;/code&gt; selects JPEG. &lt;code&gt;*/*&lt;/code&gt; stays on JPEG. &lt;code&gt;image/jpeg;q=0.8, image/webp;q=0.8, image/avif;q=0.8&lt;/code&gt; selects AVIF. A header that already named &lt;code&gt;image/avif&lt;/code&gt; with no &lt;code&gt;q&lt;/code&gt;, beside WebP, JPEG, and &lt;code&gt;*/*&lt;/code&gt;, still selects AVIF.&lt;/p&gt;
+&lt;p&gt;The worker CI job runs &lt;code&gt;npx tsc --noEmit&lt;/code&gt;, then &lt;code&gt;npm test&lt;/code&gt;. That run reported 235 passed.&lt;/p&gt;
+&lt;p&gt;The EXIF allowlist on the published JPEG is a separate change, in &lt;a href=&quot;https://kevintcoughlin.com/blog/pillow-convert-keeps-exif-gps/&quot;&gt;Pillow's convert() kept the camera GPS on the published original&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;what-i-would-repeat&quot;&gt;What I would repeat&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;includes&lt;/code&gt; is not content negotiation.&lt;/strong&gt; &lt;code&gt;image/avif;q=0&lt;/code&gt; still contains &lt;code&gt;image/avif&lt;/code&gt;. That &lt;code&gt;q&lt;/code&gt; means do not send AVIF.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Let the highest &lt;code&gt;q&lt;/code&gt; win.&lt;/strong&gt; Start from 0 so &lt;code&gt;q=0&lt;/code&gt; cannot. On a tie, AVIF, then WebP, then JPEG.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;*/*&lt;/code&gt; stays on JPEG.&lt;/strong&gt; curl and the wallpaper one-liners save a &lt;code&gt;.jpg&lt;/code&gt;. They do not ask for AVIF.&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+  </entry>
   <entry>
     <title>Pillow's convert() kept the camera GPS on the published original</title>
     <link rel="alternate" type="text/html" href="https://kevintcoughlin.com/blog/pillow-convert-keeps-exif-gps/"/>
