@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="In godot-xdg-portals, gamemoded, not the portal, holds GameMode registrations. A daemon restart dropped them, and request_game_mode() still returned true." />
+    <meta name="author" content="Kevin T. Coughlin" />
+    <meta name="theme-color" content="#14211d" />
+    <link rel="canonical" href="https://kevintcoughlin.com/blog/gamemoded-restart-drops-the-hold/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="alternate" type="application/atom+xml" title="Kevin Coughlin's Blog" href="https://kevintcoughlin.com/blog/feed.atom" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="A gamemoded restart dropped the GameMode hold — Kevin Coughlin" />
+    <meta property="og:description" content="In godot-xdg-portals, gamemoded, not the portal, holds GameMode registrations. A daemon restart dropped them, and request_game_mode() still returned true." />
+    <meta property="og:url" content="https://kevintcoughlin.com/blog/gamemoded-restart-drops-the-hold/" />
+    <meta property="og:image" content="https://kevintcoughlin.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Kevin Coughlin — Making useful things for curious people." />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:site_name" content="Kevin Coughlin" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="article:published_time" content="2026-12-01T16:00:00Z" />
+    <meta property="article:modified_time" content="2026-12-01T16:00:00Z" />
+    <meta property="article:author" content="https://kevintcoughlin.com/" />
+    <meta property="article:tag" content="gamedev" />
+    <meta property="article:tag" content="tips" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@kevintcoughlin" />
+    <meta name="twitter:title" content="A gamemoded restart dropped the GameMode hold — Kevin Coughlin" />
+    <meta name="twitter:description" content="In godot-xdg-portals, gamemoded, not the portal, holds GameMode registrations. A daemon restart dropped them, and request_game_mode() still returned true." />
+    <meta name="twitter:image" content="https://kevintcoughlin.com/og-image.png" />
+    <meta name="twitter:image:alt" content="Kevin Coughlin — Making useful things for curious people." />
+    <title>A gamemoded restart dropped the GameMode hold — Kevin Coughlin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #edf0e9;
+        --muted: #a8b4aa;
+        --line: rgba(237, 240, 233, 0.18);
+        --accent: #d7ef72;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #14211d;
+        font-family: var(--sans);
+        line-height: 1.65;
+      }
+      .shell {
+        width: min(720px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      header a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wordmark {
+        font-family: var(--serif);
+        font-weight: 600;
+      }
+      .wordmark span,
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--serif);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        margin: 48px 0 8px;
+      }
+      time,
+      .meta {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      ul.posts {
+        padding: 0;
+        list-style: none;
+      }
+      ul.posts li {
+        margin: 32px 0;
+      }
+      ul.posts h2 {
+        margin: 4px 0;
+      }
+      ul.tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tags a {
+        padding: 2px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        text-decoration: none;
+      }
+      ul.tags a:hover,
+      ul.tags a:focus-visible,
+      ul.tags a[aria-current='page'] {
+        color: var(--ink);
+        background: var(--line);
+      }
+      ul.tag-index {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      ul.tag-index a {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+      }
+      ul.tag-index a span:first-child {
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      ul.tag-index .count {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      ul.tag-index a:hover,
+      ul.tag-index a:focus-visible,
+      ul.tag-index a:hover .count,
+      ul.tag-index a:focus-visible .count {
+        color: var(--ink);
+      }
+      footer {
+        margin: 64px auto 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "0d360b4cb7b148b5a55c50a0bdfabcb1"}'
+    ></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "A gamemoded restart dropped the GameMode hold",
+        "description": "In godot-xdg-portals, gamemoded, not the portal, holds GameMode registrations. A daemon restart dropped them, and request_game_mode() still returned true.",
+        "image": "https://kevintcoughlin.com/og-image.png",
+        "datePublished": "2026-12-01T16:00:00Z",
+        "dateModified": "2026-12-01T16:00:00Z",
+        "author": {
+          "@type": "Person",
+          "name": "Kevin Coughlin",
+          "url": "https://kevintcoughlin.com/"
+        },
+        "publisher": {
+          "@type": "Person",
+          "name": "Kevin Coughlin",
+          "url": "https://kevintcoughlin.com/"
+        },
+        "url": "https://kevintcoughlin.com/blog/gamemoded-restart-drops-the-hold/",
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "https://kevintcoughlin.com/blog/gamemoded-restart-drops-the-hold/"
+        },
+        "isPartOf": {
+          "@id": "https://kevintcoughlin.com/blog/#blog"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header class="shell">
+      <a class="wordmark" href="/" aria-label="Kevin Coughlin home">Kevin Coughlin<span>.</span></a>
+      <a href="/blog/">Blog</a>
+    </header>
+    <main class="shell">
+      <article>
+        <h1>A gamemoded restart dropped the GameMode hold</h1>
+        <time datetime="2026-12-01T16:00:00Z">December 1, 2026</time>
+        <ul class="tags" aria-label="Tags">
+          <li><a href="/blog/tags/gamedev/">gamedev</a></li>
+          <li><a href="/blog/tags/tips/">tips</a></li>
+        </ul>
+<p>In <a href="https://github.com/KevinTCoughlin/godot-xdg-portals">godot-xdg-portals</a>, <code>gamemoded</code>, not the portal, holds GameMode registrations. A daemon restart dropped them, and <code>request_game_mode()</code> still returned true.</p>
+<p><code>request_game_mode()</code> records a pid after <code>RegisterGame</code> returns 0. A later call for that pid returns true and does not call the portal again. A portal restart still works that way: a second <code>RegisterGame</code> for a pid the daemon already knows is rejected. A <code>gamemoded</code> restart drops every registration. The facade still had the pid, and the game ran without GameMode until it exited. The change is <a href="https://github.com/KevinTCoughlin/godot-xdg-portals/pull/51">godot-xdg-portals#51</a> (<a href="https://github.com/KevinTCoughlin/godot-xdg-portals/commit/bf3e41c93aa7e0c95c8e166135058d3796324049"><code>bf3e41c</code></a>), which builds on the portal name watch in <a href="https://github.com/KevinTCoughlin/godot-xdg-portals/pull/44">godot-xdg-portals#44</a>. <a href="https://github.com/KevinTCoughlin/godot-xdg-portals/issues/49">#49</a> had two options. This one takes the watch.</p>
+<h2 id="the-portal-name-watch-cannot-see-the-daemon">The portal name watch cannot see the daemon</h2>
+<p>#44 watches <code>org.freedesktop.portal.Desktop</code>. When that name is lost, cached capabilities drop and GameMode holds stay. <code>gamemoded</code> tracks the game process, so a portal restart does not drop them, and registering again would be rejected.</p>
+<p>The daemon's own name is <code>com.feralinteractive.GameMode</code>. #44 does not watch it. Before this change the pid stayed in <code>_game_mode_pids</code>, so the next request returned before it reached the bus:</p>
+<pre><code class="language-gdscript">    if _game_mode_pids.has(resolved):
+        return true
+</code></pre>
+<p><code>query_game_mode()</code> asks the backend and does not read that dictionary. <a href="https://github.com/KevinTCoughlin/godot-xdg-portals/issues/49">#49</a> says that call would report <code>NOT_REGISTERED</code> after the daemon drops the pid. <code>request_game_mode()</code> never asks.</p>
+<h2 id="watch-the-daemon-and-take-the-hold-again">Watch the daemon, and take the hold again</h2>
+<p>The native backend watches <code>com.feralinteractive.GameMode</code> and only watches it. The portal still forwards <code>RegisterGame</code>. There is no auto-start flag, so the watch does not activate the daemon.</p>
+<pre><code class="language-cpp">    // gamemoded holds GameMode registrations, not the portal. When it restarts
+    // they are gone, and the facade has to register again. No auto-start flag:
+    // watching must not activate the daemon.
+    game_mode_daemon_watch = g_bus_watch_name_on_connection(connection,
+            GAME_MODE_DAEMON_BUS_NAME, G_BUS_NAME_WATCHER_FLAGS_NONE,
+            &amp;XdgPortalNative::on_game_mode_daemon_appeared,
+            &amp;XdgPortalNative::on_game_mode_daemon_vanished, this, nullptr);
+</code></pre>
+<p>The first report is the daemon as found at startup. Nothing was registered with an earlier instance, so that report is ignored. A later owner is a new instance. A replacement with no unowned gap is reported as lost, then back. The facade keeps those pids as lost. The game still wants them, and the next instance gets them back:</p>
+<pre><code class="language-gdscript">func _on_game_mode_daemon_presence_changed(available: bool) -&gt; void:
+    if available:
+        _retake_lost_game_mode()
+        return
+    for pid: int in _game_mode_pids.keys():
+        _game_mode_lost_pids[pid] = true
+    _game_mode_pids.clear()
+</code></pre>
+<p><code>_retake_lost_game_mode()</code> calls <code>RegisterGame</code> for each lost pid once a daemon owns the name and the portal can be reached. If the portal name is unowned, it waits and runs again when the portal returns. A pid the new daemon rejects is dropped, and <code>portal_error</code> is emitted with context <code>GameMode.RegisterGame</code>:</p>
+<pre><code class="language-gdscript">            portal_error.emit(
+                &quot;GameMode.RegisterGame&quot;,
+                &quot;Could not register pid %d with GameMode again after gamemoded restarted.&quot; % pid
+            )
+</code></pre>
+<p><code>release_game_mode()</code> for a lost hold returns true with no bus call, and the hold is not taken again. <code>UnregisterGame</code> would otherwise D-Bus-activate a daemon that never had the pid:</p>
+<pre><code class="language-gdscript">    if _game_mode_lost_pids.has(resolved):
+        _game_mode_lost_pids.erase(resolved)
+        return true
+</code></pre>
+<p><code>request_game_mode()</code> for a lost hold erases that entry and registers immediately. The outcome of that call decides it. Leaving the tree clears lost holds and does not unregister them. <code>gamemoded</code> already dropped the pid.</p>
+<h2 id="inside-flatpak-the-name-is-not-visible">Inside Flatpak the name is not visible</h2>
+<p>A Flatpak sandbox cannot see <code>com.feralinteractive.GameMode</code>, so the watch never fires and nothing changes there. No extra permission is requested. A <code>gamemoded</code> restart is recovered only when the game exits. The same note is in <code>docs/compatibility.md</code> and <code>docs/api.md</code>. The constant says why a missing name is left alone:</p>
+<pre><code class="language-cpp">// The GameMode daemon's own name. Only watched, never called: the portal
+// forwards registrations to it. A sandbox that cannot see the name never
+// reports it, which is the same as a daemon that never restarts.
+inline constexpr const char *GAME_MODE_DAEMON_BUS_NAME = &quot;com.feralinteractive.GameMode&quot;;
+</code></pre>
+<h2 id="what-i-ran">What I ran</h2>
+<p><code>./scripts/run_tests.sh</code> reported 116 passed and 0 failed, on Godot 4.7.2, a macOS build, headless. Seven of the tests are new, in <code>tests/test_game_mode_daemon.gd</code>. They cover taking the hold again after a restart, not taking a hold released before the restart, a local release while the daemon is gone, a request during the gap, a rejected re-take, a daemon restart during a portal gap, and leaving the tree after the daemon went away.</p>
+<p>I did not run <code>./scripts/run_native_smoke.sh</code> locally. It now has a <code>gamemode-restart</code> mode, in which the fake portal also owns the daemon name and restarts it after the first <code>RegisterGame</code>. The checks on <a href="https://github.com/KevinTCoughlin/godot-xdg-portals/commit/bf3e41c93aa7e0c95c8e166135058d3796324049"><code>bf3e41c</code></a> passed, including the Godot suites and the fake-portal smoke (<a href="https://github.com/KevinTCoughlin/godot-xdg-portals/actions/runs/46081122884">run 46081122884</a>). I did not run row 16 of <code>docs/native-testing.md</code>, <code>systemctl --user restart gamemoded</code>. Not tested on hardware.</p>
+
+      </article>
+    </main>
+    <footer class="shell">
+      <a href="/blog/tags/">Tags</a>
+      ·
+      <a href="https://kevintcoughlin.com/blog/feed.atom">Subscribe via Atom feed</a>
+    </footer>
+  </body>
+</html>
